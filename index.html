@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>스마트 발전기 컨트롤러</title>
+  <title>스마트 발전기 컨트롤러 V2.5</title>
 
   <!-- 모바일 전체화면 앱(PWA) 설정 -->
   <meta name="theme-color" content="#0f172a">
@@ -25,19 +25,19 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      padding: 12px;
-      gap: 10px;
+      padding: 12px 14px;
+      gap: 11px;
       max-width: 480px;
       margin: 0 auto;
     }
 
-    /* 상단 앱 헤더 & 연결 장비 표시줄 */
+    /* 1. 상단 앱 헤더 & 연결 장비 표시줄 */
     .app-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       background: #1e293b;
-      padding: 12px 16px;
+      padding: 12px 15px;
       border-radius: 16px;
       border: 1px solid #334155;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -46,9 +46,8 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 800;
-      cursor: pointer;
     }
     .dot {
       width: 13px;
@@ -57,339 +56,187 @@
       background: #ef4444;
       box-shadow: 0 0 8px #ef4444;
       transition: 0.3s;
+      flex-shrink: 0;
     }
     .dot.connected { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
-    .dot.standby { background: #eab308; box-shadow: 0 0 10px #eab308; }
+    .dot.standby {
+      background: #eab308;
+      box-shadow: 0 0 10px #eab308;
+      animation: pulseDot 1.2s infinite ease-in-out;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.82); }
+    }
 
     .settings-btn {
       background: #334155;
       border: none;
       color: #f8fafc;
-      padding: 8px 14px;
+      padding: 8px 13px;
       border-radius: 12px;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 700;
       cursor: pointer;
+      flex-shrink: 0;
     }
     .settings-btn:active { transform: scale(0.95); }
 
-    /* 220V 발전 상태 메인 전광판 */
-    .status-board {
-      background: linear-gradient(145deg, #1e293b, #0f172a);
-      border: 2px solid #334155;
+    /* 미연결 시 나타나는 대형 원터치 연결 버튼 */
+    .big-connect-btn {
+      width: 100%;
+      border: 2px solid #38bdf8;
       border-radius: 18px;
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: 0.3s;
-    }
-    .status-board.running {
-      border-color: #22c55e;
-      box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
-      background: linear-gradient(145deg, #064e3b, #0f172a);
-    }
-    .status-board.warning {
-      border-color: #f97316;
-      box-shadow: 0 0 20px rgba(249, 115, 22, 0.25);
-      background: linear-gradient(145deg, #431407, #0f172a);
-    }
-    .status-left { text-align: left; }
-    .status-title { font-size: 0.8rem; color: #94a3b8; margin-bottom: 2px; font-weight: 600; }
-    .status-value { font-size: 1.3rem; font-weight: 900; color: #cbd5e1; }
-    .status-board.running .status-value { color: #4ade80; }
-    .status-board.warning .status-value { color: #fb923c; }
-    .status-sub { font-size: 0.85rem; font-weight: 800; color: #38bdf8; text-align: right; }
-
-    /* 부하율 & 전압강하(출력안정도) 듀얼 그래프 카드 */
-    .visual-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .v-card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 16px;
-      padding: 12px;
+      padding: 18px 16px;
+      background: linear-gradient(135deg, #0284c7, #1d4ed8);
+      color: #ffffff;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-    }
-    .v-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-    .v-title { font-size: 0.85rem; font-weight: 800; color: #cbd5e1; }
-    .v-badge {
-      font-size: 0.72rem;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 6px;
-      background: #334155;
-      color: #94a3b8;
-    }
-    .v-badge.good { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-    .v-badge.normal { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
-    .v-badge.warn { background: rgba(249, 115, 22, 0.25); color: #fb923c; }
-    .v-badge.danger { background: rgba(239, 68, 68, 0.3); color: #f87171; }
-
-    .v-main-num {
-      font-size: 1.6rem;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-      margin: 2px 0 8px 0;
-    }
-    .v-main-num small { font-size: 0.85rem; font-weight: 700; color: #94a3b8; margin-left: 2px; }
-
-    .gauge-track {
-      width: 100%;
-      height: 12px;
-      background: #0f172a;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid #334155;
-      margin-bottom: 8px;
-    }
-    .gauge-fill {
-      height: 100%;
-      width: 0%;
-      border-radius: 8px;
-      background: linear-gradient(90deg, #22c55e, #38bdf8);
-      transition: width 0.3s ease, background 0.3s ease;
-    }
-
-    .v-footer {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.78rem;
-      color: #64748b;
-      font-weight: 700;
-    }
-    .v-footer span.highlight { color: #94a3b8; }
-
-    /* 배터리 충전 상태 바 (IO33 DCIN) */
-    .batt-card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 16px;
-      padding: 12px 14px;
-    }
-    .batt-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .batt-title {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.9rem;
-      font-weight: 800;
-    }
-    .bolt-icon { color: #64748b; }
-    .bolt-icon.charging { color: #facc15; }
-
-    .batt-status-chip {
-      font-size: 0.8rem;
-      font-weight: 800;
-      padding: 4px 10px;
-      border-radius: 20px;
-      background: #0f172a;
-      color: #94a3b8;
-      border: 1px solid #334155;
-    }
-    .batt-status-chip.charging {
-      background: rgba(34, 197, 94, 0.15);
-      color: #4ade80;
-      border-color: #22c55e;
-    }
-
-    .batt-bar-wrap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .batt-shell {
-      flex: 1;
-      height: 16px;
-      background: #0f172a;
-      border: 2px solid #475569;
-      border-radius: 8px;
-      padding: 2px;
-      overflow: hidden;
-    }
-    .batt-level {
-      height: 100%;
-      width: 0%;
-      border-radius: 4px;
-      background: linear-gradient(90deg, #eab308, #22c55e);
-      transition: width 0.3s ease;
-    }
-    .batt-volt-text {
-      font-size: 1rem;
-      font-weight: 900;
-      color: #f8fafc;
-      min-width: 55px;
-      text-align: right;
-    }
-
-    /* 슬라이더(게이지) 카드 */
-    .card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 16px;
-      padding: 12px 14px;
-    }
-    .slider-row { margin-bottom: 10px; }
-    .slider-row:last-child { margin-bottom: 0; }
-    .slider-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.88rem;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-    .slider-val { color: #38bdf8; font-weight: 800; }
-    input[type="range"].main-slider {
-      width: 100%;
-      height: 8px;
-      border-radius: 8px;
-      background: #0f172a;
-      outline: none;
-      -webkit-appearance: none;
-      pointer-events: none;
-    }
-    input[type="range"].main-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #38bdf8;
-      border: 2px solid #f8fafc;
-    }
-
-    /* 메인 제어 버튼 (예열 / 시동 / 1단 / 정지) */
-    .main-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr 0.8fr;
-      gap: 8px;
-    }
-    .ctrl-btn {
-      border: none;
-      border-radius: 16px;
-      padding: 16px 8px;
-      font-size: 1.15rem;
-      font-weight: 900;
-      color: #fff;
-      cursor: pointer;
-      transition: 0.2s;
-      box-shadow: 0 5px 12px rgba(0,0,0,0.35);
-    }
-    .ctrl-btn:active:not(:disabled) { transform: scale(0.96); }
-    .ctrl-btn:disabled {
-      background: #334155 !important;
-      color: #64748b !important;
-      box-shadow: none !important;
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-    .btn-preheat { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    .btn-start   { background: linear-gradient(135deg, #10b981, #059669); }
-    .btn-step1   { background: linear-gradient(135deg, #3b82f6, #1d4ed8); font-size: 1.05rem; }
-    .btn-step1.active-step { background: linear-gradient(135deg, #ec4899, #be185d); }
-    .btn-stop {
-      grid-column: span 3;
-      background: linear-gradient(135deg, #ef4444, #b91c1c);
-      padding: 15px;
-      font-size: 1.25rem;
-    }
-
-    /* 자동정지 타이머 섹션 */
-    .timer-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .timer-title { font-size: 0.9rem; font-weight: 800; color: #e2e8f0; }
-    .timer-display { font-size: 1.1rem; font-weight: 900; color: #facc15; }
-    .timer-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-    }
-    .t-btn {
-      border: none;
-      border-radius: 10px;
-      padding: 11px 4px;
-      font-size: 0.9rem;
-      font-weight: 800;
-      color: #fff;
-      background: #2563eb;
-      cursor: pointer;
-    }
-    .t-btn.cancel { background: #dc2626; }
-    .t-btn:active:not(:disabled) { transform: scale(0.95); }
-    .t-btn:disabled {
-      background: #334155 !important;
-      color: #64748b !important;
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-
-    /* 모달 팝업 */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.78);
-      display: none;
       align-items: center;
       justify-content: center;
-      padding: 18px;
-      z-index: 100;
+      gap: 5px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+      animation: pulseBanner 2s infinite ease-in-out;
+      transition: 0.2s;
+    }
+    .big-connect-btn:active { transform: scale(0.97); }
+    .big-connect-btn.hidden { display: none !important; }
+    .big-conn-main { font-size: 1.2rem; font-weight: 900; letter-spacing: -0.3px; }
+    .big-conn-sub { font-size: 0.8rem; font-weight: 700; color: #e0f2fe; opacity: 0.92; }
+    @keyframes pulseBanner {
+      0%, 100% { box-shadow: 0 0 16px rgba(56, 189, 248, 0.3); }
+      50% { box-shadow: 0 0 26px rgba(56, 189, 248, 0.65); }
+    }
+
+    /* 2. 통합 계기판 */
+    .status-panel {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 2px solid #334155;
+      border-radius: 20px;
+      padding: 15px 15px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: 0.3s;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.28);
+    }
+    .status-panel.running {
+      border-color: #22c55e;
+      box-shadow: 0 0 24px rgba(34, 197, 94, 0.25);
+      background: linear-gradient(145deg, #064e3b, #0f172a);
+    }
+    .status-panel.starting {
+      border-color: #eab308;
+      box-shadow: 0 0 20px rgba(234, 179, 8, 0.22);
+    }
+    .status-panel.step1-ready {
+      border-color: #38bdf8;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.2);
+    }
+
+    .status-top { display: flex; align-items: center; justify-content: space-between; }
+    .status-left { text-align: left; }
+    .status-title { font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; }
+    .status-value { font-size: 1.25rem; font-weight: 900; color: #cbd5e1; }
+    .status-panel.running .status-value { color: #4ade80; }
+    .status-panel.starting .status-value { color: #facc15; }
+    .status-panel.step1-ready .status-value { color: #38bdf8; }
+
+    .status-pill {
+      padding: 6px 11px;
+      border-radius: 11px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      background: #0f172a;
+      color: #64748b;
+      border: 1px solid #334155;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .status-panel.running .status-pill { background: rgba(34, 197, 94, 0.2); color: #4ade80; border-color: #22c55e; }
+    .status-panel.starting .status-pill { background: rgba(234, 179, 8, 0.18); color: #facc15; border-color: #eab308; }
+    .status-panel.step1-ready .status-pill { background: rgba(56, 189, 248, 0.18); color: #38bdf8; border-color: #38bdf8; }
+
+    /* 3칸 실시간 디지털 미터 그리드 */
+    .meter-grid { display: grid; grid-template-columns: 1fr 1fr 1.12fr; gap: 8px; }
+    .meter-box {
+      background: rgba(15, 23, 42, 0.78);
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .meter-label { font-size: 0.74rem; font-weight: 700; color: #94a3b8; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+    .meter-num { font-size: 1.28rem; font-weight: 900; color: #f8fafc; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
+    .meter-unit { font-size: 0.78rem; font-weight: 700; color: #94a3b8; margin-left: 2px; }
+    .meter-sub { font-size: 0.68rem; font-weight: 800; margin-top: 3px; color: #64748b; }
+
+    .chg-dot { width: 9px; height: 9px; border-radius: 50%; background: #475569; display: inline-block; transition: 0.3s; }
+    .chg-dot.charging { background: #22c55e; box-shadow: 0 0 9px #22c55e, 0 0 16px rgba(34, 197, 94, 0.7); }
+    .chg-dot.low-batt { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+    .meter-sub.charging-text { color: #4ade80; }
+    .meter-sub.low-text { color: #f87171; }
+
+    .val-good { color: #4ade80; }
+    .val-warn { color: #facc15; }
+    .val-low  { color: #f87171; }
+
+    /* 3. 공통 카드 및 예열/시동 카운트다운 게이지 */
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 18px; padding: 14px 16px; }
+    .slider-row { margin-bottom: 12px; }
+    .slider-row:last-child { margin-bottom: 0; }
+    .slider-header { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 700; margin-bottom: 6px; }
+    .slider-val { color: #38bdf8; font-weight: 800; }
+    input[type="range"].main-slider {
+      width: 100%; height: 10px; border-radius: 8px; background: #0f172a; outline: none; -webkit-appearance: none; pointer-events: none;
+    }
+    input[type="range"].main-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #38bdf8; border: 2px solid #f8fafc;
+    }
+
+    /* 4. 메인 운전 제어 버튼 4종 */
+    .main-controls { display: grid; grid-template-columns: 1fr 1fr 0.85fr; gap: 10px; }
+    .ctrl-btn {
+      border: none; border-radius: 18px; padding: 19px 8px; font-size: 1.18rem; font-weight: 900; color: #fff; cursor: pointer; transition: 0.2s; box-shadow: 0 5px 12px rgba(0,0,0,0.35);
+    }
+    .ctrl-btn:active:not(:disabled) { transform: scale(0.96); }
+    .ctrl-btn:disabled { background: #334155 !important; color: #64748b !important; box-shadow: none !important; cursor: not-allowed; opacity: 0.6; }
+    .btn-preheat { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .btn-start   { background: linear-gradient(135deg, #10b981, #059669); }
+    .btn-step1   { background: linear-gradient(135deg, #3b82f6, #1d4ed8); font-size: 1.02rem; }
+    .btn-step1.active-step { background: linear-gradient(135deg, #ec4899, #be185d); box-shadow: 0 0 16px rgba(236, 72, 153, 0.45); }
+    .btn-stop { grid-column: span 3; background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 17px; font-size: 1.25rem; margin-top: 2px; }
+
+    /* 5. 자동정지 타이머 섹션 */
+    .timer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .timer-title { font-size: 0.94rem; font-weight: 800; color: #e2e8f0; }
+    .timer-display { font-size: 1.12rem; font-weight: 900; color: #facc15; }
+    .timer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .t-btn { border: none; border-radius: 12px; padding: 12px 4px; font-size: 0.9rem; font-weight: 800; color: #fff; background: #2563eb; cursor: pointer; }
+    .t-btn.cancel { background: #dc2626; }
+    .t-btn:active:not(:disabled) { transform: scale(0.95); }
+    .t-btn:disabled { background: #334155 !important; color: #64748b !important; cursor: not-allowed; opacity: 0.6; }
+
+    /* 6. 모달 팝업 */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); display: none; align-items: center; justify-content: center; padding: 18px; z-index: 100;
     }
     .modal-overlay.active { display: flex; }
-    .modal-box {
-      background: #1e293b;
-      border: 1px solid #475569;
-      border-radius: 20px;
-      width: 100%;
-      max-width: 380px;
-      padding: 20px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
-    }
+    .modal-box { background: #1e293b; border: 1px solid #475569; border-radius: 20px; width: 100%; max-width: 380px; padding: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.6); }
     .modal-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 14px; text-align: center; }
-    .form-group { margin-bottom: 14px; }
-    .form-label { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px; font-size: 0.9rem; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 8px; font-size: 0.92rem; }
     .form-slider { width: 100%; height: 8px; accent-color: #38bdf8; }
-
     .pin-input {
-      width: 100%;
-      padding: 14px;
-      font-size: 1.6rem;
-      font-weight: 900;
-      text-align: center;
-      letter-spacing: 8px;
-      border-radius: 12px;
-      border: 2px solid #38bdf8;
-      background: #0f172a;
-      color: #fff;
-      margin-bottom: 14px;
+      width: 100%; padding: 14px; font-size: 1.6rem; font-weight: 900; text-align: center; letter-spacing: 8px; border-radius: 12px; border: 2px solid #38bdf8; background: #0f172a; color: #fff; margin-bottom: 14px;
     }
+    .perm-list { background: #0f172a; border: 1px solid #334155; border-radius: 14px; padding: 13px 14px; font-size: 0.86rem; color: #cbd5e1; line-height: 1.65; margin-bottom: 16px; }
     .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
-    .m-btn {
-      flex: 1;
-      padding: 12px;
-      border-radius: 12px;
-      border: none;
-      font-size: 0.95rem;
-      font-weight: 800;
-      cursor: pointer;
-    }
+    .m-btn { flex: 1; padding: 13px; border-radius: 12px; border: none; font-size: 0.95rem; font-weight: 800; cursor: pointer; }
     .m-btn.primary { background: #0284c7; color: #fff; }
     .m-btn.secondary { background: #475569; color: #fff; }
     .m-btn.warn { background: #ea580c; color: #fff; width: 100%; margin-top: 10px; }
@@ -398,81 +245,54 @@
 </head>
 <body>
 
-  <!-- 1. 최상단 블루투스 장비 이름 표시 & 환경설정 버튼 -->
+  <!-- 1. 최상단 상태 표시 & 설정 버튼 -->
   <div class="app-header">
-    <div class="conn-badge" id="topConnBar" onclick="handleSmartConnect()">
+    <div class="conn-badge" id="topConnBar">
       <span class="dot" id="connDot"></span>
-      <span id="connText">연결 안 됨 (터치하여 연결)</span>
+      <span id="connText">연결 안 됨</span>
     </div>
     <button class="settings-btn" onclick="openSettingsModal()">⚙️ 설정</button>
   </div>
 
-  <!-- 2. 발전기 메인 상태 전광판 -->
-  <div class="status-board" id="acStatusBoard">
-    <div class="status-left">
-      <div class="status-title">현재 발전기 상태</div>
-      <div class="status-value" id="acStatusText">⚪ 발전기 정지 상태</div>
-    </div>
-    <div class="status-sub" id="acQuickSummary">0V / 0.0Hz</div>
-  </div>
+  <!-- 대형 원터치 연결 버튼 (누르면 저장된 발전기로 다이렉트 즉시 연결!) -->
+  <button class="big-connect-btn" id="bigConnectBtn" onclick="handleSmartConnect()">
+    <div class="big-conn-main" id="bigConnMainText">📡 발전기 연결하기</div>
+    <div class="big-conn-sub" id="bigConnSubText">터치하여 내 발전기에 연결하세요</div>
+  </button>
 
-  <!-- 3. 부하율(IO35) & 전압강하율(IO32) 그래프 카드 -->
-  <div class="visual-grid">
-    <!-- 좌측: 엔진 부하율 (주파수 기반) -->
-    <div class="v-card">
-      <div>
-        <div class="v-header">
-          <span class="v-title">💪 엔진 부하율</span>
-          <span class="v-badge" id="loadBadge">대기</span>
-        </div>
-        <div class="v-main-num" id="loadPercentText">0<small>%</small></div>
-        <div class="gauge-track">
-          <div class="gauge-fill" id="loadGaugeBar"></div>
-        </div>
+  <!-- 2. 실시간 발전 상태 & 계기판 -->
+  <div class="status-panel" id="acStatusBoard">
+    <div class="status-top">
+      <div class="status-left">
+        <div class="status-title">현재 발전기 운전 상태</div>
+        <div class="status-value" id="acStatusText">⚪ 발전기 연결 대기중</div>
       </div>
-      <div class="v-footer">
-        <span>주파수(IO35)</span>
-        <span class="highlight" id="hzSubText">0.0 Hz</span>
-      </div>
+      <div class="status-pill" id="acSubBadge">미연결</div>
     </div>
 
-    <!-- 우측: 전압 강하율 / 출력 유지율 (AC전압 기반) -->
-    <div class="v-card">
-      <div>
-        <div class="v-header">
-          <span class="v-title">⚡ 전압 강하율</span>
-          <span class="v-badge" id="dropBadge">대기</span>
-        </div>
-        <div class="v-main-num" id="dropPercentText">0<small>%</small></div>
-        <div class="gauge-track">
-          <div class="gauge-fill" id="voltGaugeBar"></div>
-        </div>
+    <div class="meter-grid">
+      <div class="meter-box">
+        <div class="meter-label">⚡ 발전 전압</div>
+        <div><span class="meter-num" id="acVoltVal">--</span><span class="meter-unit">V</span></div>
+        <div class="meter-sub" id="acVoltSub">AC 출력</div>
       </div>
-      <div class="v-footer">
-        <span>AC 출력(IO32)</span>
-        <span class="highlight" id="acVoltSubText">0 V</span>
+      <div class="meter-box">
+        <div class="meter-label">〰️ 주파수</div>
+        <div><span class="meter-num" id="hzFreqVal">--</span><span class="meter-unit">Hz</span></div>
+        <div class="meter-sub" id="hzFreqSub">엔진 회전</div>
+      </div>
+      <div class="meter-box">
+        <div class="meter-label">
+          <span>🔋 배터리</span>
+          <span class="chg-dot" id="battChgDot"></span>
+        </div>
+        <div><span class="meter-num" id="dcBattVal">--</span><span class="meter-unit">V</span></div>
+        <div class="meter-sub" id="dcBattSub">대기중</div>
       </div>
     </div>
   </div>
 
-  <!-- 4. 배터리 충전 상태 바 (IO33 DCIN) -->
-  <div class="batt-card">
-    <div class="batt-top">
-      <div class="batt-title">
-        <span class="bolt-icon" id="boltIcon">⚡</span>
-        <span>배터리 & 충전 상태</span>
-      </div>
-      <span class="batt-status-chip" id="battStatusChip">🔋 대기 상태</span>
-    </div>
-    <div class="batt-bar-wrap">
-      <div class="batt-shell">
-        <div class="batt-level" id="battLevelBar"></div>
-      </div>
-      <div class="batt-volt-text" id="dcVoltText">0.0 V</div>
-    </div>
-  </div>
-
-  <!-- 5. 예열 / 시동 슬라이더 표시창 -->
+  <!-- 3. 예열 / 시동 게이지 -->
   <div class="card">
     <div class="slider-row">
       <div class="slider-header">
@@ -490,15 +310,15 @@
     </div>
   </div>
 
-  <!-- 6. 메인 운전 버튼 (예열 / 시동 / 1단 / 정지) -->
+  <!-- 4. 메인 제어 버튼 -->
   <div class="main-controls">
     <button class="ctrl-btn btn-preheat" id="btnPreheat" onclick="onActionButton('CMD_PREHEAT')" disabled>🔥 예열</button>
     <button class="ctrl-btn btn-start" id="btnStart" onclick="onActionButton('CMD_START')" disabled>⚡ 시동</button>
-    <button class="ctrl-btn btn-step1" id="btnStep1" onclick="onActionButton('CMD_STEP1')" disabled>🚀 1단</button>
+    <button class="ctrl-btn btn-step1" id="btnStep1" onclick="onActionButton('CMD_STEP1')" disabled>🚀 1단 OFF</button>
     <button class="ctrl-btn btn-stop" id="btnStop" onclick="onActionButton('CMD_STOP')" disabled>🛑 발전기 정지</button>
   </div>
 
-  <!-- 7. 자동정지 타이머 섹션 -->
+  <!-- 5. 자동정지 타이머 -->
   <div class="card">
     <div class="timer-header">
       <span class="timer-title">⏱️ 자동정지 타이머</span>
@@ -516,47 +336,33 @@
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-box">
       <div class="modal-title">⚙️ 환경설정</div>
-
       <div class="form-group">
         <div class="form-label">
-          <span>예열 설정</span>
+          <span>예열 설정 (1.0 ~ 20.0초)</span>
           <span><strong id="cfgPreheatVal">8.0</strong> 초</span>
         </div>
         <input type="range" class="form-slider" id="cfgPreheatSlider" min="1.0" max="20.0" step="0.5" value="8.0"
                oninput="document.getElementById('cfgPreheatVal').innerText = parseFloat(this.value).toFixed(1)">
       </div>
-
       <div class="form-group">
         <div class="form-label">
-          <span>시동 설정</span>
+          <span>시동 설정 (0.3 ~ 5.0초)</span>
           <span><strong id="cfgStartVal">0.9</strong> 초</span>
         </div>
         <input type="range" class="form-slider" id="cfgStartSlider" min="0.3" max="5.0" step="0.1" value="0.9"
                oninput="document.getElementById('cfgStartVal').innerText = parseFloat(this.value).toFixed(1)">
       </div>
-
-      <div class="form-group">
-        <div class="form-label">
-          <span>무부하 기준 전압 (강하율 기준)</span>
-          <span><strong id="cfgBaseVoltVal">220</strong> V</span>
-        </div>
-        <input type="range" class="form-slider" id="cfgBaseVoltSlider" min="210" max="240" step="1" value="220"
-               oninput="baseRatedVolt = parseInt(this.value); document.getElementById('cfgBaseVoltVal').innerText = this.value; updateTelemetryUI();">
-      </div>
-
       <div class="modal-actions">
         <button class="m-btn secondary" onclick="closeSettingsModal()">닫기</button>
         <button class="m-btn primary" onclick="saveSettingsToEsp()">확인 (보드 저장)</button>
       </div>
-
       <hr style="border: 0; border-top: 1px solid #334155; margin: 16px 0;">
-
-      <button class="m-btn warn" onclick="switchAnotherGenerator()">🔄 다른 발전기 선택 (연결 변경)</button>
+      <button class="m-btn warn" onclick="switchAnotherGenerator()">🔄 다른 발전기 선택 (기기 변경)</button>
       <button class="m-btn danger" onclick="disconnectCurrentBle()">❌ 현재 발전기 연결 끊기</button>
     </div>
   </div>
 
-  <!-- 비밀번호 인증 모달 -->
+  <!-- 비밀번호 입력 모달 -->
   <div class="modal-overlay" id="pinModal">
     <div class="modal-box">
       <div class="modal-title" id="pinModalTitle">🔒 발전기 비밀번호 입력</div>
@@ -571,12 +377,27 @@
     </div>
   </div>
 
+  <!-- 권한 승인 모달 -->
+  <div class="modal-overlay" id="permInitModal">
+    <div class="modal-box">
+      <div class="modal-title">🛡️ 초기 권한 승인 및 기기 등록</div>
+      <p style="font-size:0.88rem; color:#94a3b8; text-align:center; margin-bottom:12px;">
+        원활한 사용을 위해 아래 권한을 최초 1회 승인해주세요.
+      </p>
+      <div class="perm-list">
+        ✔️ <strong>근처 기기(블루투스) 탐색 및 연결 권한</strong><br>
+        ✔️ <strong>내 발전기 정보 영구 기억 권한</strong><br>
+        ✔️ <strong>운전 중 스마트폰 화면 꺼짐 방지 권한</strong>
+      </div>
+      <button class="m-btn primary" style="width:100%;" onclick="grantAllInitialPermissions()">🚀 권한 승인 및 내 발전기 등록</button>
+    </div>
+  </div>
+
   <script>
-    // PWA 매니페스트 동적 생성
     (function setupDynamicManifest() {
       const iconHref = document.getElementById('app-favicon').href;
       const manifest = {
-        name: "스마트 발전기 원격 컨트롤러",
+        name: "스마트 발전기 원격 컨트롤러 V2.5",
         short_name: "발전기 리모컨",
         start_url: ".",
         display: "standalone",
@@ -591,27 +412,177 @@
       document.head.appendChild(link);
     })();
 
+
+    // =====================================================
+    // [Capacitor BLE 어댑터] APK(네이티브) 환경에서만 개입.
+    // 일반 웹브라우저에서는 IS_NATIVE=false → 기존 코드 그대로 동작.
+    // =====================================================
+    const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    const NativeBLE = IS_NATIVE && window.Capacitor.Plugins ? window.Capacitor.Plugins.BluetoothLe : null;
+    const NativePrefs = IS_NATIVE && window.Capacitor.Plugins ? window.Capacitor.Plugins.Preferences : null;
+    let _nativeInit = null;
+
+    function nativeBleInit() {
+      if (!NativeBLE) return Promise.resolve(false);
+      if (_nativeInit) return _nativeInit;
+      _nativeInit = (async () => {
+        try {
+          await NativeBLE.initialize({ androidNeverForLocation: true });
+          console.log("[BLE] native initialize OK");
+          return true;
+        } catch (e) {
+          console.log("[BLE] initialize 실패", e);
+          _nativeInit = null;
+          return false;
+        }
+      })();
+      return _nativeInit;
+    }
+
+    // 이름으로 기기 찾기 (이미 페어링된 것)
+    async function nativeFindByName(name) {
+      await nativeBleInit();
+      try {
+        const res = await NativeBLE.getBondedDevices();
+        const list = (res && res.devices) || [];
+        const hit = list.find(d => (d.name || "") === name || (d.deviceId || "") === name);
+        return hit || null;
+      } catch (e) { return null; }
+    }
+
+    // 스캔해서 이름으로 찾기
+    async function nativeScanForName(name, timeoutMs) {
+      await nativeBleInit();
+      return new Promise(async (resolve) => {
+        let found = null;
+        let timer = null;
+        const handler = (result) => {
+          const d = result && result.device;
+          if (d && ((d.name || "") === name)) {
+            found = d;
+          }
+        };
+        try {
+          await NativeBLE.addListener("onScanResult", handler);
+          await NativeBLE.requestLEScan({ namePrefix: name, allowDuplicates: false, scanMode: 1 });
+        } catch (e) {
+          console.log("[BLE] requestLEScan 실패", e);
+        }
+        timer = setTimeout(async () => {
+          try { await NativeBLE.stopLEScan(); } catch (e) {}
+          try { await NativeBLE.removeAllListeners("onScanResult"); } catch (e) {}
+          resolve(found);
+        }, timeoutMs || 12000);
+      });
+    }
+
+    // native device → 웹호환 shim (기존 connectToGattDevice 코드 재사용)
+    function nativeShim(dev) {
+      const shim = {
+        name: dev.name || "",
+        id: dev.deviceId,
+        __native: true,
+        __deviceId: dev.deviceId,
+        __notifyCb: null,
+        __disconnCb: null,
+        gatt: {
+          connected: false,
+          connect: async () => {
+            await nativeBleInit();
+            if (shim.__disconnCb) {
+              try { NativeBLE.addListener("onDisconnect", (r) => {
+                if (r && r.device && r.device.deviceId === shim.__deviceId) {
+                  shim.gatt.connected = false;
+                  shim.__disconnCb();
+                }
+              }); } catch (e) {}
+            }
+            await NativeBLE.connect({ deviceId: shim.__deviceId, timeout: 15000 });
+            shim.gatt.connected = true;
+            return {
+              getPrimaryService: async (uuid) => ({
+                getCharacteristic: async (cuid) => ({
+                  startNotifications: async () => {
+                    await NativeBLE.startNotifications({
+                      deviceId: shim.__deviceId, service: uuid, characteristic: cuid,
+                      callback: (v) => { if (shim.__notifyCb) shim.__notifyCb(v); }
+                    });
+                  },
+                  writeValue: async (buf) => {
+                    const arr = new Uint8Array(buf instanceof ArrayBuffer ? buf : buf.buffer);
+                    await NativeBLE.write({
+                      deviceId: shim.__deviceId, service: uuid, characteristic: cuid, value: btoa(String.fromCharCode(...arr))
+                    });
+                  }
+                })
+              })
+            };
+          },
+          disconnect: async () => {
+            try { await NativeBLE.disconnect({ deviceId: shim.__deviceId }); } catch (e) {}
+            shim.gatt.connected = false;
+          }
+        },
+        addEventListener: (ev, cb) => { if (ev === "gattserverdisconnected") shim.__disconnCb = cb; },
+        removeEventListener: () => {}
+      };
+      return shim;
+    }
+
+    // 네이티브일 때 connectToGattDevice 를 shim 으로 감싸기 위해 후킹 준비
+    window.__NATIVE_SHIM = nativeShim;
+    window.__nativeScanForName = nativeScanForName;
+    window.__nativeFindByName = nativeFindByName;
+    window.__IS_NATIVE = IS_NATIVE;
+
+    // 네이티브 앱: 부팅 직후 권한 요청(initialize) 후 저장 기기로 조용한 재연결
+    if (IS_NATIVE) {
+      document.addEventListener("deviceready", () => { nativeBleInit(); }, { once: true });
+      window.addEventListener("load", async () => {
+        const ok = await nativeBleInit();
+        if (ok) {
+          const savedName = localStorage.getItem('auth_gen_name');
+          if (savedName) {
+            const dev = await nativeFindByName(savedName);
+            if (dev) {
+              try {
+                bleDevice = nativeShim(dev);
+                await connectToGattDevice(bleDevice);
+                console.log("[BLE] 저장 기기 자동 재연결 OK");
+              } catch (e) { console.log("[BLE] 자동 재연결 실패", e); }
+            }
+          }
+        }
+      });
+    }
+
     const SERVICE_UUID        = "12345678-1234-1234-1234-1234567890ab";
     const CHARACTERISTIC_UUID = "abcdefab-1234-5678-1234-abcdefabcdef";
 
-    let bleDevice = null;
-    let bleChar   = null;
-    let isBleConnected = false;
-    let isAc220On      = false;
-    let isStep1On      = false;
+    let bleDevice          = null;
+    let bleChar            = null;
+    let isBleConnected     = false;
+    let isConnectingNow    = false;
+    let manualDisconnect   = false;
+    let autoReconnectTimer = null;
+    let wakeLockObj        = null;
 
-    // 센서 측정값 (IO35: 주파수, IO32: AC전압, IO33: DC배터리)
-    let currentAcVolt = 0;
-    let currentHz     = 0.0;
-    let currentDcVolt = 0.0;
-    let baseRatedVolt = 220;
+    let acVoltVal       = 0;
+    let hzFreqVal       = 0.0;
+    let dcBattVal       = 0.0;
+    let baseBattVal     = 0.0;
 
-    // ESP32 설정값
-    let espPreheatSec = 8.0;
-    let espStartSec   = 0.9;
-    let espRemainSec  = 0;
+    let isGenRunning    = false;
+    let isEngineTurning = false;
+    let isBattCharging  = false;
+    let espChgOverride  = null;
+    let isStep1On       = false;
+    let step1HoldRemSec = 0;
 
-    // 예열 / 시동 슬라이더 독립 애니메이션 타이머 변수
+    let espPreheatSec   = 8.0;
+    let espStartSec     = 0.9;
+    let espRemainSec    = 0;
+
     let preheatAnimTimer   = null;
     let startAnimTimer     = null;
     let startDelayTimer    = null;
@@ -621,172 +592,279 @@
     let pendingDevice = null;
 
     window.addEventListener('load', async () => {
-      updateTelemetryUI();
+      updateHeaderUI();
+      updateStatusBoardUI();
+      updateStep1ButtonUI();
       updateButtonStates();
+      requestScreenWakeLock();
+
       const savedName = localStorage.getItem('auth_gen_name');
-      if (savedName) {
-        document.getElementById('connDot').className = 'dot standby';
-        document.getElementById('connText').innerText = `자동 연결 대기 (${savedName}) - 터치!`;
-        await trySilentAutoConnect(savedName);
+      const permDone  = localStorage.getItem('perm_init_v22');
+
+      if (!savedName && !permDone) {
+        document.getElementById('permInitModal').classList.add('active');
+      } else if (savedName) {
+        startAutoReconnectLoop();
       }
     });
 
-    // 주파수(IO35) -> 엔진 부하율(%) 변환
-    function getEngineLoadPercent() {
-      if (!isAc220On || currentHz < 40) return 0;
-      const load = ((60.8 - currentHz) / (60.8 - 57.5)) * 100;
-      return Math.max(0, Math.min(100, Math.round(load)));
-    }
-
-    // AC전압(IO32) -> 전압 강하율(%) 변환
-    function getVoltageDropPercent() {
-      if (!isAc220On || currentAcVolt < 50) return 0;
-      const drop = ((baseRatedVolt - currentAcVolt) / baseRatedVolt) * 100;
-      return Math.max(0, Math.min(50, Math.round(drop)));
-    }
-
-    function updateTelemetryUI() {
-      const board   = document.getElementById('acStatusBoard');
-      const stText  = document.getElementById('acStatusText');
-      const stSub   = document.getElementById('acQuickSummary');
-
-      const loadPct = getEngineLoadPercent();
-      const dropPct = getVoltageDropPercent();
-
-      // 1. 메인 상태판
-      board.classList.remove('running', 'warning');
-      if (isBleConnected && isAc220On) {
-        if (loadPct >= 85 || dropPct >= 10) {
-          board.classList.add('warning');
-          stText.innerText = '🟠 고부하 / 전압강하 주의';
-        } else {
-          board.classList.add('running');
-          stText.innerText = '🟢 220V 정상 발전중';
-        }
-        stSub.innerText = `${currentAcVolt}V / ${currentHz.toFixed(1)}Hz`;
-      } else {
-        stText.innerText = '⚪ 발전기 정지 상태 (0V)';
-        stSub.innerText  = '0V / 0.0Hz';
-      }
-
-      // 2. 엔진 부하율 그래프 (IO35)
-      const loadBadge = document.getElementById('loadBadge');
-      const loadBar   = document.getElementById('loadGaugeBar');
-      document.getElementById('loadPercentText').innerHTML = `${loadPct}<small>%</small>`;
-      document.getElementById('hzSubText').innerText = `${currentHz.toFixed(1)} Hz`;
-      loadBar.style.width = `${loadPct}%`;
-
-      loadBadge.className = 'v-badge';
-      if (!isAc220On) {
-        loadBadge.innerText = '정지';
-      } else if (loadPct <= 40) {
-        loadBadge.classList.add('good');
-        loadBadge.innerText = '여유';
-        loadBar.style.background = '#22c55e';
-      } else if (loadPct <= 75) {
-        loadBadge.classList.add('normal');
-        loadBadge.innerText = '정상';
-        loadBar.style.background = '#38bdf8';
-      } else if (loadPct <= 90) {
-        loadBadge.classList.add('warn');
-        loadBadge.innerText = '고부하';
-        loadBar.style.background = '#f97316';
-      } else {
-        loadBadge.classList.add('danger');
-        loadBadge.innerText = '과부하';
-        loadBar.style.background = '#ef4444';
-      }
-
-      // 3. 전압 강하율 그래프 (IO32)
-      const dropBadge = document.getElementById('dropBadge');
-      const voltBar   = document.getElementById('voltGaugeBar');
-      document.getElementById('dropPercentText').innerHTML = `${dropPct}<small>%</small>`;
-      document.getElementById('acVoltSubText').innerText = `${currentAcVolt} V`;
-
-      // 출력 유지율 바 (강하가 없을수록 100% 꽉 참)
-      const stabilityPct = isAc220On ? Math.max(10, 100 - (dropPct * 3)) : 0;
-      voltBar.style.width = `${stabilityPct}%`;
-
-      dropBadge.className = 'v-badge';
-      if (!isAc220On) {
-        dropBadge.innerText = '정지';
-      } else if (dropPct <= 3) {
-        dropBadge.classList.add('good');
-        dropBadge.innerText = '안정';
-        voltBar.style.background = '#22c55e';
-      } else if (dropPct <= 8) {
-        dropBadge.classList.add('normal');
-        dropBadge.innerText = '양호';
-        voltBar.style.background = '#38bdf8';
-      } else {
-        dropBadge.classList.add('warn');
-        dropBadge.innerText = '강하주의';
-        voltBar.style.background = '#f97316';
-      }
-
-      // 4. 배터리 충전 상태 (IO33)
-      const isCharging = isBleConnected && (currentDcVolt >= 13.0);
-      const boltIcon   = document.getElementById('boltIcon');
-      const battChip   = document.getElementById('battStatusChip');
-      const battBar    = document.getElementById('battLevelBar');
-      document.getElementById('dcVoltText').innerText = `${currentDcVolt.toFixed(1)} V`;
-
-      const battPct = currentDcVolt > 5 ? Math.max(10, Math.min(100, Math.round(((currentDcVolt - 11.0) / (14.4 - 11.0)) * 100))) : 0;
-      battBar.style.width = `${battPct}%`;
-
-      if (isCharging) {
-        boltIcon.classList.add('charging');
-        battChip.classList.add('charging');
-        battChip.innerText = '⚡ 정상 충전 중';
-      } else {
-        boltIcon.classList.remove('charging');
-        battChip.classList.remove('charging');
-        if (!isBleConnected || currentDcVolt === 0) {
-          battChip.innerText = '🔋 대기 상태';
-        } else if (currentDcVolt < 12.0) {
-          battChip.innerText = '🚨 저전압 주의';
-        } else {
-          battChip.innerText = '🔋 배터리 양호';
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        requestScreenWakeLock();
+        if (!isBleConnected && !manualDisconnect && localStorage.getItem('auth_gen_name')) {
+          attemptSilentReconnect();
         }
       }
-    }
+    });
 
-    async function trySilentAutoConnect(savedName) {
-      if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return;
+    async function grantAllInitialPermissions() {
       try {
-        const devices = await navigator.bluetooth.getDevices();
-        const matched = devices.find(d => d.name === savedName);
-        if (matched) {
-          await connectToGattDevice(matched);
+        if (navigator.storage && navigator.storage.persist) {
+          await navigator.storage.persist();
         }
-      } catch (e) {
-        console.log("자동 탐색 대기중");
+      } catch (e) {}
+
+      await requestScreenWakeLock();
+      localStorage.setItem('perm_init_v22', '1');
+      document.getElementById('permInitModal').classList.remove('active');
+
+      await handleSmartConnect();
+    }
+
+    async function requestScreenWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLockObj = await navigator.wakeLock.request('screen');
+        } catch (e) {}
       }
     }
 
-    async function handleSmartConnect(pendingCommand = null) {
+    function startAutoReconnectLoop() {
+      if (autoReconnectTimer) clearInterval(autoReconnectTimer);
+      attemptSilentReconnect();
+      autoReconnectTimer = setInterval(() => {
+        if (!isBleConnected && !isConnectingNow && !manualDisconnect) {
+          attemptSilentReconnect();
+        }
+      }, 2000);
+    }
+
+    async function attemptSilentReconnect() {
+      if (isBleConnected || isConnectingNow || manualDisconnect) return;
+      const savedName = localStorage.getItem('auth_gen_name');
+      if (!savedName) return;
+
+      isConnectingNow = true;
+      try {
+        if (bleDevice && bleDevice.name === savedName) {
+          await connectToGattDevice(bleDevice);
+        } else if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+          const devices = await navigator.bluetooth.getDevices();
+          const matched = devices.find(d => d.name === savedName);
+          if (matched) {
+            bleDevice = matched;
+            await connectToGattDevice(matched);
+          }
+        }
+      } catch (e) {}
+      isConnectingNow = false;
+    }
+
+    function evaluateGeneratorState() {
+      isEngineTurning = (acVoltVal >= 15) || (hzFreqVal >= 10.0);
+
+      if (!isGenRunning) {
+        if (acVoltVal >= 160 || hzFreqVal >= 45.0) {
+          isGenRunning = true;
+          stopStartSliderAnimationOnly();
+        }
+      } else {
+        if (acVoltVal < 90 && hzFreqVal < 25.0) {
+          isGenRunning = false;
+        }
+      }
+
+      if (!isEngineTurning && !isGenRunning && dcBattVal >= 9.0 && dcBattVal <= 13.1) {
+        baseBattVal = (baseBattVal === 0.0) ? dcBattVal : (baseBattVal * 0.8 + dcBattVal * 0.2);
+      }
+
+      if (espChgOverride !== null) {
+        isBattCharging = espChgOverride;
+      } else {
+        const deltaRise = (baseBattVal > 8.0) ? (dcBattVal - baseBattVal) : 0.0;
+        if (!isBattCharging) {
+          if (dcBattVal >= 13.3 || (isGenRunning && deltaRise >= 0.5 && dcBattVal >= 12.5)) {
+            isBattCharging = true;
+          }
+        } else {
+          if (dcBattVal <= 13.1 && !(isGenRunning && deltaRise >= 0.4)) {
+            isBattCharging = false;
+          }
+        }
+      }
+    }
+
+    function updateStatusBoardUI() {
+      const board  = document.getElementById('acStatusBoard');
+      const stText = document.getElementById('acStatusText');
+      const badge  = document.getElementById('acSubBadge');
+
+      const elAc   = document.getElementById('acVoltVal');
+      const elAcSub= document.getElementById('acVoltSub');
+      const elHz   = document.getElementById('hzFreqVal');
+      const elHzSub= document.getElementById('hzFreqSub');
+      const elDc   = document.getElementById('dcBattVal');
+      const elDcSub= document.getElementById('dcBattSub');
+      const chgDot = document.getElementById('battChgDot');
+
+      board.classList.remove('running', 'starting', 'step1-ready');
+      elAc.className = 'meter-num';
+      elHz.className = 'meter-num';
+      elDc.className = 'meter-num';
+      chgDot.className = 'chg-dot';
+      elDcSub.className = 'meter-sub';
+
+      if (!isBleConnected) {
+        stText.innerText  = '⚪ 발전기 연결 대기중';
+        badge.innerText   = '미연결';
+        elAc.innerText    = '--';
+        elAcSub.innerText = 'AC 출력';
+        elHz.innerText    = '--';
+        elHzSub.innerText = '엔진 회전';
+        elDc.innerText    = '--';
+        elDcSub.innerText = '대기중';
+        return;
+      }
+
+      if (isGenRunning) {
+        board.classList.add('running');
+        if (acVoltVal >= 195 && acVoltVal <= 245) {
+          stText.innerText = '🟢 정상 발전 가동중';
+          badge.innerText  = '정상 출력';
+        } else {
+          stText.innerText = '🟢 발전 가동중 (부하 변동)';
+          badge.innerText  = '부하 대응중';
+        }
+      } else if (isEngineTurning) {
+        board.classList.add('starting');
+        stText.innerText = '🟡 전압·주파수 변동중';
+        badge.innerText  = '시동/감속';
+      } else if (isStep1On) {
+        board.classList.add('step1-ready');
+        if (step1HoldRemSec > 0) {
+          stText.innerText = `🔵 1단(연료) 자동 열림 (${step1HoldRemSec}초)`;
+          badge.innerText  = '시동 대기중';
+        } else {
+          stText.innerText = '🔵 1단(ACC) 전원 켜짐';
+          badge.innerText  = '시동 대기';
+        }
+      } else {
+        stText.innerText = '⚪ 발전기 정지 상태';
+        badge.innerText  = '엔진 정지';
+      }
+
+      const dispAc = Math.round(acVoltVal);
+      elAc.innerText = String(dispAc);
+      if (dispAc === 0) {
+        elAcSub.innerText = '출력 없음';
+      } else if (dispAc >= 195 && dispAc <= 245) {
+        elAc.classList.add('val-good');
+        elAcSub.innerText = '정상 전압';
+      } else {
+        elAc.classList.add('val-warn');
+        elAcSub.innerText = '과도/변동';
+      }
+
+      elHz.innerText = hzFreqVal.toFixed(1);
+      if (hzFreqVal < 1.0) {
+        elHzSub.innerText = '0 RPM';
+      } else if (hzFreqVal >= 54.0 && hzFreqVal <= 63.0) {
+        elHz.classList.add('val-good');
+        elHzSub.innerText = '정상 회전';
+      } else {
+        elHz.classList.add('val-warn');
+        elHzSub.innerText = '회전 변동';
+      }
+
+      elDc.innerText = dcBattVal > 0 ? dcBattVal.toFixed(1) : '0.0';
+      if (isBattCharging) {
+        chgDot.classList.add('charging');
+        elDc.classList.add('val-good');
+        elDcSub.classList.add('charging-text');
+        elDcSub.innerText = '충전중';
+      } else if (dcBattVal > 0 && dcBattVal <= 11.8) {
+        chgDot.classList.add('low-batt');
+        elDc.classList.add('val-low');
+        elDcSub.classList.add('low-text');
+        elDcSub.innerText = '저전압 주의';
+      } else {
+        elDcSub.innerText = '대기 전압';
+      }
+    }
+
+    function updateStep1ButtonUI() {
+      const btn = document.getElementById('btnStep1');
+      btn.classList.toggle('active-step', isStep1On);
+      if (isStep1On && step1HoldRemSec > 0) {
+        btn.innerText = `🚀 1단 (${step1HoldRemSec}s)`;
+      } else {
+        btn.innerText = isStep1On ? '🚀 1단 ON' : '🚀 1단 OFF';
+      }
+    }
+
+    // =====================================================
+    // 7. [핵심 수정] 검색 팝업 없이 마지막 저장된 기기에 다이렉트 연결!
+    // =====================================================
+    async function handleSmartConnect() {
       if (isBleConnected) return true;
+      manualDisconnect = false;
 
       const savedName = localStorage.getItem('auth_gen_name');
-      try {
-        let options = { optionalServices: [SERVICE_UUID] };
-        if (savedName) {
-          options.filters = [{ name: savedName }];
-        } else {
-          options.acceptAllDevices = true;
-        }
 
-        const device = await navigator.bluetooth.requestDevice(options);
+      // 1) 이미 메모리에 bleDevice가 있거나 브라우저 허용 기기 목록에 저장된 이름이 있다면 검색 없이 즉시 GATT 접속 시도!
+      if (savedName) {
+        try {
+          if (!bleDevice && navigator.bluetooth && navigator.bluetooth.getDevices) {
+            const devices = await navigator.bluetooth.getDevices();
+            bleDevice = devices.find(d => d.name === savedName);
+          }
+          if (bleDevice) {
+            await connectToGattDevice(bleDevice);
+            if (isBleConnected) return true;
+          }
+        } catch (e) {}
+      }
+
+      // 2) 만약 브라우저 보안 캐시가 비어있어 어쩔 수 없이 찾아야 할 때만 딱 한 번 검색 창 띄우기
+      try {
+        let device = null;
+        if (window.__IS_NATIVE) {
+          // 네이티브: 저장된 이름으로 스캔
+          if (savedName) {
+            device = await window.__nativeFindByName(savedName);
+            if (!device) device = await window.__nativeScanForName(savedName, 12000);
+          }
+          if (!device) throw new Error("native scan not found");
+        } else {
+          let options = { optionalServices: [SERVICE_UUID] };
+          if (savedName) {
+            options.filters = [{ name: savedName }];
+          } else {
+            options.acceptAllDevices = true;
+          }
+          device = await navigator.bluetooth.requestDevice(options);
+        }
         const devName = device.name || "Unknown";
 
         if (savedName && devName === savedName) {
-          await connectToGattDevice(device, pendingCommand);
+          await connectToGattDevice(device);
+          startAutoReconnectLoop();
         } else {
           pendingDevice = device;
           openPinModal(devName);
         }
       } catch (err) {
-        console.log("연결 취소됨");
+        console.log("블루투스 연결 취소됨");
       }
       return false;
     }
@@ -815,62 +893,119 @@
 
       if (inputPin === expectedPin) {
         localStorage.setItem('auth_gen_name', pendingDevice.name);
+        localStorage.setItem('perm_init_v22', '1');
         document.getElementById('pinModal').classList.remove('active');
         const devToConn = pendingDevice;
         pendingDevice = null;
+        manualDisconnect = false;
         await connectToGattDevice(devToConn);
+        startAutoReconnectLoop();
       } else {
         alert("❌ 비밀번호(장비 번호 4자리)가 일치하지 않습니다! 다시 확인해주세요.");
       }
     }
 
-    async function connectToGattDevice(device, pendingCommand = null) {
-      try {
-        bleDevice = device;
-        bleDevice.removeEventListener('gattserverdisconnected', onBleDisconnected);
-        bleDevice.addEventListener('gattserverdisconnected', onBleDisconnected);
-
-        const server = await bleDevice.gatt.connect();
-        const service = await server.getPrimaryService(SERVICE_UUID);
-        bleChar = await service.getCharacteristic(CHARACTERISTIC_UUID);
-
-        await bleChar.startNotifications();
-        bleChar.addEventListener('characteristicvaluechanged', onBleDataReceived);
-
-        isBleConnected = true;
-        updateHeaderUI();
-        updateButtonStates();
-
-        const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        await sendBleCmd(`DATE_${yyyy}${mm}${dd}`);
-
-        if (pendingCommand) {
-          setTimeout(() => onActionButton(pendingCommand), 250);
-        }
-      } catch (err) {
-        isBleConnected = false;
-        updateHeaderUI();
-        updateButtonStates();
+    async function connectToGattDevice(device) {
+      // 네이티브 기기 객체면 웹호환 shim 으로 변환
+      if (window.__IS_NATIVE && device && device.__native === undefined && device.deviceId) {
+        device = window.__NATIVE_SHIM(device);
       }
+      bleDevice = device;
+      bleDevice.removeEventListener('gattserverdisconnected', onBleDisconnected);
+      bleDevice.addEventListener('gattserverdisconnected', onBleDisconnected);
+
+      const server = await bleDevice.gatt.connect();
+      const service = await server.getPrimaryService(SERVICE_UUID);
+      bleChar = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+      await bleChar.startNotifications();
+      if (bleDevice && bleDevice.__native) {
+        // shim: 네이티브 notify 콜백 → 기존 onBleDataReceived 로 변환
+        bleDevice.__notifyCb = (v) => {
+          try {
+            const bin = atob(v.value || "");
+            const buf = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+            onBleDataReceived({ target: { value: new DataView(buf.buffer) } });
+          } catch (e) {}
+        };
+      } else {
+        bleChar.removeEventListener('characteristicvaluechanged', onBleDataReceived);
+        bleChar.addEventListener('characteristicvaluechanged', onBleDataReceived);
+      }
+
+      isBleConnected = true;
+      updateHeaderUI();
+      updateStatusBoardUI();
+      updateButtonStates();
+
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      await sendBleCmd(`DATE_${yyyy}${mm}${dd}`);
     }
 
     function onBleDisconnected() {
-      isBleConnected = false;
-      isAc220On = false;
-      currentAcVolt = 0;
-      currentHz = 0.0;
-      currentDcVolt = 0.0;
+      isBleConnected  = false;
+      acVoltVal       = 0;
+      hzFreqVal       = 0.0;
+      dcBattVal       = 0.0;
+      baseBattVal     = 0.0;
+      isGenRunning    = false;
+      isEngineTurning = false;
+      isBattCharging  = false;
+      espChgOverride  = null;
+      isStep1On       = false;
+      step1HoldRemSec = 0;
+
       stopAllSliderAnimations();
       updateHeaderUI();
-      updateTelemetryUI();
+      updateStatusBoardUI();
+      updateStep1ButtonUI();
       updateButtonStates();
+
+      if (!manualDisconnect && localStorage.getItem('auth_gen_name')) {
+        startAutoReconnectLoop();
+      }
     }
 
+    // =====================================================
+    // 8. ESP32 실시간 상태 패킷 수신 처리
+    // =====================================================
     function onBleDataReceived(event) {
       const msg = new TextDecoder().decode(event.target.value).trim();
+      if (!msg) return;
+
+      if (msg.startsWith("st_")) {
+        const parts = msg.substring(3).split(",");
+        if (parts.length >= 3) {
+          acVoltVal = parseFloat(parts[0]) || 0;
+          hzFreqVal = parseFloat(parts[1]) || 0.0;
+          dcBattVal = parseFloat(parts[2]) || 0.0;
+        }
+        if (parts.length >= 4 && parts[3] !== "") {
+          espChgOverride = (parts[3] === "1");
+        }
+        if (parts.length >= 5 && parts[4] !== "") {
+          isStep1On = (parts[4] === "1");
+        }
+        if (parts.length >= 6 && parts[5] !== "") {
+          espRemainSec = parseInt(parts[5], 10) || 0;
+          updateTimerUI();
+        }
+        if (parts.length >= 7 && parts[6] !== "") {
+          step1HoldRemSec = parseInt(parts[6], 10) || 0;
+        } else {
+          step1HoldRemSec = 0;
+        }
+
+        evaluateGeneratorState();
+        updateStep1ButtonUI();
+        updateStatusBoardUI();
+        updateButtonStates();
+        return;
+      }
 
       if (msg.startsWith("r1_")) {
         espPreheatSec = parseFloat(msg.substring(3));
@@ -894,43 +1029,29 @@
         espRemainSec = parseInt(msg.substring(4), 10) || 0;
         updateTimerUI();
       }
-      else if (msg.startsWith("ac_")) {
-        const val = parseFloat(msg.substring(3));
-        if (val <= 1) {
-          isAc220On = (val === 1);
-          currentAcVolt = isAc220On ? 220 : 0;
-        } else {
-          currentAcVolt = Math.round(val);
-          isAc220On = (currentAcVolt >= 80);
-        }
-        updateTelemetryUI();
-        updateButtonStates();
-      }
-      else if (msg.startsWith("hz_")) {
-        currentHz = parseFloat(msg.substring(3)) || 0.0;
-        updateTelemetryUI();
-      }
-      else if (msg.startsWith("dc_")) {
-        currentDcVolt = parseFloat(msg.substring(3)) || 0.0;
-        updateTelemetryUI();
+      else if (msg.startsWith("s1_")) {
+        isStep1On = (msg.substring(3) === "1");
+        if (!isStep1On) step1HoldRemSec = 0;
+        updateStep1ButtonUI();
+        updateStatusBoardUI();
       }
     }
 
+    // =====================================================
+    // 9. 명령어 전송 및 메인 운전 버튼 액션 제어
+    // =====================================================
     async function sendBleCmd(cmd) {
       if (!isBleConnected || !bleChar) return;
       try {
         const encoder = new TextEncoder();
         await bleChar.writeValue(encoder.encode(cmd));
       } catch (e) {
-        console.log("전송 오류:", e);
+        console.log("BLE 전송 오류:", e);
       }
     }
 
     async function onActionButton(cmd) {
-      if (!isBleConnected) {
-        await handleSmartConnect(cmd);
-        return;
-      }
+      if (!isBleConnected) return;
 
       await sendBleCmd(cmd);
 
@@ -941,14 +1062,16 @@
         startDelayTimer = setTimeout(() => {
           runStartSliderAnim();
         }, 1000);
-      } else if (cmd === 'CMD_STEP1') {
-        isStep1On = !isStep1On;
-        document.getElementById('btnStep1').classList.toggle('active-step', isStep1On);
       } else if (cmd === 'CMD_STOP') {
+        stopAllSliderAnimations();
+      } else if (cmd === 'CMD_STEP1' && isStep1On) {
         stopAllSliderAnimations();
       }
     }
 
+    // =====================================================
+    // 10. 예열 & 시동 슬라이더 카운트다운 시각 효과
+    // =====================================================
     function runPreheatSliderAnim() {
       if (preheatAnimTimer) clearInterval(preheatAnimTimer);
       isPreheatAnimating = true;
@@ -997,33 +1120,50 @@
       }, 40);
     }
 
-    function stopAllSliderAnimations() {
-      if (preheatAnimTimer) { clearInterval(preheatAnimTimer); preheatAnimTimer = null; }
-      if (startAnimTimer)   { clearInterval(startAnimTimer);   startAnimTimer = null; }
-      if (startDelayTimer)  { clearTimeout(startDelayTimer);   startDelayTimer = null; }
-      isPreheatAnimating = false;
-      isStartAnimating   = false;
-
-      document.getElementById('mainPreheatSlider').value = espPreheatSec;
-      document.getElementById('mainPreheatVal').innerText = espPreheatSec.toFixed(1);
+    function stopStartSliderAnimationOnly() {
+      if (startAnimTimer)  { clearInterval(startAnimTimer);  startAnimTimer = null; }
+      if (startDelayTimer) { clearTimeout(startDelayTimer);  startDelayTimer = null; }
+      isStartAnimating = false;
       document.getElementById('mainStartSlider').value = espStartSec;
       document.getElementById('mainStartVal').innerText = espStartSec.toFixed(1);
     }
 
+    function stopAllSliderAnimations() {
+      if (preheatAnimTimer) { clearInterval(preheatAnimTimer); preheatAnimTimer = null; }
+      isPreheatAnimating = false;
+      document.getElementById('mainPreheatSlider').value = espPreheatSec;
+      document.getElementById('mainPreheatVal').innerText = espPreheatSec.toFixed(1);
+      stopStartSliderAnimationOnly();
+    }
+
+    // =====================================================
+    // 11. 상단 상태줄 & 대형 연결 버튼 표시/숨김 제어
+    // =====================================================
     function updateHeaderUI() {
-      const dot  = document.getElementById('connDot');
-      const text = document.getElementById('connText');
+      const dot       = document.getElementById('connDot');
+      const text      = document.getElementById('connText');
+      const bigBtn    = document.getElementById('bigConnectBtn');
+      const bigMain   = document.getElementById('bigConnMainText');
+      const bigSub    = document.getElementById('bigConnSubText');
       const savedName = localStorage.getItem('auth_gen_name');
 
       if (isBleConnected && bleDevice) {
         dot.className = 'dot connected';
         text.innerText = `연결됨: ${bleDevice.name}`;
-      } else if (savedName) {
-        dot.className = 'dot standby';
-        text.innerText = `연결 대기 (${savedName}) - 터치!`;
+        bigBtn.classList.add('hidden');
       } else {
-        dot.className = 'dot';
-        text.innerText = '연결 안 됨 (터치하여 연결)';
+        bigBtn.classList.remove('hidden');
+        if (savedName) {
+          dot.className = 'dot standby';
+          text.innerText = `미연결 (${savedName})`;
+          bigMain.innerText = `📡 내 발전기 (${savedName}) 연결`;
+          bigSub.innerText  = '여기를 누르면 저장된 발전기로 바로 연결됩니다';
+        } else {
+          dot.className = 'dot';
+          text.innerText = '등록된 발전기 없음';
+          bigMain.innerText = '📡 새 발전기 검색 및 등록';
+          bigSub.innerText  = '최초 1회 발전기를 선택하고 비밀번호를 입력하세요';
+        }
       }
     }
 
@@ -1044,22 +1184,25 @@
     }
 
     function updateButtonStates() {
-      const savedName = localStorage.getItem('auth_gen_name');
+      const isBusyRunning = isGenRunning || isEngineTurning;
 
-      const canStartOrPreheat = isBleConnected ? (!isAc220On) : Boolean(savedName);
-      document.getElementById('btnPreheat').disabled = !canStartOrPreheat;
-      document.getElementById('btnStart').disabled   = !canStartOrPreheat;
+      const canOperate = isBleConnected && !isBusyRunning;
+      document.getElementById('btnPreheat').disabled = !canOperate;
+      document.getElementById('btnStart').disabled   = !canOperate;
+      document.getElementById('btnStep1').disabled   = !canOperate;
 
-      document.getElementById('btnStep1').disabled       = !isBleConnected;
       document.getElementById('btnStop').disabled        = !isBleConnected;
       document.getElementById('btnTimerCancel').disabled = !isBleConnected;
 
-      const canAddTime = isBleConnected && isAc220On;
+      const canAddTime = isBleConnected && isGenRunning;
       document.getElementById('btnAdd1m').disabled  = !canAddTime;
       document.getElementById('btnAdd15m').disabled = !canAddTime;
       document.getElementById('btnAdd1h').disabled  = !canAddTime;
     }
 
+    // =====================================================
+    // 12. 환경설정 모달 저장 및 다른 발전기 전환 기능
+    // =====================================================
     function openSettingsModal() {
       document.getElementById('cfgPreheatSlider').value = espPreheatSec;
       document.getElementById('cfgPreheatVal').innerText = espPreheatSec.toFixed(1);
@@ -1090,25 +1233,38 @@
 
     async function switchAnotherGenerator() {
       closeSettingsModal();
+      manualDisconnect = true;
       if (bleDevice && bleDevice.gatt.connected) {
         bleDevice.gatt.disconnect();
       }
       try {
-        const device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: [SERVICE_UUID]
-        });
+        let device = null;
+        if (window.__IS_NATIVE) {
+          if (window.__nativeScanForName) {
+            // 기기 변경: 발전기 이름 패턴으로 12초 스캔 (PIN 4자리 suffix)
+            device = await window.__nativeScanForName("", 12000);
+          }
+          if (!device) throw new Error("native scan none");
+        } else {
+          device = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: [SERVICE_UUID]
+          });
+        }
         pendingDevice = device;
         openPinModal(device.name || "Unknown");
       } catch (e) {
+        manualDisconnect = false;
         console.log("기기 변경 취소");
       }
     }
 
     function disconnectCurrentBle() {
+      manualDisconnect = true;
       if (bleDevice && bleDevice.gatt.connected) {
         bleDevice.gatt.disconnect();
       }
+      updateHeaderUI();
       closeSettingsModal();
     }
   </script>
