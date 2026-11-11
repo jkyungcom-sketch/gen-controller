@@ -28,6 +28,9 @@ on:
         description: 'keystore alias'
         required: false
         default: 'jkyung'
+      ks_sha256:
+        description: 'keystore 인증서 SHA256 지문 (콜론 없이)'
+        required: false
 
 permissions:
   contents: write
@@ -216,6 +219,25 @@ jobs:
               exit 1
             fi
             echo "✅ Release 서명 검증 통과"
+
+            # ★ 고정키 지문 대조 (빌드 산출물이 우리 키로 서명됐는지 확정)
+            WANT_SHA256="${{ inputs.ks_sha256 }}"
+            GOT=$("$APKSIGNER" verify --print-certs "out/$APK_NAME" \
+                    | grep -i "SHA-256 digest" | head -1 \
+                    | sed 's/.*digest: *//' | tr -d ' \r')
+            echo "기대 지문: ${WANT_SHA256:- (미지정)}"
+            echo "실제 지문: $GOT"
+            if [ -n "$WANT_SHA256" ]; then
+              NORM_WANT=$(echo "$WANT_SHA256" | tr 'A-F' 'a-f' | tr -d ':')
+              NORM_GOT=$(echo "$GOT" | tr 'A-F' 'a-f' | tr -d ':')
+              if [ "$NORM_WANT" != "$NORM_GOT" ]; then
+                echo "::error::서명 지문 불일치! 기대=$NORM_WANT 실제=$NORM_GOT"
+                exit 1
+              fi
+              echo "✅ 고정키 지문 일치 확인"
+            else
+              echo "::warning::ks_sha256 미지정 → 지문 대조 생략"
+            fi
           fi
 
       - name: Upload artifact
