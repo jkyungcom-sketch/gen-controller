@@ -1,5 +1,8 @@
 name: Build APK
 
+# ── 2트랙 분리 ─────────────────────────────────────────────
+#  track=test  : 테스트 APK (test-latest pre-release) — main 브랜치/latest 절대 안 건드림
+#  track=release: 정식 APK  (latest release)            — main 브랜치 푸시로 트리거
 on:
   push:
     branches: [main]
@@ -8,31 +11,77 @@ on:
       - 'capacitor.config.json'
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
+    inputs:
+      track:
+        description: 'test = 테스트APK / release = 정식APK'
+        required: true
+        default: 'test'
+        type: choice
+        options: [test, release]
+      ks_url:
+        description: 'keystore 1회용 다운로드 URL'
+        required: false
+      ks_pass:
+        description: 'keystore store 비밀번호'
+        required: false
+      ks_alias:
+        description: 'keystore alias'
+        required: false
+        default: 'jkyung'
 
 permissions:
   contents: write
 
 concurrency:
   group: apk-build
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  build:
+  resolve:
     runs-on: ubuntu-latest
+    outputs:
+      track: ${{ steps.t.outputs.track }}
     steps:
+      - id: t
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "track=${{ inputs.track }}" >> $GITHUB_OUTPUT
+          else
+            echo "track=release" >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    needs: resolve
+    runs-on: ubuntu-latest
+    env:
+      TRACK: ${{ needs.resolve.outputs.track }}
+    steps:
+      - name: Track 정보
+        run: |
+          echo "TRACK = $TRACK"
+          if [ "$TRACK" = "test" ]; then
+            echo "APK_NAME=generator-test.apk"   >> $GITHUB_ENV
+            echo "TAG=test-latest"               >> $GITHUB_ENV
+            echo "REL_TITLE=🧪 테스트 빌드 (검증용)" >> $GITHUB_ENV
+            echo "IS_PRE=true"                   >> $GITHUB_ENV
+          else
+            echo "APK_NAME=generator-remote.apk" >> $GITHUB_ENV
+            echo "TAG=latest"                    >> $GITHUB_ENV
+            echo "REL_TITLE=발전기 리모컨 최신판" >> $GITHUB_ENV
+            echo "IS_PRE=false"                  >> $GITHUB_ENV
+          fi
+
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # Android SDK 는 GitHub 러너에 이미 설치되어 있음 (ANDROID_HOME=/usr/local/lib/android/sdk)
-      # setup-android 액션은 불필요하며 실패 원인이었음 → 제거
       - name: Verify Android SDK
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          ls "$ANDROID_HOME" || true
           ls "$ANDROID_HOME/platforms" || true
           ls "$ANDROID_HOME/build-tools" || true
 
@@ -48,11 +97,42 @@ jobs:
           npm i --no-audit --no-fund @capacitor/core @capacitor/cli @capacitor/android
           npm i --no-audit --no-fund @capacitor-community/bluetooth-le @capacitor/preferences
 
-      - name: Prepare web assets
+      # ★ 요구사항 3: 네이티브 BLE 어댑터를 별도 파일로 주입
+      #   순수 웹 index.html 을 통째로 붙여넣어도 빌드 시 자동으로 script 주입됨
+      - name: Prepare web assets (inject BLE adapter)
         run: |
           set -e
           rm -rf www && mkdir -p www
           cp index.html www/index.html
+          if [ -f ble-native-adapter.js ]; then
+            cp ble-native-adapter.js www/ble-native-adapter.js
+            python3 scripts/inject_adapter.py www/index.html
+          else
+            echo "::warning::ble-native-adapter.js 없음 — 어댑터 미주입"
+          fi
+          ls -la www/
+
+      # ★ 요구사항 2: 고정 Release 서명키 (rieul 1회용 토큰 HTTPS 수신)
+      #   레포(public)에 keystore/비번을 전혀 남기지 않는 방식.
+      #   KS_URL 은 workflow_dispatch inputs 로 전달되며 빌드 후 즉시 폐기됨.
+      - name: Restore release keystore
+        env:
+          KS_URL: ${{ inputs.ks_url }}
+          KS_PASS: ${{ inputs.ks_pass }}
+          KS_ALIAS: ${{ inputs.ks_alias }}
+        run: |
+          set -e
+          if [ -z "$KS_URL" ]; then
+            echo "::error::ks_url 입력값이 없습니다 (서명 빌드 불가)"
+            exit 1
+          fi
+          curl -fsSL --retry 3 --retry-delay 2 "$KS_URL" -o android-release.jks
+          test -s android-release.jks
+          echo "KEYSTORE_FILE=$PWD/android-release.jks" >> $GITHUB_ENV
+          echo "✅ keystore 수신 $(stat -c%s android-release.jks) bytes"
+          # 즉시 검증 (비번 맞는지)
+          keytool -list -keystore android-release.jks -storepass "$KS_PASS" -alias "$KS_ALIAS" >/dev/null
+          echo "✅ keystore 비밀번호/별칭 검증 OK"
 
       - name: Capacitor init and add android
         run: |
@@ -64,48 +144,47 @@ jobs:
           npx cap sync android
 
       - name: Inject BLE permissions
-        run: |
-          set -e
-          python3 - <<'PYEOF'
-          import re
-          p = "android/app/src/main/AndroidManifest.xml"
-          s = open(p, encoding="utf-8").read()
-          perms = """
-              <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
-              <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-              <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
-              <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
-              <uses-permission android:name="android.permission.WAKE_LOCK" />
-              <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
-          """
-          if "BLUETOOTH_SCAN" not in s:
-              s = re.sub(r"(<manifest[^>]*>)", lambda m: m.group(1) + "\n" + perms, s, count=1)
-          if "usesCleartextTraffic" not in s:
-              s = s.replace("<application", '<application android:usesCleartextTraffic="true"', 1)
-          open(p, "w", encoding="utf-8").write(s)
-          print("manifest patched")
-          PYEOF
+        run: python3 scripts/patch_manifest.py android/app/src/main/AndroidManifest.xml
 
-      - name: Build debug APK
+      - name: Configure signing
+        env:
+          KS_PASS: ${{ inputs.ks_pass }}
+          KS_ALIAS: ${{ inputs.ks_alias }}
+          KS_FILE: ${{ env.KEYSTORE_FILE }}
+        run: |
+          if [ -z "$KS_FILE" ]; then
+            echo "::warning::keystore 없음 → assembleDebug 로 폴백"
+            echo "BUILD_TASK=assembleDebug" >> $GITHUB_ENV
+          else
+            python3 scripts/patch_gradle.py android/app/build.gradle
+            echo "BUILD_TASK=assembleRelease" >> $GITHUB_ENV
+          fi
+
+      - name: Build APK
         run: |
           set -e
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          echo "사용 태스크: $BUILD_TASK"
+          ./gradlew "$BUILD_TASK" --no-daemon --stacktrace
 
       - name: Collect APK
         run: |
           set -e
           mkdir -p out
-          find android -name "*.apk" -type f -exec cp {} out/generator-remote.apk \;
+          SRC=$(find android/app/build/outputs/apk -name "*.apk" | head -1)
+          echo "found: $SRC"
+          cp "$SRC" "out/$APK_NAME"
           ls -la out/
+          echo "=== 서명 검증 ==="
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -r | head -1)
+          "$APKSIGNER" verify --print-certs "out/$APK_NAME" | head -8
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: generator-remote-apk
-          path: out/generator-remote.apk
+          name: apk-${{ env.TRACK }}
+          path: out/${{ env.APK_NAME }}
           retention-days: 30
 
       - name: Publish release (clobber)
@@ -113,9 +192,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          gh api -X DELETE repos/${{ github.repository }}/releases/tags/latest 2>/dev/null || true
-          gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/latest 2>/dev/null || true
-          gh release create latest out/generator-remote.apk \
-            --title "발전기 리모컨 최신판" \
-            --notes "자동 빌드 (commit ${{ github.sha }})" \
-            --latest
+          gh api -X DELETE repos/${{ github.repository }}/releases/tags/$TAG 2>/dev/null || true
+          gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/$TAG 2>/dev/null || true
+          PRE=""
+          if [ "$IS_PRE" = "true" ]; then PRE="--prerelease"; fi
+          gh release create "$TAG" "out/$APK_NAME" \
+            --title "$REL_TITLE" \
+            --notes "$TRACK 트랙 자동 빌드 / commit ${{ github.sha }}" \
+            $PRE --latest=false
+          echo "✅ release $TAG 생성 완료"
