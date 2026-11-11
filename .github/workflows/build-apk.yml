@@ -172,13 +172,51 @@ jobs:
         run: |
           set -e
           mkdir -p out
-          SRC=$(find android/app/build/outputs/apk -name "*.apk" | head -1)
-          echo "found: $SRC"
+
+          # ★ 트랙에 맞는 디렉터리만 엄격히 선택 (debug/release 혼동 원천 차단)
+          if [ "$BUILD_TASK" = "assembleRelease" ]; then
+            SEARCH_DIR="android/app/build/outputs/apk/release"
+            EXPECT_SIGNED="yes"
+          else
+            SEARCH_DIR="android/app/build/outputs/apk/debug"
+            EXPECT_SIGNED="no"
+          fi
+
+          echo "BUILD_TASK=$BUILD_TASK"
+          echo "SEARCH_DIR=$SEARCH_DIR"
+          ls -laR android/app/build/outputs/apk || true
+
+          if [ ! -d "$SEARCH_DIR" ]; then
+            echo "::error::$SEARCH_DIR 디렉터리가 없습니다 (빌드 산출물 없음)"
+            exit 1
+          fi
+
+          SRC=$(find "$SEARCH_DIR" -name "*.apk" -type f | head -1)
+          if [ -z "$SRC" ]; then
+            echo "::error::$SEARCH_DIR 안에 APK가 없습니다"
+            exit 1
+          fi
+          echo "✅ 선택된 APK: $SRC ($(stat -c%s "$SRC") bytes)"
+
           cp "$SRC" "out/$APK_NAME"
-          ls -la out/
-          echo "=== 서명 검증 ==="
+          echo "APK 크기: $(stat -c%s out/$APK_NAME) bytes"
+          echo "SHA256: $(sha256sum out/$APK_NAME | cut -d' ' -f1)"
+
+          echo "=== apksigner 서명 검증 ==="
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -r | head -1)
-          "$APKSIGNER" verify --print-certs "out/$APK_NAME" | head -8
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::apksigner 를 찾을 수 없습니다"
+            exit 1
+          fi
+          "$APKSIGNER" verify --verbose --print-certs "out/$APK_NAME" | head -20
+
+          if [ "$EXPECT_SIGNED" = "yes" ]; then
+            if ! "$APKSIGNER" verify "out/$APK_NAME" >/dev/null 2>&1; then
+              echo "::error::release APK 서명 검증 실패 — 고정키 서명이 적용되지 않았습니다"
+              exit 1
+            fi
+            echo "✅ Release 서명 검증 통과"
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -192,12 +230,35 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          gh api -X DELETE repos/${{ github.repository }}/releases/tags/$TAG 2>/dev/null || true
-          gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/$TAG 2>/dev/null || true
+          echo "TAG=$TAG / APK_NAME=$APK_NAME / IS_PRE=$IS_PRE"
+
+          # 1) 같은 태그의 릴리스 전부 삭제 (draft 포함)
+          IDS=$(gh api "repos/${{ github.repository }}/releases?per_page=100" \
+                  --jq ".[] | select(.tag_name==\"$TAG\") | .id" 2>/dev/null || true)
+          for RID in $IDS; do
+            echo "기존 릴리스 삭제: id=$RID tag=$TAG"
+            gh api -X DELETE "repos/${{ github.repository }}/releases/$RID" || true
+          done
+
+          # 2) 태그 삭제
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/$TAG" 2>/dev/null || true
+
+          # 3) 생성
           PRE=""
           if [ "$IS_PRE" = "true" ]; then PRE="--prerelease"; fi
+          set +e
           gh release create "$TAG" "out/$APK_NAME" \
             --title "$REL_TITLE" \
             --notes "$TRACK 트랙 자동 빌드 / commit ${{ github.sha }}" \
             $PRE --latest=false
+          RC=$?
+          set -e
+          if [ $RC -ne 0 ]; then
+            echo "::error::gh release create 실패 (exit $RC)"
+            echo "--- 잔여 릴리스 재조회 ---"
+            gh api "repos/${{ github.repository }}/releases?per_page=100" \
+              --jq '.[] | "\(.id) \(.tag_name) draft=\(.draft)"' || true
+            exit $RC
+          fi
           echo "✅ release $TAG 생성 완료"
+          gh release view "$TAG" --json tagName,isDraft,isPrerelease,assets
