@@ -1,0 +1,8 @@
+{
+  "appId": "org.jkyung.generator",
+  "appName": "발전기 리모컨",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
