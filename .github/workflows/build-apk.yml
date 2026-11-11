@@ -26,12 +26,20 @@ jobs:
         with:
           node-version: '22'
 
+      # Android SDK 는 GitHub 러너에 이미 설치되어 있음 (ANDROID_HOME=/usr/local/lib/android/sdk)
+      # setup-android 액션은 불필요하며 실패 원인이었음 → 제거
+      - name: Verify Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          ls "$ANDROID_HOME" || true
+          ls "$ANDROID_HOME/platforms" || true
+          ls "$ANDROID_HOME/build-tools" || true
+
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
-
-      - uses: android-actions/setup-android@v3
 
       - name: Capacitor deps
         run: |
@@ -58,11 +66,11 @@ jobs:
       - name: Inject BLE permissions
         run: |
           set -e
-          python3 - <<'PY'
+          python3 - <<'PYEOF'
           import re
           p = "android/app/src/main/AndroidManifest.xml"
           s = open(p, encoding="utf-8").read()
-          perms = '''
+          perms = """
               <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
               <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
               <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
@@ -70,15 +78,14 @@ jobs:
               <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
               <uses-permission android:name="android.permission.WAKE_LOCK" />
               <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
-          '''
+          """
           if "BLUETOOTH_SCAN" not in s:
               s = re.sub(r"(<manifest[^>]*>)", lambda m: m.group(1) + "\n" + perms, s, count=1)
-          # cleartext 허용 (로컬 http 제어 대비)
-          if 'android:usesCleartextTraffic' not in s:
-              s = s.replace('<application', '<application android:usesCleartextTraffic="true"', 1)
+          if "usesCleartextTraffic" not in s:
+              s = s.replace("<application", '<application android:usesCleartextTraffic="true"', 1)
           open(p, "w", encoding="utf-8").write(s)
           print("manifest patched")
-          PY
+          PYEOF
 
       - name: Build debug APK
         run: |
@@ -93,7 +100,6 @@ jobs:
           mkdir -p out
           find android -name "*.apk" -type f -exec cp {} out/generator-remote.apk \;
           ls -la out/
-          unzip -l out/generator-remote.apk | head -20
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -107,10 +113,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          # 기존 latest 태그/릴리스 제거 후 재생성 (항상 덮어쓰기)
           gh api -X DELETE repos/${{ github.repository }}/releases/tags/latest 2>/dev/null || true
           gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/latest 2>/dev/null || true
           gh release create latest out/generator-remote.apk \
             --title "발전기 리모컨 최신판" \
-            --notes "자동 빌드 $(date -u '+%Y-%m-%d %H:%M UTC') / commit ${{ github.sha }}" \
+            --notes "자동 빌드 (commit ${{ github.sha }})" \
             --latest
