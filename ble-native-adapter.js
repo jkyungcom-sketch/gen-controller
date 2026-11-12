@@ -1,9 +1,13 @@
-/* ble-native-adapter.js — Capacitor BLE (BluetoothLe) <-> Web Bluetooth API 완벽 호환 어댑터 (V2)
- * - APK(Capacitor Android) 환경에서 즉시(동기적으로) navigator.bluetooth 장착
- * - 1순위: 저장된 기기 ID(MAC: ble_native_device_id / ble_last_id)로 무팝업 즉시 직결
- * - 2순위: 폰 기본 블루투스에 등록(페어링)된 기기(getBondedDevices / getConnectedDevices)에서 'korea' 자동 탐색
- * - 3순위: 백그라운드 고속 무필터 스캔(requestLEScan)으로 'korea' 자동 발견 및 즉시 연결 (안드로이드 UUID 하드웨어 필터 버그 완전 우회)
- * - 4순위: 폴백 시에도 services 필수 필터를 제거하고 optionalServices + namePrefix:'korea' 로 스캔창 호출
+/* ble-native-adapter.js — Capacitor BLE (BluetoothLe) <-> Web Bluetooth API 완벽 호환 어댑터 (V3)
+ * [핵심 동작 원칙]
+ * 1. 첫 설치 시(또는 초기화 직후): 절대 멋대로 자동 연결하지 않음!
+ *    - 사용자가 [발전기 선택/연결] 버튼을 누르면 -> 주변(및 폰 등록) 'korea...' 발전기 목록 모달 표시
+ *    - 사용자가 목록에서 발전기를 직접 손으로 선택 -> 앱에서 비밀번호 4자리 직접 입력 통과 시에만 연결 및 저장!
+ * 2. 두 번째 실행부터(자동 연결):
+ *    - 이미 선택 + 비밀번호 인증까지 완료되어 저장된 마지막 발전기(ble_last_id + ble_last_name)가 있을 때만
+ *      getDevices()가 해당 기기를 반환하여 앱 실행 즉시 0.5초 만에 자동 연결!
+ * 3. 다른 발전기로 변경 시:
+ *    - 언제든 상단 연결/변경 버튼을 누르면 requestDevice()가 발전기 선택 모달을 띄워 다른 발전기를 선택 가능!
  */
 (function () {
   "use strict";
@@ -256,12 +260,15 @@
     return Promise.resolve(this._chars[cu]);
   };
 
+  var _activeDevices = {};
+
   function BleDevice(devId, devName) {
     var self = this;
     this.id = devId;
     this.name = devName || "korea";
     this._listeners = {};
     this._discHandle = null;
+    _activeDevices[devId] = this;
     this.gatt = {
       connected: false,
       device: self,
@@ -321,48 +328,84 @@
 
   var _cachedDevice = null;
 
-  // 폰 기본 설정에 페어링(등록)되었거나 이미 연결된 기기 중 'korea' 탐색
-  function findBondedOrConnectedKorea(BLE) {
-    var found = [];
-    var pConn = (typeof BLE.getConnectedDevices === "function")
-      ? BLE.getConnectedDevices({ services: [SERVICE_UUID] }).catch(function () { return { devices: [] }; })
-      : Promise.resolve({ devices: [] });
-    var pBond = (typeof BLE.getBondedDevices === "function")
-      ? BLE.getBondedDevices().catch(function () { return { devices: [] }; })
-      : Promise.resolve({ devices: [] });
+  // 완전 초기화용 헬퍼 (연결 해제 + 캐시 제거)
+  window.__bleNativeReset = function () {
+    var lastId = getSavedId();
+    _cachedDevice = null;
+    return getReadyBle().then(function (BLE) {
+      var ids = Object.keys(_activeDevices);
+      if (lastId && ids.indexOf(lastId) === -1) ids.push(lastId);
+      return Promise.all(ids.map(function (id) {
+        return BLE.disconnect({ deviceId: id }).catch(function () {});
+      }));
+    }).catch(function () {});
+  };
 
-    return Promise.all([pConn, pBond]).then(function (res) {
-      var list1 = (res[0] && res[0].devices) || [];
-      var list2 = (res[1] && res[1].devices) || [];
-      var all = list1.concat(list2);
-      var seen = {};
-      for (var i = 0; i < all.length; i++) {
-        var d = all[i];
-        var id = d && (d.deviceId || d.id);
-        var nm = d && d.name;
-        if (id && !seen[id] && isKoreaName(nm)) {
-          seen[id] = true;
-          found.push({ id: id, name: nm });
-        }
-      }
-      return found;
-    });
-  }
+  // 한글 발전기 선택 모달창 (주변 BLE 스캔 + 폰 등록 블루투스 동시 탐색, 사용자가 직접 터치해 선택!)
+  function openKoreaDevicePickerModal(BLE) {
+    return new Promise(function (resolve, reject) {
+      var old = document.getElementById("__koreaBlePickerModal");
+      if (old && old.parentNode) old.parentNode.removeChild(old);
 
-  // 하드웨어 UUID 필터 없이 백그라운드 스캔(requestLEScan)으로 'korea' 자동 탐색
-  function autoScanKoreaDevice(BLE, timeoutMs) {
-    if (typeof BLE.requestLEScan !== "function") {
-      return Promise.resolve(null);
-    }
-    return new Promise(function (resolve) {
-      var resolved = false;
+      var overlay = document.createElement("div");
+      overlay.id = "__koreaBlePickerModal";
+      overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.82);display:flex;align-items:center;justify-content:center;z-index:99999;padding:18px;";
+
+      var box = document.createElement("div");
+      box.style.cssText = "width:100%;max-width:360px;background:#162033;border:1px solid #3b82f6;border-radius:18px;padding:18px;color:#f8fafc;font-family:inherit;box-shadow:0 12px 32px rgba(0,0,0,0.5);";
+
+      var title = document.createElement("div");
+      title.style.cssText = "font-size:17px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;";
+      title.innerHTML = '<span>📡 연결할 발전기 선택</span><span id="__bleScanStat" style="font-size:12px;color:#38bdf8;font-weight:700;">탐색 중...</span>';
+
+      var sub = document.createElement("div");
+      sub.style.cssText = "font-size:12.5px;color:#94a3b8;margin-bottom:12px;line-height:1.4;";
+      sub.textContent = "연결할 발전기(korea...)를 직접 눌러주세요. 처음 연결하는 발전기는 뒷자리 번호 4자리를 입력해야 연결됩니다.";
+
+      var listWrap = document.createElement("div");
+      listWrap.style.cssText = "display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto;margin-bottom:14px;padding:4px 0;";
+
+      var emptyMsg = document.createElement("div");
+      emptyMsg.style.cssText = "text-align:center;padding:24px 10px;color:#cbd5e1;font-size:13.5px;background:#0b1120;border-radius:12px;border:1px dashed #334155;";
+      emptyMsg.innerHTML = "🔍 주변의 <b>korea</b> 발전기를 찾고 있습니다...<br><span style='font-size:11.5px;color:#64748b'>(발전기 전원과 블루투스가 켜져 있는지 확인하세요)</span>";
+      listWrap.appendChild(emptyMsg);
+
+      var btnRow = document.createElement("div");
+      btnRow.style.cssText = "display:flex;gap:8px;";
+
+      var btnRescan = document.createElement("button");
+      btnRescan.type = "button";
+      btnRescan.style.cssText = "flex:1;padding:12px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:14px;font-weight:700;cursor:pointer;";
+      btnRescan.textContent = "🔄 다시 검색";
+
+      var btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.style.cssText = "flex:1;padding:12px;border-radius:10px;border:none;background:#334155;color:#fff;font-size:14px;font-weight:700;cursor:pointer;";
+      btnCancel.textContent = "닫기";
+
+      btnRow.appendChild(btnRescan);
+      btnRow.appendChild(btnCancel);
+
+      box.appendChild(title);
+      box.appendChild(sub);
+      box.appendChild(listWrap);
+      box.appendChild(btnRow);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+
+      var foundMap = {};
       var scanHandle = null;
-      var timer = null;
+      var scanTimer = null;
+      var closed = false;
+      var currentSavedId = getSavedId();
 
-      function finish(devObj) {
-        if (resolved) return;
-        resolved = true;
-        if (timer) clearTimeout(timer);
+      function stopScanning() {
+        if (scanTimer) {
+          clearTimeout(scanTimer);
+          scanTimer = null;
+        }
+        var statEl = document.getElementById("__bleScanStat");
+        if (statEl) statEl.textContent = "탐색 완료";
         Promise.resolve()
           .then(function () {
             if (typeof BLE.stopLEScan === "function") {
@@ -371,36 +414,144 @@
           })
           .then(function () {
             if (scanHandle && typeof scanHandle.remove === "function") {
-              return scanHandle.remove().catch(function () {});
+              var h = scanHandle;
+              scanHandle = null;
+              return h.remove().catch(function () {});
             }
-          })
-          .then(function () {
-            resolve(devObj || null);
           });
       }
 
-      BLE.addListener("onScanResult", function (res) {
-        if (resolved || !res) return;
-        var d = res.device || res;
-        var id = d.deviceId || d.id;
-        var nm = d.name || res.localName || "";
-        var uuids = res.uuids || [];
-        var hasFfe0 = Array.isArray(uuids) && uuids.some(function (u) {
-          return String(u).toLowerCase().indexOf("ffe0") >= 0;
-        });
-        if (id && (isKoreaName(nm) || hasFfe0)) {
-          finish({ id: id, name: nm || "korea" });
+      function closeAndCleanup() {
+        if (closed) return;
+        closed = true;
+        stopScanning();
+        if (overlay && overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
         }
-      }).then(function (h) {
-        scanHandle = h;
-        return BLE.requestLEScan({ allowDuplicates: true });
-      }).then(function () {
-        timer = setTimeout(function () {
-          finish(null);
-        }, timeoutMs || 3500);
-      }).catch(function () {
-        finish(null);
+      }
+
+      function addCandidate(id, name, sourceLabel) {
+        if (closed || !id) return;
+        var cleanNm = String(name || "korea").trim();
+        if (foundMap[id]) {
+          // 이름이 더 구체적이면 업데이트
+          if (cleanNm && cleanNm !== "korea" && foundMap[id].name === "korea") {
+            foundMap[id].name = cleanNm;
+            foundMap[id].btnNameEl.textContent = "⚡ " + cleanNm;
+          }
+          return;
+        }
+        if (emptyMsg && emptyMsg.parentNode === listWrap) {
+          listWrap.removeChild(emptyMsg);
+        }
+
+        var itemBtn = document.createElement("button");
+        itemBtn.type = "button";
+        var isCurrent = (currentSavedId && currentSavedId === id);
+        itemBtn.style.cssText = "width:100%;padding:14px;border-radius:12px;border:1px solid " + (isCurrent ? "#10b981" : "#3b82f6") + ";background:" + (isCurrent ? "rgba(16,185,129,0.15)" : "#0b1120") + ";color:#f8fafc;display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:left;";
+
+        var leftDiv = document.createElement("div");
+        var nameEl = document.createElement("div");
+        nameEl.style.cssText = "font-size:15.5px;font-weight:800;color:#fff;";
+        nameEl.textContent = "⚡ " + cleanNm;
+
+        var metaEl = document.createElement("div");
+        metaEl.style.cssText = "font-size:11.5px;color:#94a3b8;margin-top:3px;";
+        metaEl.textContent = sourceLabel + " · " + id + (isCurrent ? " (최근 연결됨)" : "");
+
+        leftDiv.appendChild(nameEl);
+        leftDiv.appendChild(metaEl);
+
+        var rightBadge = document.createElement("span");
+        rightBadge.style.cssText = "padding:6px 12px;border-radius:8px;background:#2563eb;color:#fff;font-size:13px;font-weight:800;white-space:nowrap;";
+        rightBadge.textContent = "선택";
+
+        itemBtn.appendChild(leftDiv);
+        itemBtn.appendChild(rightBadge);
+
+        itemBtn.addEventListener("click", function () {
+          var chosenName = foundMap[id] ? foundMap[id].name : cleanNm;
+          closeAndCleanup();
+          // ★ 주의: 여기서 saveDeviceIdentity 를 미리 호출하지 않는다!
+          // index.html 에서 비밀번호 4자리 검증을 통과하고 gatt.connect()가 성공할 때만 저장된다!
+          var dev = new BleDevice(id, chosenName);
+          _cachedDevice = dev;
+          resolve(dev);
+        });
+
+        foundMap[id] = { id: id, name: cleanNm, btnNameEl: nameEl };
+        listWrap.appendChild(itemBtn);
+      }
+
+      function startDiscovery() {
+        var statEl = document.getElementById("__bleScanStat");
+        if (statEl) statEl.textContent = "탐색 중...";
+
+        // 1) 폰 블루투스에 등록/연결된 korea 기기 즉시 표시 (자동 연결은 절대 안 함, 목록에만 표시!)
+        var pConn = (typeof BLE.getConnectedDevices === "function")
+          ? BLE.getConnectedDevices({ services: [SERVICE_UUID] }).catch(function () { return { devices: [] }; })
+          : Promise.resolve({ devices: [] });
+        var pBond = (typeof BLE.getBondedDevices === "function")
+          ? BLE.getBondedDevices().catch(function () { return { devices: [] }; })
+          : Promise.resolve({ devices: [] });
+
+        Promise.all([pConn, pBond]).then(function (res) {
+          var l1 = (res[0] && res[0].devices) || [];
+          var l2 = (res[1] && res[1].devices) || [];
+          var all = l1.concat(l2);
+          for (var i = 0; i < all.length; i++) {
+            var d = all[i];
+            var id = d && (d.deviceId || d.id);
+            var nm = d && d.name;
+            if (id && isKoreaName(nm)) {
+              addCandidate(id, nm, "폰 등록 기기");
+            }
+          }
+        });
+
+        // 2) 주변 실시간 BLE 스캔 (requestLEScan)
+        if (typeof BLE.requestLEScan === "function") {
+          stopScanning();
+          if (statEl) statEl.textContent = "주변 스캔 중...";
+          BLE.addListener("onScanResult", function (res) {
+            if (closed || !res) return;
+            var d = res.device || res;
+            var id = d.deviceId || d.id;
+            var nm = d.name || res.localName || "";
+            var uuids = res.uuids || [];
+            var hasFfe0 = Array.isArray(uuids) && uuids.some(function (u) {
+              return String(u).toLowerCase().indexOf("ffe0") >= 0;
+            });
+            if (id && (isKoreaName(nm) || hasFfe0)) {
+              addCandidate(id, nm || "korea", "주변 블루투스 신호");
+            }
+          }).then(function (h) {
+            if (closed) {
+              if (h && h.remove) h.remove().catch(function () {});
+              return;
+            }
+            scanHandle = h;
+            return BLE.requestLEScan({ allowDuplicates: true });
+          }).then(function () {
+            scanTimer = setTimeout(function () {
+              stopScanning();
+            }, 6000);
+          }).catch(function () {
+            stopScanning();
+          });
+        }
+      }
+
+      btnRescan.addEventListener("click", function () {
+        startDiscovery();
       });
+
+      btnCancel.addEventListener("click", function () {
+        closeAndCleanup();
+        reject(new Error("사용자가 발전기 선택을 취소했습니다."));
+      });
+
+      startDiscovery();
     });
   }
 
@@ -409,79 +560,29 @@
       return Promise.resolve(true);
     },
     getDevices: function () {
-      return getReadyBle().then(function (BLE) {
+      return getReadyBle().then(function () {
+        // ★ 오직 이전에 사용자가 직접 선택하고 비밀번호 인증까지 완료하여 저장된 기기만 반환!
+        // (처음 깔았거나 초기화했을 때는 절대 멋대로 폰 블루투스 기기를 가져와 자동연결하지 않음)
         var savedId = getSavedId();
-        var savedName = getSavedName() || "korea";
-        if (savedId) {
+        var savedName = getSavedName();
+        if (savedId && savedName) {
           if (!_cachedDevice || _cachedDevice.id !== savedId) {
             _cachedDevice = new BleDevice(savedId, savedName);
           }
           return [_cachedDevice];
         }
-        // 저장된 ID가 없더라도 폰 기본 블루투스에 'korea'가 페어링돼 있으면 자동 인식!
-        return findBondedOrConnectedKorea(BLE).then(function (list) {
-          if (list && list.length > 0) {
-            var d0 = list[0];
-            saveDeviceIdentity(d0.id, d0.name);
-            _cachedDevice = new BleDevice(d0.id, d0.name);
-            return [_cachedDevice];
-          }
-          return [];
-        });
+        return [];
       }).catch(function () {
         return [];
       });
     },
-    requestDevice: function (options) {
+    requestDevice: function () {
       return getReadyBle().then(function (BLE) {
-        // 1순위: 이미 저장된 기기 ID가 있으면 즉시 반환
-        var savedId = getSavedId();
-        var savedName = getSavedName() || "korea";
-        if (savedId) {
-          if (!_cachedDevice || _cachedDevice.id !== savedId) {
-            _cachedDevice = new BleDevice(savedId, savedName);
-          }
-          return _cachedDevice;
-        }
-
-        // 2순위: 폰 기본 설정(블루투스)에 페어링/연결된 'korea'가 있으면 즉시 반환
-        return findBondedOrConnectedKorea(BLE).then(function (bondedList) {
-          if (bondedList && bondedList.length === 1) {
-            var b0 = bondedList[0];
-            saveDeviceIdentity(b0.id, b0.name);
-            _cachedDevice = new BleDevice(b0.id, b0.name);
-            return _cachedDevice;
-          }
-
-          // 3순위: 백그라운드 무필터 스캔(requestLEScan)으로 'korea' 자동 탐색 (스캔 팝업 없이 즉시 연결!)
-          return autoScanKoreaDevice(BLE, 3500).then(function (scanned) {
-            if (scanned && scanned.id) {
-              saveDeviceIdentity(scanned.id, scanned.name);
-              _cachedDevice = new BleDevice(scanned.id, scanned.name);
-              return _cachedDevice;
-            }
-
-            // 4순위: 폴백 — 네이티브 선택창 호출 (★ services 필수 필터 제외! optionalServices 만 전달)
-            return BLE.requestDevice({
-              namePrefix: "korea",
-              optionalServices: [SERVICE_UUID]
-            }).catch(function () {
-              // namePrefix 도 안 먹히는 특이 기종 폴백: 전체 BLE 목록 표시
-              return BLE.requestDevice({
-                optionalServices: [SERVICE_UUID]
-              });
-            }).then(function (dev) {
-              var dId = dev.deviceId || dev.id;
-              var dName = dev.name || "korea";
-              saveDeviceIdentity(dId, dName);
-              _cachedDevice = new BleDevice(dId, dName);
-              return _cachedDevice;
-            });
-          });
-        });
+        // 사용자가 [발전기 선택/연결] 버튼을 누르면 항상 발전기 목록 선택창을 띄워 직접 고르게 함!
+        return openKoreaDevicePickerModal(BLE);
       });
     }
   };
 
-  console.log("[ble-native-adapter V2] 장착 완료 (저장기기 직결 + 폰 페어링 연동 + 무필터 자동스캔)");
+  console.log("[ble-native-adapter V3] 장착 완료 (첫연결 수동선택+PIN필수 / 2회차부터 마지막 발전기 자동연결 / 다중 발전기 전환 지원)");
 })();
