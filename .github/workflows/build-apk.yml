@@ -74,11 +74,11 @@ jobs:
             echo "IS_PRE=false"                  >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
         with:
           ref: main
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
 
@@ -88,7 +88,7 @@ jobs:
           ls "$ANDROID_HOME/platforms" || true
           ls "$ANDROID_HOME/build-tools" || true
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -97,9 +97,8 @@ jobs:
         run: |
           set -e
           npm init -y >/dev/null
-          # ★ 버전 고정: MainActivity.java 의 BridgeActivity / getBridge() API 호환성 보장
-          npm i --no-audit --no-fund @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
-          npm i --no-audit --no-fund @capacitor-community/bluetooth-le@6.1.0 @capacitor/preferences@6
+          npm i --no-audit --no-fund @capacitor/core @capacitor/cli @capacitor/android
+          npm i --no-audit --no-fund @capacitor-community/bluetooth-le @capacitor/preferences
 
       # ★ 요구사항 3: 네이티브 BLE 어댑터를 별도 파일로 주입
       #   순수 웹 index.html 을 통째로 붙여넣어도 빌드 시 자동으로 script 주입됨
@@ -119,50 +118,24 @@ jobs:
       # ★ 요구사항 2: 고정 Release 서명키 (rieul 1회용 토큰 HTTPS 수신)
       #   레포(public)에 keystore/비번을 전혀 남기지 않는 방식.
       #   KS_URL 은 workflow_dispatch inputs 로 전달되며 빌드 후 즉시 폐기됨.
-      - name: Resolve keystore (고정키 → 자동생성 폴백)
-        id: ks
+      - name: Restore release keystore
         env:
           KS_URL: ${{ inputs.ks_url }}
           KS_PASS: ${{ inputs.ks_pass }}
           KS_ALIAS: ${{ inputs.ks_alias }}
         run: |
           set -e
-          KS_ALIAS="${KS_ALIAS:-jkyung}"
-          echo "KS_ALIAS=$KS_ALIAS" >> $GITHUB_ENV
-
-          if [ -n "$KS_URL" ] && [ -n "$KS_PASS" ]; then
-            echo "▶ 고정 release 키스토어 수신 시도"
-            if curl -fsSL --retry 3 --retry-delay 2 "$KS_URL" -o android-release.jks && [ -s android-release.jks ]; then
-              if keytool -list -keystore android-release.jks -storepass "$KS_PASS" -alias "$KS_ALIAS" >/dev/null 2>&1; then
-                echo "KEYSTORE_FILE=$PWD/android-release.jks" >> $GITHUB_ENV
-                echo "KS_PASS=$KS_PASS" >> $GITHUB_ENV
-                echo "KS_SRC=fixed" >> $GITHUB_ENV
-                echo "✅ 고정 keystore 수신/검증 OK ($(stat -c%s android-release.jks) bytes)"
-                exit 0
-              fi
-              echo "::warning::고정 keystore 비밀번호/별칭 검증 실패 → 자동생성으로 폴백"
-              rm -f android-release.jks
-            else
-              echo "::warning::고정 keystore 다운로드 실패 → 자동생성으로 폴백"
-              rm -f android-release.jks
-            fi
-          else
-            echo "::notice::ks_url 미입력 (자동 push 빌드) → 서명키 자동 생성"
+          if [ -z "$KS_URL" ]; then
+            echo "::error::ks_url 입력값이 없습니다 (서명 빌드 불가)"
+            exit 1
           fi
-
-          # ── 폴백: 빌드마다 서명키 자체 생성 (Release 서명 성공 보장) ──
-          GEN_PASS="jkyung-ci-$(date +%s)"
-          keytool -genkeypair -v \
-            -keystore android-release.jks \
-            -alias "$KS_ALIAS" \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass "$GEN_PASS" -keypass "$GEN_PASS" \
-            -dname "CN=JKYUNG Generator CI, OU=Mobile, O=JKYUNG LABS, L=Seoul, ST=Seoul, C=KR"
+          curl -fsSL --retry 3 --retry-delay 2 "$KS_URL" -o android-release.jks
+          test -s android-release.jks
           echo "KEYSTORE_FILE=$PWD/android-release.jks" >> $GITHUB_ENV
-          echo "KS_PASS=$GEN_PASS" >> $GITHUB_ENV
-          echo "KS_SRC=generated" >> $GITHUB_ENV
-          echo "::warning::자동 생성 서명키 사용 (KS_SRC=generated) — 실사용 배포는 고정키로 재빌드 권장"
-          echo "✅ 자동 생성 keystore OK ($(stat -c%s android-release.jks) bytes)"
+          echo "✅ keystore 수신 $(stat -c%s android-release.jks) bytes"
+          # 즉시 검증 (비번 맞는지)
+          keytool -list -keystore android-release.jks -storepass "$KS_PASS" -alias "$KS_ALIAS" >/dev/null
+          echo "✅ keystore 비밀번호/별칭 검증 OK"
 
       - name: Capacitor init and add android
         run: |
@@ -173,23 +146,44 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
-      - name: Inject BLE permissions
-        run: python3 scripts/patch_manifest.py android/app/src/main/AndroidManifest.xml
-
-      # ★ AndroidWifiBridge 주입 (관리자 페이지 V3.0 Wi-Fi 계약 구현)
-      #   MainActivity 를 BridgeActivity 확장판으로 교체 → window.AndroidWifiBridge 노출
-      - name: Inject AndroidWifiBridge (WebView → 네이티브 Wi-Fi)
+      # ★★ 필수: AndroidWifiBridge.java / MainActivity.java 실제 주입
+      #    (cap sync 는 java 를 건드리지 않으므로 반드시 sync 이후에 실행)
+      #    누락 시 window.AndroidWifiBridge 가 APK 에 존재하지 않아
+      #    Wi-Fi 스캔/연결/bindProcessToNetwork 가 전부 죽는다.
+      - name: Inject Wi-Fi bridge (AndroidWifiBridge + MainActivity)
         run: |
           set -e
           python3 scripts/patch_wifi_bridge.py
-          echo "--- 주입된 파일 확인 ---"
-          ls -la android/app/src/main/java/org/jkyung/generator/
-          grep -c "addJavascriptInterface" android/app/src/main/java/org/jkyung/generator/MainActivity.java
+          echo "=== 주입 결과 검증 ==="
+          PKG=android/app/src/main/java/org/jkyung/generator
+          test -f $PKG/AndroidWifiBridge.java || { echo "::error::AndroidWifiBridge.java 미주입"; exit 1; }
+          grep -q 'addJavascriptInterface(wifiBridge, "AndroidWifiBridge")' $PKG/MainActivity.java \
+            || { echo "::error::MainActivity 에 브릿지 주입 코드 없음"; exit 1; }
+          grep -q 'extends BridgeActivity' $PKG/MainActivity.java \
+            || { echo "::error::MainActivity 가 BridgeActivity 미확장"; exit 1; }
+          echo "✅ Wi-Fi 브릿지 주입 검증 통과"
+          ls -la $PKG/
+
+      - name: Inject BLE permissions
+        run: python3 scripts/patch_manifest.py android/app/src/main/AndroidManifest.xml
+
+      # ★ cleartext / Wi-Fi 권한 최종 확인 (patch_wifi_bridge.py 가 이미 넣었지만 멱등 재확인)
+      - name: Verify manifest cleartext + wifi permissions
+        run: |
+          set -e
+          MF=android/app/src/main/AndroidManifest.xml
+          grep -q 'android:usesCleartextTraffic="true"' $MF \
+            || { echo "::error::usesCleartextTraffic 누락 → http://192.168.4.1 차단됨"; exit 1; }
+          for P in ACCESS_WIFI_STATE CHANGE_WIFI_STATE ACCESS_NETWORK_STATE CHANGE_NETWORK_STATE; do
+            grep -q "android.permission.$P" $MF || { echo "::error::$P 권한 누락"; exit 1; }
+          done
+          echo "✅ manifest 검증 통과"
+          grep -n 'usesCleartextTraffic\|ACCESS_WIFI_STATE\|CHANGE_WIFI_STATE' $MF
 
       - name: Configure signing
         env:
-          KS_PASS: ${{ env.KS_PASS }}
-          KS_ALIAS: ${{ env.KS_ALIAS }}
+          KS_PASS: ${{ inputs.ks_pass }}
+          KS_ALIAS: ${{ inputs.ks_alias }}
           KS_FILE: ${{ env.KEYSTORE_FILE }}
         run: |
           if [ -z "$KS_FILE" ]; then
@@ -259,10 +253,6 @@ jobs:
 
             # ★ 고정키 지문 대조 (빌드 산출물이 우리 키로 서명됐는지 확정)
             WANT_SHA256="${{ inputs.ks_sha256 }}"
-            if [ "$KS_SRC" = "generated" ]; then
-              echo "::notice::자동 생성 키로 서명됨 → 고정키 지문 대조 생략"
-              WANT_SHA256=""
-            fi
             GOT=$("$APKSIGNER" verify --print-certs "out/$APK_NAME" \
                     | grep -i "SHA-256 digest" | head -1 \
                     | sed 's/.*digest: *//' | tr -d ' \r')
