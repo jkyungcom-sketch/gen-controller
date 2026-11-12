@@ -324,11 +324,16 @@ public class AndroidWifiBridge {
                     //     연결해 둔 상태라면 requestNetwork 스펙을 기다리지 말고
                     //     현재 활성 Wi-Fi Network 를 즉시 bindProcessToNetwork 한다.
                     //     (LTE 가 켜져 있어도 192.168.4.1 트래픽이 바로 나가게 됨)
-                    if (bindExistingWifiIfMatches(ssid)) {
+                    // ③ 지시: 이미 korea1112(또는 192.168.4.x)에 연결돼 있으면 즉시 bind 후 리턴.
+                    //    연결돼 있지 않으면 bindExisting 은 false 를 돌려주고,
+                    //    지체 없이 아래 WifiNetworkSpecifier 시스템 팝업 경로로 넘어간다.
+                    boolean already = bindExistingWifiIfMatches(ssid);
+                    if (already) {
                         Log.i(TAG, "이미 연결된 Wi-Fi 발견 → 즉시 바인딩 완료: " + ssid);
                         return;
                     }
-                    // 이미 연결되어 있지 않으면 정상 절차로 새로 연결
+                    // 연결 안 됨 → 즉시 시스템 연결 팝업 (LTE/카톡 유지형)
+                    Log.i(TAG, "기존 연결 없음 → WifiNetworkSpecifier 시스템 팝업 요청");
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         connectSpecifier(ssid, pin, 0);
                     } else {
@@ -344,6 +349,17 @@ public class AndroidWifiBridge {
     /** Android 10 (API 29) 이상: WifiNetworkSpecifier */
     private void connectSpecifier(String ssid, String pin, final int attempt) {
         try {
+            // ★ 중복 requestNetwork 는 안드로이드가 팝업을 무시하는 버그를 만든다.
+            //   진입 즉시 이전 콜백을 깨끗이 해제한다.
+            if (netCb != null) {
+                try {
+                    cm().unregisterNetworkCallback(netCb);
+                    Log.i(TAG, "이전 NetworkCallback 해제 완료");
+                } catch (Throwable ignored) {
+                }
+                netCb = null;
+            }
+
             WifiNetworkSpecifier.Builder sb = new WifiNetworkSpecifier.Builder()
                     .setSsid(ssid);
             // ★ 오픈 네트워크(ESP32 AP) 는 pin 이 빈 문자열이므로 아무 키도 지정하지 않는다.
@@ -414,9 +430,26 @@ public class AndroidWifiBridge {
                 }
             };
 
-            // API 31+ 에만 존재하는 3인자 오버로드 회피 → 모든 API 레벨 호환
-            cm().requestNetwork(req, netCb);
-            Log.i(TAG, "requestNetwork 요청됨");
+            // ★ 시스템 연결 팝업은 UI 스레드(Handler)에서 요청해야 확실히 뜬다.
+            //   + 15초 타임아웃을 걸어 콜백이 영영 안 와도 앱이 먹통되지 않게 한다.
+            //   requestNetwork(NetworkRequest, NetworkCallback, Handler, timeoutMs) 는 API 26+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                cm().requestNetwork(req, netCb, new Handler(Looper.getMainLooper()), 15000);
+                Log.i(TAG, "requestNetwork 요청됨 (main handler, timeout=15s)");
+            } else {
+                cm().requestNetwork(req, netCb);
+                Log.i(TAG, "requestNetwork 요청됨 (legacy)");
+                // 구버전은 타임아웃 인자가 없으므로 직접 15초 워치독
+                main.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (boundNetwork == null) {
+                            Log.w(TAG, "15초 워치독 → 연결 실패 처리");
+                            reportFailure(ssid, "timeout");
+                        }
+                    }
+                }, 15000);
+            }
         } catch (Throwable t) {
             Log.e(TAG, "connectSpecifier 실패", t);
         }
