@@ -218,8 +218,14 @@ public class AndroidWifiBridge {
                     Log.i(TAG, "백그라운드 스캔 완료 → " + (s == null ? "null" : s.length() + "chars"));
                 }
             };
-            activity.registerReceiver(scanReceiver,
-                    new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+            IntentFilter scanFilter = new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+            if (Build.VERSION.SDK_INT >= 33) {
+                // Android 13+ : 시스템 브로드캐스트는 RECEIVER_NOT_EXPORTED 필수
+                activity.registerReceiver(scanReceiver, scanFilter,
+                        Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                activity.registerReceiver(scanReceiver, scanFilter);
+            }
             boolean ok = wm().startScan();
             Log.i(TAG, "startScan() 요청: " + ok);
             if (!ok) {
@@ -330,7 +336,8 @@ public class AndroidWifiBridge {
                 }
             };
 
-            cm().requestNetwork(req, netCb, SCAN_TIMEOUT_MS * 3);
+            // API 31+ 에만 존재하는 3인자 오버로드 회피 → 모든 API 레벨 호환
+            cm().requestNetwork(req, netCb);
             Log.i(TAG, "requestNetwork 요청됨");
         } catch (Throwable t) {
             Log.e(TAG, "connectSpecifier 실패", t);
