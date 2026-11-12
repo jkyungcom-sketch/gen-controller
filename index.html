@@ -351,6 +351,7 @@
       color: #fff;
     }
   </style>
+  <script src="ble-native-adapter.js"></script>
 </head>
 <body>
 
@@ -359,7 +360,10 @@
       <div id="statusDot" class="status-dot"></div>
       <div id="statusText" class="status-text">미연결 (발전기를 연결하세요)</div>
     </div>
-    <button class="icon-btn" onclick="openSettingsModal()">⚙️ 설정</button>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button class="icon-btn" onclick="location.reload()" title="새로고침">🔄</button>
+      <button class="icon-btn" onclick="openSettingsModal()">⚙️ 설정</button>
+    </div>
   </div>
 
   <button id="mainConnectBtn" class="connect-banner" onclick="handleConnectClick()">
@@ -475,7 +479,6 @@
     </div>
   </div>
 
-  <script src="ble-native-adapter.js"></script>
   <script>
     const SERVICE_UUID        = "12345678-1234-1234-1234-1234567890ab";
     const CHARACTERISTIC_UUID = "abcdefab-1234-5678-1234-abcdefabcdef";
@@ -594,26 +597,26 @@
     // ★ 웹앱 실행 시 이전에 연결했던 블루투스 기기를 기억해서 자동 접속 시도
     async function tryAutoConnectSavedDevice() {
       if (sysLocked || isConnected || !navigator.bluetooth) return;
-      const savedName = localStorage.getItem("ble_last_name") || "";
-      const savedId   = localStorage.getItem("ble_last_id") || "";
-      if (!savedName) return;
-
-      lastCleanName = savedName;
+      const savedName = localStorage.getItem("ble_last_name") || localStorage.getItem("ble_native_device_name") || "";
+      const savedId   = localStorage.getItem("ble_last_id") || localStorage.getItem("ble_native_device_id") || "";
+      if (savedName) lastCleanName = savedName;
 
       if (typeof navigator.bluetooth.getDevices === "function") {
         try {
           const devices = await navigator.bluetooth.getDevices();
           if (devices && devices.length > 0) {
-            let target = devices.find(d => (savedId && d.id === savedId) || sanitizeSsid(d.name) === savedName) || devices[0];
+            let target = devices.find(d => (savedId && d.id === savedId) || (savedName && sanitizeSsid(d.name) === savedName)) || devices[0];
             if (target) {
+              const tName = sanitizeSsid(target.name || savedName || "korea0000");
+              lastCleanName = tName;
               bleDevice = target;
-              const ok = await connectGattAndSubscribe(target, sanitizeSsid(target.name || savedName));
+              document.getElementById("statusText").innerText = "자동 연결 중 (" + tName + ")...";
+              const ok = await connectGattAndSubscribe(target, tName);
               if (!ok) {
-                // 광고 신호 감시(watchAdvertisements) 지원 시 가까워지면 즉시 연결
                 if (typeof target.watchAdvertisements === "function") {
                   target.addEventListener("advertisementreceived", async () => {
                     if (!isConnected && !sysLocked) {
-                      await connectGattAndSubscribe(target, sanitizeSsid(target.name || savedName));
+                      await connectGattAndSubscribe(target, tName);
                     }
                   });
                   try { await target.watchAdvertisements(); } catch (e) {}
@@ -648,8 +651,9 @@
       }
 
       try {
+        document.getElementById("statusText").innerText = "발전기 블루투스 탐색 중...";
         const device = await navigator.bluetooth.requestDevice({
-          filters: [{ namePrefix: "korea" }, { services: [SERVICE_UUID] }],
+          filters: [{ namePrefix: "korea" }],
           optionalServices: [SERVICE_UUID]
         });
 
