@@ -13,6 +13,8 @@ import android.net.NetworkInfo;
 import android.net.NetworkRequest;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.LinkProperties;
+import android.net.RouteInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiNetworkSpecifier;
@@ -92,6 +94,9 @@ public class AndroidWifiBridge {
     private int cachedRssi = -127;
     /** 레거시 경로에서 bind 검증 시 사용할 SSID */
     private String cachedLegacySsid = "";
+    /** ESP32 대역(192.168.4.x) 으로 판명된 네트워크 캐시 */
+    private Network cachedEspNetwork = null;
+    private String cachedEspGateway = "";
 
     public AndroidWifiBridge(MainActivity activity) {
         this.activity = activity;
@@ -536,6 +541,43 @@ public class AndroidWifiBridge {
         }
     }
 
+    /**
+     * 현재 Wi-Fi 의 IPv4 게이트웨이가 ESP32 대역(192.168.4.x) 인지 확인.
+     * SSID 를 못 읽는 경우(<unknown ssid>) 의 최후 수단.
+     */
+    private boolean isEspSubnetActive() {
+        try {
+            for (Network n : cm().getAllNetworks()) {
+                NetworkCapabilities nc = cm().getNetworkCapabilities(n);
+                if (nc == null || !nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) continue;
+
+                LinkProperties lp = cm().getLinkProperties(n);
+                if (lp == null) continue;
+
+                String gw = null;
+                if (lp.getRoutes() != null) {
+                    for (RouteInfo r : lp.getRoutes()) {
+                        if (r.isDefaultRoute() && r.getGateway() != null) {
+                            gw = r.getGateway().getHostAddress();
+                            break;
+                        }
+                    }
+                }
+                if (gw == null) continue;
+
+                Log.i(TAG, "Wi-Fi 게이트웨이 = " + gw);
+                if (gw.startsWith("192.168.4.")) {
+                    cachedEspNetwork = n;
+                    cachedEspGateway = gw;
+                    return true;
+                }
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "isEspSubnetActive 실패", t);
+        }
+        return false;
+    }
+
     // ==================================================================
     // ★★ 이미 연결된 Wi-Fi 를 즉시 바인딩 (가장 흔한 실패 경로 해결)
     //   Android 10+ 에서는 앱이 requestNetwork 로 만든 네트워크만 bind 되기
@@ -549,9 +591,32 @@ public class AndroidWifiBridge {
             String curSsid = currentSsidSafe();
             Log.i(TAG, "현재 연결된 Wi-Fi SSID = '" + curSsid + "' (요청 '" + wantSsid + "')");
 
-            // SSID 가 정확히 같을 때만 즉시 바인딩 (다른 집/회사 Wi-Fi 오바인딩 방지)
-            if (!curSsid.equalsIgnoreCase(wantSsid)) {
-                return false;
+            // ① SSID 가 같으면 바로 바인딩
+            // ② SSID 를 못 읽거나(<unknown ssid>) 달라도 게이트웨이가 192.168.4.x 이면
+            //    ESP32 AP 가 확실하므로 강제 바인딩한다. (소비자는 설정을 안 건드린다)
+            boolean ssidMatch = curSsid.length() > 0 && curSsid.equalsIgnoreCase(wantSsid);
+            if (!ssidMatch) {
+                if (!isEspSubnetActive()) {
+                    Log.i(TAG, "SSID 불일치 + ESP 대역 아님 → 기존 네트워크 바인딩 생략");
+                    return false;
+                }
+                Log.i(TAG, "SSID 불일치지만 게이트웨이 " + cachedEspGateway
+                        + " (ESP32 대역) → 강제 바인딩 진행");
+                Network esp = cachedEspNetwork;
+                if (esp == null) return false;
+
+                boolean forced = cm().bindProcessToNetwork(esp);
+                Log.i(TAG, "ESP 대역 강제 bindProcessToNetwork = " + forced);
+                if (!forced) return false;
+
+                boundNetwork = esp;
+                main.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        verifyAndReport(esp, wantSsid);
+                    }
+                }, 600);
+                return true;
             }
 
             for (Network n : cm().getAllNetworks()) {
