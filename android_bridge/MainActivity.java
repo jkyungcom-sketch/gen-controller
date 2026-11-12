@@ -53,7 +53,51 @@ public class MainActivity extends BridgeActivity {
             Log.e(TAG, "브릿지 주입 실패", t);
         }
 
-        ensureWifiPermissions();
+        // ★ 소비자는 아무 설정도 건드리지 않는다. 앱을 켜면 즉시 권한 팝업.
+        //   (창이 실제로 뜬 뒤에 요청해야 안드로이드가 다이얼로그를 보여준다)
+        getWindow().getDecorView().post(new Runnable() {
+            @Override
+            public void run() {
+                getWindow().getDecorView().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        ensureWifiPermissions();
+                    }
+                }, 400);
+            }
+        });
+    }
+
+    /** 권한 팝업 결과 → 거부돼도 앱은 살아 있게, 재요청 경로 제공. */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != REQ_WIFI_PERMS) return;
+
+        int granted = 0;
+        int denied = 0;
+        StringBuilder deniedList = new StringBuilder();
+        for (int i = 0; i < grantResults.length; i++) {
+            if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                granted++;
+            } else {
+                denied++;
+                if (i < permissions.length) {
+                    deniedList.append(permissions[i]).append(' ');
+                }
+            }
+        }
+        Log.i(TAG, "권한 결과: 허용 " + granted + " / 거부 " + denied
+                + (denied > 0 ? (" [" + deniedList + "]") : ""));
+
+        // 거부된 게 있으면 JS 에 알려서 UI 가 안내 문구를 띄울 수 있게 한다
+        if (denied > 0) {
+            evalJs("window.dispatchEvent(new CustomEvent('androidPermsDenied',{detail:{"
+                    + "denied:\"" + deniedList.toString().trim() + "\"}}));");
+        } else {
+            evalJs("window.dispatchEvent(new CustomEvent('androidPermsGranted',{detail:{}}));");
+        }
     }
 
     /** Wi-Fi 스캔/연결에 필요한 런타임 권한 요청 (이미 있으면 즉시 반환). */
@@ -69,9 +113,15 @@ public class MainActivity extends BridgeActivity {
                     need.add("android.permission.NEARBY_WIFI_DEVICES");
                 }
             }
+            // ★ 위치 권한은 Android 12+ 에서도 SSID 스캔에 필수
+            //   (FINE 만 요청하면 일부 기기에서 COARSE 가 자동 거부되어 SSID 가 <unknown ssid>)
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) {
                 need.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                need.add(Manifest.permission.ACCESS_COARSE_LOCATION);
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
