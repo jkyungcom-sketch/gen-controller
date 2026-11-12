@@ -361,13 +361,14 @@
       <div id="statusText" class="status-text">미연결 (발전기를 연결하세요)</div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;">
+      <button class="icon-btn" onclick="resetSavedDevice()" style="background:#7f1d1d;border-color:#dc2626;color:#fecaca;" title="처음 설치 상태로 초기화">🧹 초기화</button>
       <button class="icon-btn" onclick="location.reload()" title="새로고침">🔄</button>
       <button class="icon-btn" onclick="openSettingsModal()">⚙️ 설정</button>
     </div>
   </div>
 
   <button id="mainConnectBtn" class="connect-banner" onclick="handleConnectClick()">
-    <span>📶 발전기 블루투스 연결</span>
+    <span>📶 발전기 블루투스 선택 / 연결</span>
   </button>
 
   <div class="gauge-grid">
@@ -594,20 +595,25 @@
       }, 1800);
     }
 
-    // ★ 웹앱 실행 시 이전에 연결했던 블루투스 기기를 기억해서 자동 접속 시도
+    // ★ 웹앱 실행 시 이전에 직접 선택하고 비밀번호 4자리 인증까지 완료한 '마지막 발전기'만 자동 접속 시도
     async function tryAutoConnectSavedDevice() {
       if (sysLocked || isConnected || !navigator.bluetooth) return;
       const savedName = localStorage.getItem("ble_last_name") || localStorage.getItem("ble_native_device_name") || "";
       const savedId   = localStorage.getItem("ble_last_id") || localStorage.getItem("ble_native_device_id") || "";
-      if (savedName) lastCleanName = savedName;
+      // 처음 설치했거나 초기화된 상태(저장된 기기 또는 비밀번호 인증 기록이 없는 상태)에서는 절대 멋대로 자동 연결하지 않음!
+      if (!savedName || !savedId) return;
+      const expectedPin = extractPinFromName(savedName);
+      if (localStorage.getItem("ble_auth_" + savedName) !== expectedPin) return;
+
+      lastCleanName = savedName;
 
       if (typeof navigator.bluetooth.getDevices === "function") {
         try {
           const devices = await navigator.bluetooth.getDevices();
           if (devices && devices.length > 0) {
-            let target = devices.find(d => (savedId && d.id === savedId) || (savedName && sanitizeSsid(d.name) === savedName)) || devices[0];
+            let target = devices.find(d => (savedId && d.id === savedId) || sanitizeSsid(d.name) === savedName) || devices[0];
             if (target) {
-              const tName = sanitizeSsid(target.name || savedName || "korea0000");
+              const tName = sanitizeSsid(target.name || savedName);
               lastCleanName = tName;
               bleDevice = target;
               document.getElementById("statusText").innerText = "자동 연결 중 (" + tName + ")...";
@@ -631,6 +637,7 @@
       }
     }
 
+    // ★ 사용자가 [발전기 블루투스 선택 / 연결 (또는 변경)] 버튼을 눌렀을 때
     async function handleConnectClick() {
       if (sysLocked) return;
       if (!navigator.bluetooth) {
@@ -638,20 +645,8 @@
         return;
       }
 
-      if (isConnected && bleDevice && bleDevice.gatt.connected) {
-        await sendBleCmd("REQ_SYNC");
-        return;
-      }
-
-      // 이미 기억된 bleDevice 객체가 메모리에 있으면 팝업 없이 즉시 재연결 먼저 시도!
-      if (bleDevice) {
-        document.getElementById("statusText").innerText = "저장된 발전기 재연결 중...";
-        const ok = await connectGattAndSubscribe(bleDevice, lastCleanName);
-        if (ok) return;
-      }
-
       try {
-        document.getElementById("statusText").innerText = "발전기 블루투스 탐색 중...";
+        document.getElementById("statusText").innerText = "발전기 목록 탐색 중...";
         const device = await navigator.bluetooth.requestDevice({
           filters: [{ namePrefix: "korea" }],
           optionalServices: [SERVICE_UUID]
@@ -661,25 +656,39 @@
         const expectedPin = extractPinFromName(cleanName);
         const savedAuth = localStorage.getItem("ble_auth_" + cleanName);
 
+        // ★ 처음 연결하는 발전기이거나 아직 비밀번호 인증이 안 된 발전기는 무조건 소비자가 직접 4자리 번호를 쳐야 함!
         if (savedAuth !== expectedPin) {
           const userPin = await askPinModal(cleanName);
-          if (userPin === null) return;
+          if (userPin === null) {
+            if (!isConnected) updateConnectionUi(lastCleanName);
+            return;
+          }
           const cleanInput = String(userPin).replace(/\D/g, "").slice(-4);
           if (cleanInput !== expectedPin) {
-            alert("비밀번호 4자리가 일치하지 않습니다.");
+            alert("비밀번호 4자리가 일치하지 않습니다. (" + cleanName + "의 뒷자리 숫자를 확인하세요)");
+            if (!isConnected) updateConnectionUi(lastCleanName);
             return;
           }
           localStorage.setItem("ble_auth_" + cleanName, expectedPin);
         }
 
-        document.getElementById("statusText").innerText = "연결 중...";
+        // 기존에 다른 발전기에 연결되어 있었다면 먼저 안전하게 연결 해제 후 새 발전기로 전환
+        if (autoReconTimer) {
+          clearTimeout(autoReconTimer);
+          autoReconTimer = null;
+        }
+        if (bleDevice && bleDevice.id !== device.id && bleDevice.gatt) {
+          try { bleDevice.gatt.disconnect(); } catch (e) {}
+        }
+
+        document.getElementById("statusText").innerText = cleanName + " 연결 중...";
         const ok = await connectGattAndSubscribe(device, cleanName);
         if (!ok) {
           scheduleAutoReconnect();
         }
       } catch (err) {
         console.warn("BLE connect canceled/failed:", err);
-        if (!isConnected) updateConnectionUi(lastCleanName);
+        updateConnectionUi(lastCleanName);
       }
     }
 
@@ -702,7 +711,7 @@
         dot.className = "status-dot on";
         txt.innerText = "연결됨: " + devName;
         btn.className = "connect-banner connected";
-        btn.innerHTML = "<span>✅ " + devName + " 연결됨 (상태 새로고침)</span>";
+        btn.innerHTML = "<span>✅ " + devName + " 연결됨 (다른 발전기로 변경하려면 터치)</span>";
         document.getElementById("btnStep1").disabled = false;
         document.getElementById("btnStop").disabled = false;
         updateActionButtonsLock();
@@ -710,16 +719,16 @@
         dot.className = "status-dot wait";
         txt.innerText = "신호 대기 중... (가까워지면 자동 연결)";
         btn.className = "connect-banner reconnecting";
-        btn.innerHTML = "<span>🔄 " + (devName || "발전기") + " 자동 재연결 대기 중 (터치 시 즉시 연결)</span>";
+        btn.innerHTML = "<span>🔄 " + (devName || "발전기") + " 자동 재연결 대기 중 (터치하여 발전기 선택)</span>";
         document.getElementById("btnPreheat").disabled = true;
         document.getElementById("btnStart").disabled = true;
         document.getElementById("btnStep1").disabled = true;
         document.getElementById("btnStop").disabled = true;
       } else {
         dot.className = "status-dot";
-        txt.innerText = sysLocked ? "시스템 잠금 (x3303)" : "미연결 (발전기를 연결하세요)";
+        txt.innerText = sysLocked ? "시스템 잠금 (x3303)" : "미연결 (발전기를 선택해 연결하세요)";
         btn.className = "connect-banner";
-        btn.innerHTML = "<span>📶 발전기 블루투스 연결</span>";
+        btn.innerHTML = "<span>📶 발전기 블루투스 선택 / 연결</span>";
         document.getElementById("btnPreheat").disabled = true;
         document.getElementById("btnStart").disabled = true;
         document.getElementById("btnStep1").disabled = true;
@@ -951,19 +960,29 @@
       document.getElementById("settingsModal").classList.remove("show");
     }
 
-    function resetSavedDevice() {
+    async function resetSavedDevice() {
       if (autoReconTimer) {
         clearTimeout(autoReconTimer);
         autoReconTimer = null;
       }
       isReconnecting = false;
+      isConnected = false;
+      bleChar = null;
+      if (bleDevice) {
+        try {
+          bleDevice.removeEventListener("gattserverdisconnected", onDisconnected);
+          if (bleDevice.gatt) bleDevice.gatt.disconnect();
+        } catch (e) {}
+      }
       bleDevice = null;
       lastCleanName = "";
-      Object.keys(localStorage).forEach(k => {
-        if (k.startsWith("ble_")) localStorage.removeItem(k);
-      });
+      if (typeof window.__bleNativeReset === "function") {
+        try { await window.__bleNativeReset(); } catch (e) {}
+      }
+      try { localStorage.clear(); } catch (e) {}
+      closeSettingsModal();
       updateConnectionUi("");
-      alert("저장된 발전기 인증 및 자동 연결 정보가 초기화되었습니다.");
+      alert("🧹 초기화 완료!\n마치 앱을 처음 설치했을 때처럼 모든 연결·비밀번호 기록이 삭제되었습니다.");
     }
 
     // 페이지가 열릴 때 기억된 발전기로 자동 연결 시도 + 화면 복귀 시 즉시 재연결 체크
