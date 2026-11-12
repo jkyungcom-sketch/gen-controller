@@ -741,10 +741,15 @@
 
     async function verifyPinAndConnect() {
       if (!pendingSsid) return;
-      const inputPin = document.getElementById('pinInputBox').value.trim();
+      // ★ 소비자는 "1112" 만 친다. 입력값/기대값 모두 숫자만 남겨 비교한다.
+      const inputPin = String(document.getElementById('pinInputBox').value || "")
+        .replace(/\D/g, "");
       const expectedPin = extractPinFromName(pendingSsid);
 
-      if (inputPin === expectedPin) {
+      const pinOk = inputPin.length > 0 && expectedPin !== "0000"
+        && (inputPin === expectedPin || inputPin.slice(-4) === expectedPin);
+
+      if (pinOk) {
         // 뒤 4자리 일치 -> 내 발전기로 영구 저장 후 즉시 오픈 Wi-Fi 연결!
         localStorage.setItem('auth_gen_name', pendingSsid);
         localStorage.setItem('perm_init_v32', '1');
