@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * AndroidWifiBridge — 관리자 페이지(index.html)의 window.AndroidWifiBridge 계약 구현.
@@ -47,6 +48,8 @@ public class AndroidWifiBridge {
 
     private static final String TAG = "AndroidWifiBridge";
     private static final String SSID_PREFIX = "JKYUNG_";
+    // ★ 추가: 대소문자 무시 "korea" 로 시작하는 SSID 도 발전기로 인식 (예: korea1112)
+    private static final String SSID_PREFIX_2 = "korea";
     private static final long SCAN_TIMEOUT_MS = 6000L;
 
     /** 최근 스캔 캐시. 연결 성공 시에도 갱신. */
@@ -149,7 +152,7 @@ public class AndroidWifiBridge {
             int selfRssi = -127;
             for (ScanResult r : results) {
                 if (r == null || r.SSID == null) continue;
-                if (!r.SSID.startsWith(SSID_PREFIX)) continue;
+                if (!isGeneratorSsid(r.SSID)) continue;
                 items.add(new String[]{r.SSID, String.valueOf(r.level)});
                 if (r.level > selfRssi) selfRssi = r.level;
             }
@@ -175,6 +178,19 @@ public class AndroidWifiBridge {
             Log.e(TAG, "scanGenerators 실패", t);
             return "[]";
         }
+    }
+
+    /**
+     * 발전기 SSID 판별
+     *   - "JKYUNG_" 로 시작 (대소문자 구분 없음)
+     *   - 또는 "korea" 로 시작 (대소문자 구분 없음, 예: korea1112 / Korea1112 / KOREA-1)
+     * Android 의 SSID 는 보통 대문자로 정규화되지만 기기/AP 설정에 따라
+     * 소문자·혼합이 올 수 있으므로 대소문자를 무시하고 비교한다.
+     */
+    private static boolean isGeneratorSsid(String ssid) {
+        if (ssid == null || ssid.isEmpty()) return false;
+        String u = ssid.toUpperCase(Locale.US);
+        return u.startsWith(SSID_PREFIX) || u.startsWith(SSID_PREFIX_2.toUpperCase(Locale.US));
     }
 
     private String dumpCache() {
