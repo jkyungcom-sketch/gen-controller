@@ -97,7 +97,8 @@ jobs:
         run: |
           set -e
           npm init -y >/dev/null
-          npm i --no-audit --no-fund @capacitor/core @capacitor/cli @capacitor/android
+          # ★ 버전 고정: MainActivity.java 의 BridgeActivity / getBridge() API 호환성 보장
+          npm i --no-audit --no-fund @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
           npm i --no-audit --no-fund @capacitor-community/bluetooth-le @capacitor/preferences
 
       # ★ 요구사항 3: 네이티브 BLE 어댑터를 별도 파일로 주입
@@ -174,6 +175,16 @@ jobs:
 
       - name: Inject BLE permissions
         run: python3 scripts/patch_manifest.py android/app/src/main/AndroidManifest.xml
+
+      # ★ AndroidWifiBridge 주입 (관리자 페이지 V3.0 Wi-Fi 계약 구현)
+      #   MainActivity 를 BridgeActivity 확장판으로 교체 → window.AndroidWifiBridge 노출
+      - name: Inject AndroidWifiBridge (WebView → 네이티브 Wi-Fi)
+        run: |
+          set -e
+          python3 scripts/patch_wifi_bridge.py
+          echo "--- 주입된 파일 확인 ---"
+          ls -la android/app/src/main/java/org/jkyung/generator/
+          grep -c "addJavascriptInterface" android/app/src/main/java/org/jkyung/generator/MainActivity.java
 
       - name: Configure signing
         env:
