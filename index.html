@@ -351,7 +351,7 @@
       color: #fff;
     }
   </style>
-  <script src="ble-native-adapter.js"></script>
+  <script src="ble-native-adapter.js?v=4"></script>
 </head>
 <body>
 
@@ -654,23 +654,20 @@
 
         const cleanName = sanitizeSsid(device.name || "korea0000");
         const expectedPin = extractPinFromName(cleanName);
-        const savedAuth = localStorage.getItem("ble_auth_" + cleanName);
 
-        // ★ 처음 연결하는 발전기이거나 아직 비밀번호 인증이 안 된 발전기는 무조건 소비자가 직접 4자리 번호를 쳐야 함!
-        if (savedAuth !== expectedPin) {
-          const userPin = await askPinModal(cleanName);
-          if (userPin === null) {
-            if (!isConnected) updateConnectionUi(lastCleanName);
-            return;
-          }
-          const cleanInput = String(userPin).replace(/\D/g, "").slice(-4);
-          if (cleanInput !== expectedPin) {
-            alert("비밀번호 4자리가 일치하지 않습니다. (" + cleanName + "의 뒷자리 숫자를 확인하세요)");
-            if (!isConnected) updateConnectionUi(lastCleanName);
-            return;
-          }
-          localStorage.setItem("ble_auth_" + cleanName, expectedPin);
+        // ★ 발전기 목록에서 블루투스 이름을 클릭했을 때는 무조건 비밀번호 4자리 입력창을 띄워 소비자가 직접 입력하게 함!
+        const userPin = await askPinModal(cleanName);
+        if (userPin === null) {
+          if (!isConnected) updateConnectionUi(lastCleanName);
+          return;
         }
+        const cleanInput = String(userPin).replace(/\D/g, "").slice(-4);
+        if (cleanInput !== expectedPin) {
+          alert("비밀번호 4자리가 일치하지 않습니다. (" + cleanName + "의 뒷자리 숫자 " + expectedPin + "을 확인하세요)");
+          if (!isConnected) updateConnectionUi(lastCleanName);
+          return;
+        }
+        localStorage.setItem("ble_auth_" + cleanName, expectedPin);
 
         // 기존에 다른 발전기에 연결되어 있었다면 먼저 안전하게 연결 해제 후 새 발전기로 전환
         if (autoReconTimer) {
@@ -681,7 +678,7 @@
           try { bleDevice.gatt.disconnect(); } catch (e) {}
         }
 
-        document.getElementById("statusText").innerText = cleanName + " 연결 중...";
+        document.getElementById("statusText").innerText = cleanName + " 블루투스 연결 중...";
         const ok = await connectGattAndSubscribe(device, cleanName);
         if (!ok) {
           scheduleAutoReconnect();
