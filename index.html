@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>스마트 발전기 컨트롤러 V2.5</title>
+  <title>스마트 발전기 컨트롤러 V3.2 (Wi-Fi)</title>
 
   <!-- 모바일 전체화면 앱(PWA) 설정 -->
   <meta name="theme-color" content="#0f172a">
@@ -221,9 +221,9 @@
     .t-btn:active:not(:disabled) { transform: scale(0.95); }
     .t-btn:disabled { background: #334155 !important; color: #64748b !important; cursor: not-allowed; opacity: 0.6; }
 
-    /* 6. 모달 팝업 */
+    /* 6. 모달 팝업 & Wi-Fi 발전기 선택 리스트 */
     .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); display: none; align-items: center; justify-content: center; padding: 18px; z-index: 100;
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.82); display: none; align-items: center; justify-content: center; padding: 18px; z-index: 100;
     }
     .modal-overlay.active { display: flex; }
     .modal-box { background: #1e293b; border: 1px solid #475569; border-radius: 20px; width: 100%; max-width: 380px; padding: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.6); }
@@ -241,6 +241,42 @@
     .m-btn.secondary { background: #475569; color: #fff; }
     .m-btn.warn { background: #ea580c; color: #fff; width: 100%; margin-top: 10px; }
     .m-btn.danger { background: #dc2626; color: #fff; width: 100%; margin-top: 8px; }
+
+    /* Wi-Fi 발전기 검색 목록 스타일 */
+    .wifi-list-box {
+      max-height: 230px;
+      overflow-y: auto;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .wifi-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 15px;
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 12px;
+      color: #f8fafc;
+      font-weight: 900;
+      font-size: 1.02rem;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .wifi-item:active { transform: scale(0.97); border-color: #38bdf8; background: #0f172a; }
+    .wifi-item.saved-gen { border-color: #22c55e; }
+    .wifi-rssi { font-size: 0.8rem; color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.12); padding: 4px 8px; border-radius: 8px; }
+    .manual-ssid-row { display: flex; gap: 8px; margin-bottom: 6px; }
+    .ssid-input {
+      flex: 1; padding: 11px 12px; border-radius: 10px; border: 1px solid #475569;
+      background: #0f172a; color: #fff; font-size: 0.9rem; font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -254,10 +290,10 @@
     <button class="settings-btn" onclick="openSettingsModal()">⚙️ 설정</button>
   </div>
 
-  <!-- 대형 원터치 연결 버튼 (누르면 저장된 발전기로 다이렉트 즉시 연결!) -->
+  <!-- 대형 원터치 연결 버튼 -->
   <button class="big-connect-btn" id="bigConnectBtn" onclick="handleSmartConnect()">
-    <div class="big-conn-main" id="bigConnMainText">📡 발전기 연결하기</div>
-    <div class="big-conn-sub" id="bigConnSubText">터치하여 내 발전기에 연결하세요</div>
+    <div class="big-conn-main" id="bigConnMainText">📶 발전기 연결하기</div>
+    <div class="big-conn-sub" id="bigConnSubText">터치하여 내 발전기를 선택하세요 (카톡 동시 사용)</div>
   </button>
 
   <!-- 2. 실시간 발전 상태 & 계기판 -->
@@ -325,10 +361,10 @@
       <span class="timer-display" id="timerText">무한 운전</span>
     </div>
     <div class="timer-grid">
-      <button class="t-btn" id="btnAdd1m" onclick="sendBleCmd('OFF_ADD_60')" disabled>+1분</button>
-      <button class="t-btn" id="btnAdd15m" onclick="sendBleCmd('OFF_ADD_900')" disabled>+15분</button>
-      <button class="t-btn" id="btnAdd1h" onclick="sendBleCmd('OFF_ADD_3600')" disabled>+1시간</button>
-      <button class="t-btn cancel" id="btnTimerCancel" onclick="sendBleCmd('OFF_ADD_0')" disabled>취소</button>
+      <button class="t-btn" id="btnAdd1m" onclick="sendWifiCmd('OFF_ADD_60')" disabled>+1분</button>
+      <button class="t-btn" id="btnAdd15m" onclick="sendWifiCmd('OFF_ADD_900')" disabled>+15분</button>
+      <button class="t-btn" id="btnAdd1h" onclick="sendWifiCmd('OFF_ADD_3600')" disabled>+1시간</button>
+      <button class="t-btn cancel" id="btnTimerCancel" onclick="sendWifiCmd('OFF_ADD_0')" disabled>취소</button>
     </div>
   </div>
 
@@ -358,21 +394,42 @@
       </div>
       <hr style="border: 0; border-top: 1px solid #334155; margin: 16px 0;">
       <button class="m-btn warn" onclick="switchAnotherGenerator()">🔄 다른 발전기 선택 (기기 변경)</button>
-      <button class="m-btn danger" onclick="disconnectCurrentBle()">❌ 현재 발전기 연결 끊기</button>
+      <button class="m-btn danger" onclick="disconnectCurrentWifi()">❌ 현재 발전기 연결 끊기</button>
     </div>
   </div>
 
-  <!-- 비밀번호 입력 모달 -->
+  <!-- Wi-Fi 발전기 검색 & 선택 모달 -->
+  <div class="modal-overlay" id="wifiScanModal">
+    <div class="modal-box">
+      <div class="modal-title">📶 연결할 발전기 선택</div>
+      <p style="font-size:0.85rem; color:#94a3b8; text-align:center; margin-bottom:10px;">
+        목록에서 발전기를 선택하거나 아래에 번호 4자리를 입력하세요.
+      </p>
+      <div class="wifi-list-box" id="wifiScanList">
+        <!-- 스캔된 발전기 SSID 목록이 여기에 동적으로 표시됨 -->
+      </div>
+      <div class="manual-ssid-row">
+        <input type="text" id="manualSsidInput" class="ssid-input" placeholder="직접 입력 (예: korea1112 또는 1112)">
+        <button class="m-btn primary" style="flex:0 0 85px; padding:10px;" onclick="selectManualSsid()">선택</button>
+      </div>
+      <div class="modal-actions">
+        <button class="m-btn secondary" onclick="closeWifiScanModal()">닫기</button>
+        <button class="m-btn primary" onclick="refreshWifiScanList()">🔄 다시 검색</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 끝 4자리 번호 입력 모달 (최초 1회 및 다른 발전기로 변경 시에만 표시) -->
   <div class="modal-overlay" id="pinModal">
     <div class="modal-box">
-      <div class="modal-title" id="pinModalTitle">🔒 발전기 비밀번호 입력</div>
+      <div class="modal-title" id="pinModalTitle">🔢 발전기 번호 4자리 입력</div>
       <p style="font-size:0.9rem; color:#94a3b8; text-align:center; margin-bottom:12px;">
-        선택한 발전기(<strong id="targetGenName" style="color:#38bdf8;"></strong>)의<br>고유번호 4자리를 직접 입력하세요.
+        선택한 발전기(<strong id="targetGenName" style="color:#38bdf8;"></strong>)의<br>뒤에 숫자 4자리를 입력하세요.
       </p>
       <input type="tel" maxlength="4" class="pin-input" id="pinInputBox" placeholder="0000">
       <div class="modal-actions">
         <button class="m-btn secondary" onclick="cancelPinAuth()">취소</button>
-        <button class="m-btn primary" onclick="verifyPinAndConnect()">연결 확인</button>
+        <button class="m-btn primary" onclick="verifyPinAndConnect()">연결</button>
       </div>
     </div>
   </div>
@@ -382,14 +439,14 @@
     <div class="modal-box">
       <div class="modal-title">🛡️ 초기 권한 승인 및 기기 등록</div>
       <p style="font-size:0.88rem; color:#94a3b8; text-align:center; margin-bottom:12px;">
-        원활한 사용을 위해 아래 권한을 최초 1회 승인해주세요.
+        원활한 Wi-Fi 제어 및 카톡 동시 사용을 위해<br>최초 1회 권한을 승인해주세요.
       </p>
       <div class="perm-list">
-        ✔️ <strong>근처 기기(블루투스) 탐색 및 연결 권한</strong><br>
-        ✔️ <strong>내 발전기 정보 영구 기억 권한</strong><br>
-        ✔️ <strong>운전 중 스마트폰 화면 꺼짐 방지 권한</strong>
+        ✔️ <strong>발전기 Wi-Fi 탐색 및 자동 연결 권한</strong><br>
+        ✔️ <strong>카톡/인터넷 모바일 데이터(LTE/5G) 유지</strong><br>
+        ✔️ <strong>내 발전기 기억 및 화면 꺼짐 방지 권한</strong>
       </div>
-      <button class="m-btn primary" style="width:100%;" onclick="grantAllInitialPermissions()">🚀 권한 승인 및 내 발전기 등록</button>
+      <button class="m-btn primary" style="width:100%;" onclick="grantAllInitialPermissions()">🚀 권한 승인 및 발전기 선택</button>
     </div>
   </div>
 
@@ -397,7 +454,7 @@
     (function setupDynamicManifest() {
       const iconHref = document.getElementById('app-favicon').href;
       const manifest = {
-        name: "스마트 발전기 원격 컨트롤러 V2.5",
+        name: "스마트 발전기 원격 컨트롤러 V3.2",
         short_name: "발전기 리모컨",
         start_url: ".",
         display: "standalone",
@@ -412,160 +469,22 @@
       document.head.appendChild(link);
     })();
 
-
     // =====================================================
-    // [Capacitor BLE 어댑터] APK(네이티브) 환경에서만 개입.
-    // 일반 웹브라우저에서는 IS_NATIVE=false → 기존 코드 그대로 동작.
+    // Wi-Fi AP 통신 설정 (ESP32 기본 IP: 192.168.4.1)
     // =====================================================
-    const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-    const NativeBLE = IS_NATIVE && window.Capacitor.Plugins ? window.Capacitor.Plugins.BluetoothLe : null;
-    const NativePrefs = IS_NATIVE && window.Capacitor.Plugins ? window.Capacitor.Plugins.Preferences : null;
-    let _nativeInit = null;
+    const ESP_HOST_IP  = (location.hostname && location.hostname.startsWith("192.168.")) ? location.hostname : "192.168.4.1";
+    const ESP_HTTP_URL = `http://${ESP_HOST_IP}`;
+    const ESP_WS_URL   = `ws://${ESP_HOST_IP}:81/`;
 
-    function nativeBleInit() {
-      if (!NativeBLE) return Promise.resolve(false);
-      if (_nativeInit) return _nativeInit;
-      _nativeInit = (async () => {
-        try {
-          await NativeBLE.initialize({ androidNeverForLocation: true });
-          console.log("[BLE] native initialize OK");
-          return true;
-        } catch (e) {
-          console.log("[BLE] initialize 실패", e);
-          _nativeInit = null;
-          return false;
-        }
-      })();
-      return _nativeInit;
-    }
-
-    // 이름으로 기기 찾기 (이미 페어링된 것)
-    async function nativeFindByName(name) {
-      await nativeBleInit();
-      try {
-        const res = await NativeBLE.getBondedDevices();
-        const list = (res && res.devices) || [];
-        const hit = list.find(d => (d.name || "") === name || (d.deviceId || "") === name);
-        return hit || null;
-      } catch (e) { return null; }
-    }
-
-    // 스캔해서 이름으로 찾기
-    async function nativeScanForName(name, timeoutMs) {
-      await nativeBleInit();
-      return new Promise(async (resolve) => {
-        let found = null;
-        let timer = null;
-        const handler = (result) => {
-          const d = result && result.device;
-          if (d && ((d.name || "") === name)) {
-            found = d;
-          }
-        };
-        try {
-          await NativeBLE.addListener("onScanResult", handler);
-          await NativeBLE.requestLEScan({ namePrefix: name, allowDuplicates: false, scanMode: 1 });
-        } catch (e) {
-          console.log("[BLE] requestLEScan 실패", e);
-        }
-        timer = setTimeout(async () => {
-          try { await NativeBLE.stopLEScan(); } catch (e) {}
-          try { await NativeBLE.removeAllListeners("onScanResult"); } catch (e) {}
-          resolve(found);
-        }, timeoutMs || 12000);
-      });
-    }
-
-    // native device → 웹호환 shim (기존 connectToGattDevice 코드 재사용)
-    function nativeShim(dev) {
-      const shim = {
-        name: dev.name || "",
-        id: dev.deviceId,
-        __native: true,
-        __deviceId: dev.deviceId,
-        __notifyCb: null,
-        __disconnCb: null,
-        gatt: {
-          connected: false,
-          connect: async () => {
-            await nativeBleInit();
-            if (shim.__disconnCb) {
-              try { NativeBLE.addListener("onDisconnect", (r) => {
-                if (r && r.device && r.device.deviceId === shim.__deviceId) {
-                  shim.gatt.connected = false;
-                  shim.__disconnCb();
-                }
-              }); } catch (e) {}
-            }
-            await NativeBLE.connect({ deviceId: shim.__deviceId, timeout: 15000 });
-            shim.gatt.connected = true;
-            return {
-              getPrimaryService: async (uuid) => ({
-                getCharacteristic: async (cuid) => ({
-                  startNotifications: async () => {
-                    await NativeBLE.startNotifications({
-                      deviceId: shim.__deviceId, service: uuid, characteristic: cuid,
-                      callback: (v) => { if (shim.__notifyCb) shim.__notifyCb(v); }
-                    });
-                  },
-                  writeValue: async (buf) => {
-                    const arr = new Uint8Array(buf instanceof ArrayBuffer ? buf : buf.buffer);
-                    await NativeBLE.write({
-                      deviceId: shim.__deviceId, service: uuid, characteristic: cuid, value: btoa(String.fromCharCode(...arr))
-                    });
-                  }
-                })
-              })
-            };
-          },
-          disconnect: async () => {
-            try { await NativeBLE.disconnect({ deviceId: shim.__deviceId }); } catch (e) {}
-            shim.gatt.connected = false;
-          }
-        },
-        addEventListener: (ev, cb) => { if (ev === "gattserverdisconnected") shim.__disconnCb = cb; },
-        removeEventListener: () => {}
-      };
-      return shim;
-    }
-
-    // 네이티브일 때 connectToGattDevice 를 shim 으로 감싸기 위해 후킹 준비
-    window.__NATIVE_SHIM = nativeShim;
-    window.__nativeScanForName = nativeScanForName;
-    window.__nativeFindByName = nativeFindByName;
-    window.__IS_NATIVE = IS_NATIVE;
-
-    // 네이티브 앱: 부팅 직후 권한 요청(initialize) 후 저장 기기로 조용한 재연결
-    if (IS_NATIVE) {
-      document.addEventListener("deviceready", () => { nativeBleInit(); }, { once: true });
-      window.addEventListener("load", async () => {
-        const ok = await nativeBleInit();
-        if (ok) {
-          const savedName = localStorage.getItem('auth_gen_name');
-          if (savedName) {
-            const dev = await nativeFindByName(savedName);
-            if (dev) {
-              try {
-                bleDevice = nativeShim(dev);
-                await connectToGattDevice(bleDevice);
-                console.log("[BLE] 저장 기기 자동 재연결 OK");
-              } catch (e) { console.log("[BLE] 자동 재연결 실패", e); }
-            }
-          }
-        }
-      });
-    }
-
-    const SERVICE_UUID        = "12345678-1234-1234-1234-1234567890ab";
-    const CHARACTERISTIC_UUID = "abcdefab-1234-5678-1234-abcdefabcdef";
-
-    let bleDevice          = null;
-    let bleChar            = null;
-    let isBleConnected     = false;
+    let wifiSocket         = null;
+    let httpPollTimer      = null;
+    let isWifiConnected    = false;
     let isConnectingNow    = false;
     let manualDisconnect   = false;
     let autoReconnectTimer = null;
     let wakeLockObj        = null;
+    let currentGenSsid     = "";
+    let pendingSsid        = null;
 
     let acVoltVal       = 0;
     let hzFreqVal       = 0.0;
@@ -589,8 +508,6 @@
     let isPreheatAnimating = false;
     let isStartAnimating   = false;
 
-    let pendingDevice = null;
-
     window.addEventListener('load', async () => {
       updateHeaderUI();
       updateStatusBoardUI();
@@ -599,20 +516,38 @@
       requestScreenWakeLock();
 
       const savedName = localStorage.getItem('auth_gen_name');
-      const permDone  = localStorage.getItem('perm_init_v22');
+      const permDone  = localStorage.getItem('perm_init_v32');
 
       if (!savedName && !permDone) {
         document.getElementById('permInitModal').classList.add('active');
       } else if (savedName) {
+        currentGenSsid = savedName;
         startAutoReconnectLoop();
       }
+    });
+
+    // 안드로이드 브릿지에서 Wi-Fi 바인딩 완료 신호가 오면 즉시 채널 연결
+    window.addEventListener('androidWifiConnected', () => {
+      if (!isWifiConnected && currentGenSsid) {
+        establishEspChannel();
+      }
+    });
+
+    // ★ 브릿지 연결/바인딩 실패 → 조용한 먹통 대신 사용자에게 원인 표시
+    window.addEventListener('androidWifiFailed', (ev) => {
+      const reason = (ev && ev.detail && ev.detail.reason) ? ev.detail.reason : 'unknown';
+      console.warn('[wifi] 브릿지 연결 실패:', reason);
+      isWifiConnected = false;
+      updateHeaderUI();
+      updateStatusBoardUI();
+      updateButtonStates();
     });
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         requestScreenWakeLock();
-        if (!isBleConnected && !manualDisconnect && localStorage.getItem('auth_gen_name')) {
-          attemptSilentReconnect();
+        if (!isWifiConnected && !manualDisconnect && localStorage.getItem('auth_gen_name')) {
+          attemptSilentWifiReconnect();
         }
       }
     });
@@ -622,10 +557,13 @@
         if (navigator.storage && navigator.storage.persist) {
           await navigator.storage.persist();
         }
+        if (window.AndroidWifiBridge && window.AndroidWifiBridge.requestPermissions) {
+          window.AndroidWifiBridge.requestPermissions();
+        }
       } catch (e) {}
 
       await requestScreenWakeLock();
-      localStorage.setItem('perm_init_v22', '1');
+      localStorage.setItem('perm_init_v32', '1');
       document.getElementById('permInitModal').classList.remove('active');
 
       await handleSmartConnect();
@@ -639,35 +577,402 @@
       }
     }
 
+    // =====================================================
+    // 자동 재연결 루프 (소비자가 4자리 입력해 등록한 발전기로만 자동 연결!)
+    // =====================================================
     function startAutoReconnectLoop() {
       if (autoReconnectTimer) clearInterval(autoReconnectTimer);
-      attemptSilentReconnect();
+      attemptSilentWifiReconnect();
       autoReconnectTimer = setInterval(() => {
-        if (!isBleConnected && !isConnectingNow && !manualDisconnect) {
-          attemptSilentReconnect();
+        if (!isWifiConnected && !isConnectingNow && !manualDisconnect) {
+          attemptSilentWifiReconnect();
         }
-      }, 2000);
+      }, 2500);
     }
 
-    async function attemptSilentReconnect() {
-      if (isBleConnected || isConnectingNow || manualDisconnect) return;
+    async function attemptSilentWifiReconnect() {
+      if (isWifiConnected || isConnectingNow || manualDisconnect) return;
       const savedName = localStorage.getItem('auth_gen_name');
-      if (!savedName) return;
+      if (!savedName) return; // 저장된 발전기가 없으면 절대 자동 연결하지 않음!
 
       isConnectingNow = true;
       try {
-        if (bleDevice && bleDevice.name === savedName) {
-          await connectToGattDevice(bleDevice);
-        } else if (navigator.bluetooth && navigator.bluetooth.getDevices) {
-          const devices = await navigator.bluetooth.getDevices();
-          const matched = devices.find(d => d.name === savedName);
-          if (matched) {
-            bleDevice = matched;
-            await connectToGattDevice(matched);
-          }
-        }
+        await connectToGeneratorWifi(savedName);
       } catch (e) {}
       isConnectingNow = false;
+    }
+
+    // =====================================================
+    // 7. [핵심] 스마트 연결 & 최초 1회 끝 4자리 입력 검증
+    // =====================================================
+    async function handleSmartConnect() {
+      if (isWifiConnected) return true;
+      manualDisconnect = false;
+
+      const savedName = localStorage.getItem('auth_gen_name');
+
+      // 1) 이미 4자리 인증을 마친 내 발전기가 있으면 묻지 않고 즉시 연결!
+      if (savedName) {
+        const ok = await connectToGeneratorWifi(savedName);
+        if (ok) {
+          startAutoReconnectLoop();
+          return true;
+        }
+        // ★ 실패 시 먹통 금지 → 바로 목록 모달 오픈 (원인 파악 + 재선택 가능)
+        console.warn('[connect] 저장된 발전기 연결 실패:', savedName);
+        await openWifiScanModal();
+        return false;
+      }
+
+      // 2) 최초 실행이거나 다른 발전기를 고를 때 -> 목록 모달 오픈
+      await openWifiScanModal();
+      return false;
+    }
+
+    async function openWifiScanModal() {
+      document.getElementById('wifiScanModal').classList.add('active');
+      await refreshWifiScanList();
+    }
+
+    function closeWifiScanModal() {
+      document.getElementById('wifiScanModal').classList.remove('active');
+    }
+
+    async function refreshWifiScanList() {
+      const listEl = document.getElementById('wifiScanList');
+      listEl.innerHTML = `<div style="text-align:center; padding:18px; color:#94a3b8; font-size:0.88rem;">🔍 주변 발전기 검색중...</div>`;
+
+      let scannedList = [];
+
+      try {
+        if (window.AndroidWifiBridge && window.AndroidWifiBridge.scanGenerators) {
+          const rawJson = window.AndroidWifiBridge.scanGenerators();
+          if (rawJson) scannedList = JSON.parse(rawJson);
+        }
+      } catch (e) {}
+
+      if (scannedList.length === 0 && window.AndroidWifiBridge && window.AndroidWifiBridge.scanGenerators) {
+        await new Promise(r => setTimeout(r, 800));
+        try {
+          const rawJson2 = window.AndroidWifiBridge.scanGenerators();
+          if (rawJson2) scannedList = JSON.parse(rawJson2);
+        } catch (e) {}
+      }
+
+      const savedName = localStorage.getItem('auth_gen_name');
+      listEl.innerHTML = "";
+
+      if (scannedList.length === 0) {
+        listEl.innerHTML = `
+          <div style="text-align:center; padding:14px; color:#cbd5e1; font-size:0.84rem; line-height:1.5;">
+            검색된 목록이 없습니다.<br>
+            아래 입력칸에 <strong>발전기 이름(예: korea1112)</strong> 또는 <strong>뒤 4자리(예: 1112)</strong>를 입력 후 [선택]을 눌러주세요.
+          </div>`;
+        return;
+      }
+
+      scannedList.forEach(item => {
+        const ssid = sanitizeSsid(typeof item === 'string' ? item : item.ssid);
+        const rssiVal = (typeof item === 'object' && item.rssi !== undefined) ? `${item.rssi} dBm` : "신호 양호";
+        const isSaved = (savedName && savedName === ssid);
+
+        const row = document.createElement('div');
+        row.className = 'wifi-item' + (isSaved ? ' saved-gen' : '');
+        row.innerHTML = `
+          <span>📶 ${ssid} ${isSaved ? '<small style="color:#4ade80;">(등록됨)</small>' : ''}</span>
+          <span class="wifi-rssi">${rssiVal}</span>
+        `;
+        row.onclick = () => onSelectGeneratorSsid(ssid);
+        listEl.appendChild(row);
+      });
+    }
+
+    // 수동 입력창에서 "1112"만 쳐도 자동으로 "korea1112"로 인식!
+    function selectManualSsid() {
+      const val = document.getElementById('manualSsidInput').value.trim();
+      if (!val) {
+        alert("발전기 이름(예: korea1112) 또는 뒤 4자리 숫자(예: 1112)를 입력해주세요!");
+        return;
+      }
+      const formattedSsid = /^\d{4}$/.test(val) ? `korea${val}` : val;
+      onSelectGeneratorSsid(formattedSsid);
+    }
+
+    function onSelectGeneratorSsid(rawSsid) {
+      closeWifiScanModal();
+      const ssid = sanitizeSsid(rawSsid);   // ★ 따옴표 제거 후 저장·비교·연결
+      if (!ssid) return;
+      const savedName = localStorage.getItem('auth_gen_name');
+
+      // 이미 등록된 발전기면 번호 입력 없이 즉시 연결
+      if (savedName && savedName === ssid) {
+        manualDisconnect = false;
+        connectToGeneratorWifi(ssid);
+        startAutoReconnectLoop();
+      } else {
+        // 새 발전기 선택 시: 뒤에 4자리 숫자 입력창 오픈! ("본인 발전기가 맞습니까?" 같은 불필요한 창 없음)
+        pendingSsid = ssid;
+        openPinModal(ssid);
+      }
+    }
+
+    // ★ SSID 정규화: Android 가 "\"korea1112\"" 처럼 따옴표를 붙여 주는 경우 방어
+    function sanitizeSsid(raw) {
+      return String(raw == null ? "" : raw).replace(/"/g, "").trim();
+    }
+
+    // ★ 끝에 따옴표·특수문자가 붙어도 마지막 숫자 4자리를 정확히 추출
+    function extractPinFromName(name) {
+      const digits = String(name || "").replace(/\D/g, "");
+      return digits.length >= 4 ? digits.slice(-4) : "0000";
+    }
+
+    function openPinModal(devName) {
+      document.getElementById('targetGenName').innerText = devName;
+      document.getElementById('pinInputBox').value = "";
+      document.getElementById('pinModal').classList.add('active');
+      setTimeout(() => document.getElementById('pinInputBox').focus(), 100);
+    }
+
+    function cancelPinAuth() {
+      pendingSsid = null;
+      document.getElementById('pinModal').classList.remove('active');
+    }
+
+    async function verifyPinAndConnect() {
+      if (!pendingSsid) return;
+      const inputPin = document.getElementById('pinInputBox').value.trim();
+      const expectedPin = extractPinFromName(pendingSsid);
+
+      if (inputPin === expectedPin) {
+        // 뒤 4자리 일치 -> 내 발전기로 영구 저장 후 즉시 오픈 Wi-Fi 연결!
+        localStorage.setItem('auth_gen_name', pendingSsid);
+        localStorage.setItem('perm_init_v32', '1');
+        document.getElementById('pinModal').classList.remove('active');
+
+        const targetSsid = pendingSsid;
+        pendingSsid = null;
+        manualDisconnect = false;
+        updateHeaderUI();
+        await connectToGeneratorWifi(targetSsid);
+        startAutoReconnectLoop();
+      } else {
+        alert("❌ 발전기 뒤 4자리 번호가 일치하지 않습니다!");
+      }
+    }
+
+    // 실제 ESP32 Wi-Fi AP 연결 (ESP32에는 비번이 없으므로 두 번째 인자에 "" 빈 문자열 전달!)
+    async function connectToGeneratorWifi(rawSsid) {
+      const ssid = sanitizeSsid(rawSsid);   // ★ 브릿지로 넘기기 전 최종 정규화
+      currentGenSsid = ssid;
+
+      try {
+        if (window.AndroidWifiBridge && window.AndroidWifiBridge.connectAndBindWifi) {
+          // 와이파이 자체 비밀번호는 없으므로 ""로 오픈 네트워크 즉시 연결 + 카톡 LTE 유지 바인딩!
+          window.AndroidWifiBridge.connectAndBindWifi(ssid, "");
+          // ★ bindProcessToNetwork 가 끝나기 전에 fetch 를 치면 LTE 로 새서 100% 실패한다.
+          //   브릿지가 onAvailable → bind 를 마칠 때까지 최소 시간을 벌어준다.
+          await new Promise(r => setTimeout(r, 900));
+        }
+      } catch (e) {
+        console.log("AndroidWifiBridge 호출 오류:", e);
+      }
+
+      return await establishEspChannel();
+    }
+
+    async function establishEspChannel() {
+      return new Promise((resolve) => {
+        let resolved = false;
+
+        try {
+          if (wifiSocket) {
+            wifiSocket.onclose = null;
+            wifiSocket.close();
+          }
+          wifiSocket = new WebSocket(ESP_WS_URL);
+
+          const wsTimeout = setTimeout(async () => {
+            if (!resolved) {
+              const httpOk = await tryHttpPollingConnect();
+              resolved = true;
+              resolve(httpOk);
+            }
+          }, 1800);
+
+          wifiSocket.onopen = async () => {
+            clearTimeout(wsTimeout);
+            if (httpPollTimer) { clearInterval(httpPollTimer); httpPollTimer = null; }
+            onWifiConnectedSuccess();
+            if (!resolved) { resolved = true; resolve(true); }
+          };
+
+          wifiSocket.onmessage = (evt) => {
+            if (evt && evt.data) handleIncomingPacket(String(evt.data).trim());
+          };
+
+          wifiSocket.onclose = () => {
+            if (isWifiConnected) onWifiDisconnected();
+          };
+
+          wifiSocket.onerror = async () => {
+            clearTimeout(wsTimeout);
+            if (!resolved) {
+              const httpOk = await tryHttpPollingConnect();
+              resolved = true;
+              resolve(httpOk);
+            }
+          };
+        } catch (err) {
+          tryHttpPollingConnect().then(resolve);
+        }
+      });
+    }
+
+    async function tryHttpPollingConnect() {
+      try {
+        const ctrl = new AbortController();
+        const tId = setTimeout(() => ctrl.abort(), 1200);
+        const res = await fetch(`${ESP_HTTP_URL}/status`, { signal: ctrl.signal, cache: 'no-store' });
+        clearTimeout(tId);
+
+        if (res.ok) {
+          const text = (await res.text()).trim();
+          onWifiConnectedSuccess();
+          if (text) handleIncomingPacket(text);
+
+          if (httpPollTimer) clearInterval(httpPollTimer);
+          httpPollTimer = setInterval(async () => {
+            if (manualDisconnect) return;
+            try {
+              const c2 = new AbortController();
+              const t2 = setTimeout(() => c2.abort(), 1000);
+              const r2 = await fetch(`${ESP_HTTP_URL}/status`, { signal: c2.signal, cache: 'no-store' });
+              clearTimeout(t2);
+              if (r2.ok) {
+                const msg = (await r2.text()).trim();
+                if (msg) handleIncomingPacket(msg);
+              } else {
+                onWifiDisconnected();
+              }
+            } catch (e) {
+              onWifiDisconnected();
+            }
+          }, 400);
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    async function onWifiConnectedSuccess() {
+      isWifiConnected = true;
+      updateHeaderUI();
+      updateStatusBoardUI();
+      updateButtonStates();
+
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      await sendWifiCmd(`DATE_${yyyy}${mm}${dd}`);
+    }
+
+    function onWifiDisconnected() {
+      isWifiConnected = false;
+      if (httpPollTimer) { clearInterval(httpPollTimer); httpPollTimer = null; }
+      acVoltVal       = 0;
+      hzFreqVal       = 0.0;
+      dcBattVal       = 0.0;
+      baseBattVal     = 0.0;
+      isGenRunning    = false;
+      isEngineTurning = false;
+      isBattCharging  = false;
+      espChgOverride  = null;
+      isStep1On       = false;
+      step1HoldRemSec = 0;
+
+      stopAllSliderAnimations();
+      updateHeaderUI();
+      updateStatusBoardUI();
+      updateStep1ButtonUI();
+      updateButtonStates();
+
+      if (!manualDisconnect && localStorage.getItem('auth_gen_name')) {
+        startAutoReconnectLoop();
+      }
+    }
+
+    // =====================================================
+    // 8. ESP32 실시간 상태 패킷 수신 처리
+    // =====================================================
+    function handleIncomingPacket(rawText) {
+      if (!rawText) return;
+      const lines = rawText.split(/\r?\n/);
+
+      for (const line of lines) {
+        const msg = line.trim();
+        if (!msg) continue;
+
+        if (msg.startsWith("st_")) {
+          const parts = msg.substring(3).split(",");
+          if (parts.length >= 3) {
+            acVoltVal = parseFloat(parts[0]) || 0;
+            hzFreqVal = parseFloat(parts[1]) || 0.0;
+            dcBattVal = parseFloat(parts[2]) || 0.0;
+          }
+          if (parts.length >= 4 && parts[3] !== "") {
+            espChgOverride = (parts[3] === "1");
+          }
+          if (parts.length >= 5 && parts[4] !== "") {
+            isStep1On = (parts[4] === "1");
+          }
+          if (parts.length >= 6 && parts[5] !== "") {
+            espRemainSec = parseInt(parts[5], 10) || 0;
+            updateTimerUI();
+          }
+          if (parts.length >= 7 && parts[6] !== "") {
+            step1HoldRemSec = parseInt(parts[6], 10) || 0;
+          } else {
+            step1HoldRemSec = 0;
+          }
+
+          evaluateGeneratorState();
+          updateStep1ButtonUI();
+          updateStatusBoardUI();
+          updateButtonStates();
+          continue;
+        }
+
+        if (msg.startsWith("r1_")) {
+          espPreheatSec = parseFloat(msg.substring(3));
+          if (!isPreheatAnimating) {
+            const s1 = document.getElementById('mainPreheatSlider');
+            s1.max = Math.max(20, espPreheatSec);
+            s1.value = espPreheatSec;
+            document.getElementById('mainPreheatVal').innerText = espPreheatSec.toFixed(1);
+          }
+        }
+        else if (msg.startsWith("r2_")) {
+          espStartSec = parseFloat(msg.substring(3));
+          if (!isStartAnimating) {
+            const s2 = document.getElementById('mainStartSlider');
+            s2.max = Math.max(5, espStartSec);
+            s2.value = espStartSec;
+            document.getElementById('mainStartVal').innerText = espStartSec.toFixed(1);
+          }
+        }
+        else if (msg.startsWith("off_")) {
+          espRemainSec = parseInt(msg.substring(4), 10) || 0;
+          updateTimerUI();
+        }
+        else if (msg.startsWith("s1_")) {
+          isStep1On = (msg.substring(3) === "1");
+          if (!isStep1On) step1HoldRemSec = 0;
+          updateStep1ButtonUI();
+          updateStatusBoardUI();
+        }
+      }
     }
 
     function evaluateGeneratorState() {
@@ -724,7 +1029,7 @@
       chgDot.className = 'chg-dot';
       elDcSub.className = 'meter-sub';
 
-      if (!isBleConnected) {
+      if (!isWifiConnected) {
         stText.innerText  = '⚪ 발전기 연결 대기중';
         badge.innerText   = '미연결';
         elAc.innerText    = '--';
@@ -813,247 +1118,29 @@
     }
 
     // =====================================================
-    // 7. [핵심 수정] 검색 팝업 없이 마지막 저장된 기기에 다이렉트 연결!
+    // 9. Wi-Fi 명령어 전송
     // =====================================================
-    async function handleSmartConnect() {
-      if (isBleConnected) return true;
-      manualDisconnect = false;
-
-      const savedName = localStorage.getItem('auth_gen_name');
-
-      // 1) 이미 메모리에 bleDevice가 있거나 브라우저 허용 기기 목록에 저장된 이름이 있다면 검색 없이 즉시 GATT 접속 시도!
-      if (savedName) {
-        try {
-          if (!bleDevice && navigator.bluetooth && navigator.bluetooth.getDevices) {
-            const devices = await navigator.bluetooth.getDevices();
-            bleDevice = devices.find(d => d.name === savedName);
-          }
-          if (bleDevice) {
-            await connectToGattDevice(bleDevice);
-            if (isBleConnected) return true;
-          }
-        } catch (e) {}
-      }
-
-      // 2) 만약 브라우저 보안 캐시가 비어있어 어쩔 수 없이 찾아야 할 때만 딱 한 번 검색 창 띄우기
+    async function sendWifiCmd(cmd) {
+      if (!isWifiConnected) return;
       try {
-        let device = null;
-        if (window.__IS_NATIVE) {
-          // 네이티브: 저장된 이름으로 스캔
-          if (savedName) {
-            device = await window.__nativeFindByName(savedName);
-            if (!device) device = await window.__nativeScanForName(savedName, 12000);
-          }
-          if (!device) throw new Error("native scan not found");
-        } else {
-          let options = { optionalServices: [SERVICE_UUID] };
-          if (savedName) {
-            options.filters = [{ name: savedName }];
-          } else {
-            options.acceptAllDevices = true;
-          }
-          device = await navigator.bluetooth.requestDevice(options);
+        if (wifiSocket && wifiSocket.readyState === WebSocket.OPEN) {
+          wifiSocket.send(cmd);
+          return;
         }
-        const devName = device.name || "Unknown";
-
-        if (savedName && devName === savedName) {
-          await connectToGattDevice(device);
-          startAutoReconnectLoop();
-        } else {
-          pendingDevice = device;
-          openPinModal(devName);
+        const res = await fetch(`${ESP_HTTP_URL}/cmd?c=${encodeURIComponent(cmd)}`, { cache: 'no-store' });
+        if (res.ok) {
+          const reply = (await res.text()).trim();
+          if (reply) handleIncomingPacket(reply);
         }
-      } catch (err) {
-        console.log("블루투스 연결 취소됨");
-      }
-      return false;
-    }
-
-    function extractPinFromName(name) {
-      const match = name.match(/(\d{4})$/);
-      return match ? match[1] : "0000";
-    }
-
-    function openPinModal(devName) {
-      document.getElementById('targetGenName').innerText = devName;
-      document.getElementById('pinInputBox').value = "";
-      document.getElementById('pinModal').classList.add('active');
-      setTimeout(() => document.getElementById('pinInputBox').focus(), 100);
-    }
-
-    function cancelPinAuth() {
-      pendingDevice = null;
-      document.getElementById('pinModal').classList.remove('active');
-    }
-
-    async function verifyPinAndConnect() {
-      if (!pendingDevice) return;
-      const inputPin = document.getElementById('pinInputBox').value.trim();
-      const expectedPin = extractPinFromName(pendingDevice.name || "");
-
-      if (inputPin === expectedPin) {
-        localStorage.setItem('auth_gen_name', pendingDevice.name);
-        localStorage.setItem('perm_init_v22', '1');
-        document.getElementById('pinModal').classList.remove('active');
-        const devToConn = pendingDevice;
-        pendingDevice = null;
-        manualDisconnect = false;
-        await connectToGattDevice(devToConn);
-        startAutoReconnectLoop();
-      } else {
-        alert("❌ 비밀번호(장비 번호 4자리)가 일치하지 않습니다! 다시 확인해주세요.");
-      }
-    }
-
-    async function connectToGattDevice(device) {
-      // 네이티브 기기 객체면 웹호환 shim 으로 변환
-      if (window.__IS_NATIVE && device && device.__native === undefined && device.deviceId) {
-        device = window.__NATIVE_SHIM(device);
-      }
-      bleDevice = device;
-      bleDevice.removeEventListener('gattserverdisconnected', onBleDisconnected);
-      bleDevice.addEventListener('gattserverdisconnected', onBleDisconnected);
-
-      const server = await bleDevice.gatt.connect();
-      const service = await server.getPrimaryService(SERVICE_UUID);
-      bleChar = await service.getCharacteristic(CHARACTERISTIC_UUID);
-
-      await bleChar.startNotifications();
-      if (bleDevice && bleDevice.__native) {
-        // shim: 네이티브 notify 콜백 → 기존 onBleDataReceived 로 변환
-        bleDevice.__notifyCb = (v) => {
-          try {
-            const bin = atob(v.value || "");
-            const buf = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-            onBleDataReceived({ target: { value: new DataView(buf.buffer) } });
-          } catch (e) {}
-        };
-      } else {
-        bleChar.removeEventListener('characteristicvaluechanged', onBleDataReceived);
-        bleChar.addEventListener('characteristicvaluechanged', onBleDataReceived);
-      }
-
-      isBleConnected = true;
-      updateHeaderUI();
-      updateStatusBoardUI();
-      updateButtonStates();
-
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const dd = String(now.getDate()).padStart(2, '0');
-      await sendBleCmd(`DATE_${yyyy}${mm}${dd}`);
-    }
-
-    function onBleDisconnected() {
-      isBleConnected  = false;
-      acVoltVal       = 0;
-      hzFreqVal       = 0.0;
-      dcBattVal       = 0.0;
-      baseBattVal     = 0.0;
-      isGenRunning    = false;
-      isEngineTurning = false;
-      isBattCharging  = false;
-      espChgOverride  = null;
-      isStep1On       = false;
-      step1HoldRemSec = 0;
-
-      stopAllSliderAnimations();
-      updateHeaderUI();
-      updateStatusBoardUI();
-      updateStep1ButtonUI();
-      updateButtonStates();
-
-      if (!manualDisconnect && localStorage.getItem('auth_gen_name')) {
-        startAutoReconnectLoop();
-      }
-    }
-
-    // =====================================================
-    // 8. ESP32 실시간 상태 패킷 수신 처리
-    // =====================================================
-    function onBleDataReceived(event) {
-      const msg = new TextDecoder().decode(event.target.value).trim();
-      if (!msg) return;
-
-      if (msg.startsWith("st_")) {
-        const parts = msg.substring(3).split(",");
-        if (parts.length >= 3) {
-          acVoltVal = parseFloat(parts[0]) || 0;
-          hzFreqVal = parseFloat(parts[1]) || 0.0;
-          dcBattVal = parseFloat(parts[2]) || 0.0;
-        }
-        if (parts.length >= 4 && parts[3] !== "") {
-          espChgOverride = (parts[3] === "1");
-        }
-        if (parts.length >= 5 && parts[4] !== "") {
-          isStep1On = (parts[4] === "1");
-        }
-        if (parts.length >= 6 && parts[5] !== "") {
-          espRemainSec = parseInt(parts[5], 10) || 0;
-          updateTimerUI();
-        }
-        if (parts.length >= 7 && parts[6] !== "") {
-          step1HoldRemSec = parseInt(parts[6], 10) || 0;
-        } else {
-          step1HoldRemSec = 0;
-        }
-
-        evaluateGeneratorState();
-        updateStep1ButtonUI();
-        updateStatusBoardUI();
-        updateButtonStates();
-        return;
-      }
-
-      if (msg.startsWith("r1_")) {
-        espPreheatSec = parseFloat(msg.substring(3));
-        if (!isPreheatAnimating) {
-          const s1 = document.getElementById('mainPreheatSlider');
-          s1.max = Math.max(20, espPreheatSec);
-          s1.value = espPreheatSec;
-          document.getElementById('mainPreheatVal').innerText = espPreheatSec.toFixed(1);
-        }
-      }
-      else if (msg.startsWith("r2_")) {
-        espStartSec = parseFloat(msg.substring(3));
-        if (!isStartAnimating) {
-          const s2 = document.getElementById('mainStartSlider');
-          s2.max = Math.max(5, espStartSec);
-          s2.value = espStartSec;
-          document.getElementById('mainStartVal').innerText = espStartSec.toFixed(1);
-        }
-      }
-      else if (msg.startsWith("off_")) {
-        espRemainSec = parseInt(msg.substring(4), 10) || 0;
-        updateTimerUI();
-      }
-      else if (msg.startsWith("s1_")) {
-        isStep1On = (msg.substring(3) === "1");
-        if (!isStep1On) step1HoldRemSec = 0;
-        updateStep1ButtonUI();
-        updateStatusBoardUI();
-      }
-    }
-
-    // =====================================================
-    // 9. 명령어 전송 및 메인 운전 버튼 액션 제어
-    // =====================================================
-    async function sendBleCmd(cmd) {
-      if (!isBleConnected || !bleChar) return;
-      try {
-        const encoder = new TextEncoder();
-        await bleChar.writeValue(encoder.encode(cmd));
       } catch (e) {
-        console.log("BLE 전송 오류:", e);
+        console.log("Wi-Fi 명령 전송 오류:", e);
       }
     }
 
     async function onActionButton(cmd) {
-      if (!isBleConnected) return;
+      if (!isWifiConnected) return;
 
-      await sendBleCmd(cmd);
+      await sendWifiCmd(cmd);
 
       if (cmd === 'CMD_PREHEAT') {
         runPreheatSliderAnim();
@@ -1147,22 +1234,22 @@
       const bigSub    = document.getElementById('bigConnSubText');
       const savedName = localStorage.getItem('auth_gen_name');
 
-      if (isBleConnected && bleDevice) {
+      if (isWifiConnected) {
         dot.className = 'dot connected';
-        text.innerText = `연결됨: ${bleDevice.name}`;
+        text.innerText = `연결됨: ${currentGenSsid || savedName || '발전기'} (카톡 ON)`;
         bigBtn.classList.add('hidden');
       } else {
         bigBtn.classList.remove('hidden');
         if (savedName) {
           dot.className = 'dot standby';
-          text.innerText = `미연결 (${savedName})`;
-          bigMain.innerText = `📡 내 발전기 (${savedName}) 연결`;
-          bigSub.innerText  = '여기를 누르면 저장된 발전기로 바로 연결됩니다';
+          text.innerText = `자동 연결 대기 (${savedName})`;
+          bigMain.innerText = `📶 내 발전기 (${savedName}) 연결`;
+          bigSub.innerText  = '터치하면 저장된 발전기로 바로 연결됩니다';
         } else {
           dot.className = 'dot';
           text.innerText = '등록된 발전기 없음';
-          bigMain.innerText = '📡 새 발전기 검색 및 등록';
-          bigSub.innerText  = '최초 1회 발전기를 선택하고 비밀번호를 입력하세요';
+          bigMain.innerText = '📶 새 발전기 검색 및 등록';
+          bigSub.innerText  = '최초 1회 발전기를 선택하고 뒤 4자리를 입력하세요';
         }
       }
     }
@@ -1186,15 +1273,15 @@
     function updateButtonStates() {
       const isBusyRunning = isGenRunning || isEngineTurning;
 
-      const canOperate = isBleConnected && !isBusyRunning;
+      const canOperate = isWifiConnected && !isBusyRunning;
       document.getElementById('btnPreheat').disabled = !canOperate;
       document.getElementById('btnStart').disabled   = !canOperate;
       document.getElementById('btnStep1').disabled   = !canOperate;
 
-      document.getElementById('btnStop').disabled        = !isBleConnected;
-      document.getElementById('btnTimerCancel').disabled = !isBleConnected;
+      document.getElementById('btnStop').disabled        = !isWifiConnected;
+      document.getElementById('btnTimerCancel').disabled = !isWifiConnected;
 
-      const canAddTime = isBleConnected && isGenRunning;
+      const canAddTime = isWifiConnected && isGenRunning;
       document.getElementById('btnAdd1m').disabled  = !canAddTime;
       document.getElementById('btnAdd15m').disabled = !canAddTime;
       document.getElementById('btnAdd1h').disabled  = !canAddTime;
@@ -1216,16 +1303,16 @@
     }
 
     async function saveSettingsToEsp() {
-      if (!isBleConnected) {
+      if (!isWifiConnected) {
         alert("먼저 발전기에 연결해주세요!");
         return;
       }
       const newR1 = parseFloat(document.getElementById('cfgPreheatSlider').value).toFixed(1);
       const newR2 = parseFloat(document.getElementById('cfgStartSlider').value).toFixed(1);
 
-      await sendBleCmd(`RELAY1_${newR1}`);
+      await sendWifiCmd(`RELAY1_${newR1}`);
       setTimeout(async () => {
-        await sendBleCmd(`RELAY2_${newR2}`);
+        await sendWifiCmd(`RELAY2_${newR2}`);
       }, 180);
 
       closeSettingsModal();
@@ -1233,38 +1320,28 @@
 
     async function switchAnotherGenerator() {
       closeSettingsModal();
-      manualDisconnect = true;
-      if (bleDevice && bleDevice.gatt.connected) {
-        bleDevice.gatt.disconnect();
-      }
-      try {
-        let device = null;
-        if (window.__IS_NATIVE) {
-          if (window.__nativeScanForName) {
-            // 기기 변경: 발전기 이름 패턴으로 12초 스캔 (PIN 4자리 suffix)
-            device = await window.__nativeScanForName("", 12000);
-          }
-          if (!device) throw new Error("native scan none");
-        } else {
-          device = await navigator.bluetooth.requestDevice({
-            acceptAllDevices: true,
-            optionalServices: [SERVICE_UUID]
-          });
-        }
-        pendingDevice = device;
-        openPinModal(device.name || "Unknown");
-      } catch (e) {
-        manualDisconnect = false;
-        console.log("기기 변경 취소");
-      }
+      disconnectCurrentWifi();
+      await openWifiScanModal();
     }
 
-    function disconnectCurrentBle() {
+    function disconnectCurrentWifi() {
       manualDisconnect = true;
-      if (bleDevice && bleDevice.gatt.connected) {
-        bleDevice.gatt.disconnect();
+      if (wifiSocket) {
+        wifiSocket.onclose = null;
+        wifiSocket.close();
+        wifiSocket = null;
       }
-      updateHeaderUI();
+      if (httpPollTimer) {
+        clearInterval(httpPollTimer);
+        httpPollTimer = null;
+      }
+      try {
+        if (window.AndroidWifiBridge && window.AndroidWifiBridge.unbindWifi) {
+          window.AndroidWifiBridge.unbindWifi();
+        }
+      } catch (e) {}
+
+      onWifiDisconnected();
       closeSettingsModal();
     }
   </script>
