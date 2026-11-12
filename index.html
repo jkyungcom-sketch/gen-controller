@@ -611,27 +611,46 @@
 
       const savedName = localStorage.getItem('auth_gen_name');
 
-      // 1) 이미 4자리 인증을 마친 내 발전기가 있으면 묻지 않고 즉시 연결!
-      if (savedName) {
-        const ok = await connectToGeneratorWifi(savedName);
-        if (ok) {
-          startAutoReconnectLoop();
-          return true;
-        }
-        // ★ 실패 시 먹통 금지 → 바로 목록 모달 오픈 (원인 파악 + 재선택 가능)
-        console.warn('[connect] 저장된 발전기 연결 실패:', savedName);
+      // 1) 저장된 발전기 없음 → 즉시 모달 (대기 0ms)
+      if (!savedName) {
         await openWifiScanModal();
         return false;
       }
 
-      // 2) 최초 실행이거나 다른 발전기를 고를 때 -> 목록 모달 오픈
+      // 2) 저장된 발전기 자동 연결 시도 — ★ 최대 3초, 넘으면 무조건 모달 오픈
+      console.log('[connect] 저장된 발전기 자동 연결 시도:', savedName);
+      try {
+        const result = await withTimeout(
+          connectToGeneratorWifi(savedName), 3000, 'autoConnect'
+        );
+        if (result === true) {
+          startAutoReconnectLoop();
+          return true;
+        }
+        console.warn('[connect] 자동 연결 실패/타임아웃 → 목록 모달 강제 오픈');
+      } catch (e) {
+        console.warn('[connect] 자동 연결 예외:', e);
+      }
+
       await openWifiScanModal();
       return false;
     }
 
     async function openWifiScanModal() {
-      document.getElementById('wifiScanModal').classList.add('active');
-      await refreshWifiScanList();
+      // ★ 모달은 동기적으로 즉시 열린다 (0.1초 이내). 스캔은 그 다음.
+      const el = document.getElementById('wifiScanModal');
+      if (el) el.classList.add('active');
+
+      const listEl = document.getElementById('wifiScanList');
+      if (listEl) {
+        listEl.innerHTML = `<div style="text-align:center; padding:18px; color:#94a3b8; font-size:0.88rem;">🔍 주변 발전기 검색중...</div>`;
+      }
+      try {
+        await withTimeout(refreshWifiScanList(), 1500, 'scanList');
+      } catch (e) {
+        console.warn('[scan] 목록 조회 예외:', e);
+        if (listEl) listEl.innerHTML = `<div style="text-align:center; padding:14px; color:#cbd5e1; font-size:0.86rem;">목록을 못 가져왔어. 아래 칸에 이름(예: korea1112)을 직접 입력해줘.</div>`;
+      }
     }
 
     function closeWifiScanModal() {
@@ -717,6 +736,44 @@
     }
 
     // ★ SSID 정규화: Android 가 "\"korea1112\"" 처럼 따옴표를 붙여 주는 경우 방어
+    // ★★ 먹통 절대 금지: 브릿지 콜백이 영영 안 와도 n초 뒤 반드시 resolve 된다.
+    function withTimeout(promise, ms, label) {
+      let timer = null;
+      const timeout = new Promise(function (resolve) {
+        timer = setTimeout(function () {
+          console.warn('[timeout] ' + (label || 'op') + ' → ' + ms + 'ms 초과, 강제 진행');
+          resolve({ __timeout: true });
+        }, ms);
+      });
+      return Promise.race([Promise.resolve(promise), timeout]).then(
+        function (v) { if (timer) clearTimeout(timer); return v; },
+        function (e) { if (timer) clearTimeout(timer); throw e; }
+      );
+    }
+
+    // ★ 브릿지 성공/실패 콜백 대기 (1회성 + 타임아웃)
+    function waitBridgeResult(ms) {
+      return new Promise(function (resolve) {
+        let done = false;
+        const finish = function (ok, detail) {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          window.removeEventListener('androidWifiConnected', onOk);
+          window.removeEventListener('androidWifiFailed', onFail);
+          resolve({ ok: ok, detail: detail || {} });
+        };
+        const onOk = function (e) { finish(true, e && e.detail); };
+        const onFail = function (e) { finish(false, e && e.detail); };
+        const timer = setTimeout(function () {
+          console.warn('[timeout] 브릿지 콜백 ' + ms + 'ms 무응답 → 강제 종료');
+          finish(false, { reason: 'timeout' });
+        }, ms);
+        window.addEventListener('androidWifiConnected', onOk);
+        window.addEventListener('androidWifiFailed', onFail);
+      });
+    }
+
     function sanitizeSsid(raw) {
       return String(raw == null ? "" : raw).replace(/"/g, "").trim();
     }
@@ -773,14 +830,25 @@
 
       try {
         if (window.AndroidWifiBridge && window.AndroidWifiBridge.connectAndBindWifi) {
-          // 와이파이 자체 비밀번호는 없으므로 ""로 오픈 네트워크 즉시 연결 + 카톡 LTE 유지 바인딩!
+          // ★ 브릿지는 비동기다. 콜백(androidWifiConnected / androidWifiFailed)을
+          //   최대 6초까지 기다린다. (브릿지 자체 타임아웃 15초보다 짧게 잡아
+          //   JS 가 먼저 풀려나 UI 가 절대 먹통되지 않게 한다)
+          const waiter = waitBridgeResult(6000);
+
+          // 와이파이 자체 비밀번호는 없으므로 ""로 오픈 네트워크 + 카톡 LTE 유지 바인딩
           window.AndroidWifiBridge.connectAndBindWifi(ssid, "");
-          // ★ bindProcessToNetwork 가 끝나기 전에 fetch 를 치면 LTE 로 새서 100% 실패한다.
-          //   브릿지가 onAvailable → bind 를 마칠 때까지 최소 시간을 벌어준다.
-          await new Promise(r => setTimeout(r, 900));
+
+          const bridgeRes = await waiter;
+          if (!bridgeRes.ok) {
+            console.warn('[connect] 브릿지 연결 실패:', JSON.stringify(bridgeRes.detail || {}));
+            // ★ 실패/타임아웃 → 소켓 시도 없이 즉시 false 반환 (호출부가 모달을 연다)
+            return false;
+          }
+          console.log('[connect] 브릿지 연결 성공 → ESP 채널 개설');
         }
       } catch (e) {
         console.log("AndroidWifiBridge 호출 오류:", e);
+        return false;
       }
 
       return await establishEspChannel();
