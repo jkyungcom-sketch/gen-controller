@@ -105,6 +105,12 @@ public class MainActivity extends BridgeActivity {
         evalJs("window.dispatchEvent(new CustomEvent('androidWifiDisconnected',{detail:{ssid:" + jsStr(ssid) + "}}));");
     }
 
+    /** ★ 연결/바인딩 실패를 JS 로 알린다 (UI 침몰 방지) */
+    public void onWifiBridgeFailed(final String ssid, final String reason) {
+        evalJs("window.dispatchEvent(new CustomEvent('androidWifiFailed',{detail:{ssid:"
+                + jsStr(ssid) + ",reason:" + jsStr(reason) + "}}));");
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private void evalJs(final String js) {
         try {
