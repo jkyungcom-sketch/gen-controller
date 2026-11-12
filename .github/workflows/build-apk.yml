@@ -99,7 +99,7 @@ jobs:
           npm init -y >/dev/null
           # ★ 버전 고정: MainActivity.java 의 BridgeActivity / getBridge() API 호환성 보장
           npm i --no-audit --no-fund @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
-          npm i --no-audit --no-fund @capacitor-community/bluetooth-le @capacitor/preferences
+          npm i --no-audit --no-fund @capacitor-community/bluetooth-le@6.1.0 @capacitor/preferences@6
 
       # ★ 요구사항 3: 네이티브 BLE 어댑터를 별도 파일로 주입
       #   순수 웹 index.html 을 통째로 붙여넣어도 빌드 시 자동으로 script 주입됨
