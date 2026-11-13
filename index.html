@@ -52,6 +52,15 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 8px 14px;
+      border-radius: 10px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .status-wrap:active {
+      transform: scale(0.96);
     }
     .status-dot {
       width: 12px;
@@ -85,33 +94,6 @@
     }
     .icon-btn:active {
       transform: scale(0.96);
-    }
-    .connect-banner {
-      width: 100%;
-      padding: 15px;
-      border-radius: 14px;
-      border: none;
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: #fff;
-      font-size: 17px;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    .connect-banner.connected {
-      background: linear-gradient(135deg, #059669, #047857);
-      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
-    }
-    .connect-banner.reconnecting {
-      background: linear-gradient(135deg, #d97706, #b45309);
-      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
-    }
-    .connect-banner:active {
-      transform: scale(0.98);
     }
     .gauge-grid {
       display: grid;
@@ -210,16 +192,6 @@
     }
     .btn-start {
       background: linear-gradient(135deg, #10b981, #059669);
-    }
-    .btn-step1 {
-      background: #1e293b;
-      border: 2px solid #334155;
-      padding: 14px;
-      font-size: 16px;
-    }
-    .btn-step1.active {
-      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-      border-color: #a78bfa;
     }
     .btn-stop {
       background: linear-gradient(135deg, #ef4444, #dc2626);
@@ -356,20 +328,12 @@
 <body>
 
   <div class="top-bar">
-    <div class="status-wrap">
+    <button id="statusBtn" type="button" class="status-wrap" onclick="handleConnectClick()">
       <div id="statusDot" class="status-dot"></div>
-      <div id="statusText" class="status-text">미연결 (발전기를 연결하세요)</div>
-    </div>
-    <div style="display:flex;gap:6px;align-items:center;">
-      <button class="icon-btn" onclick="resetSavedDevice()" style="background:#7f1d1d;border-color:#dc2626;color:#fecaca;" title="처음 설치 상태로 초기화">🧹 초기화</button>
-      <button class="icon-btn" onclick="location.reload()" title="새로고침">🔄</button>
-      <button class="icon-btn" onclick="openSettingsModal()">⚙️ 설정</button>
-    </div>
+      <div id="statusText" class="status-text">연결하기</div>
+    </button>
+    <button class="icon-btn" onclick="openSettingsModal()">⚙️ 설정</button>
   </div>
-
-  <button id="mainConnectBtn" class="connect-banner" onclick="handleConnectClick()">
-    <span>📶 발전기 블루투스 선택 / 연결</span>
-  </button>
 
   <div class="gauge-grid">
     <div class="gauge-card">
@@ -404,13 +368,8 @@
       </button>
     </div>
 
-    <button id="btnStep1" class="act-btn btn-step1" onclick="triggerStep1()" disabled>
-      <span id="txtStep1">🔑 1단 (ACC / 연료) 수동 켜기</span>
-      <span id="subStep1" class="act-sub">현재 상태: OFF</span>
-    </button>
-
     <button id="btnStop" class="act-btn btn-stop" onclick="triggerStop()" disabled>
-      <span>🛑 긴급 / 전체 정지 (3회 차단)</span>
+      <span>정지</span>
     </button>
   </div>
 
@@ -520,6 +479,15 @@
       return `${y}${m}${day}`;
     }
 
+    function getSavedBleName() {
+      const savedName = localStorage.getItem("ble_last_name") || localStorage.getItem("ble_native_device_name") || "";
+      const savedId   = localStorage.getItem("ble_last_id") || localStorage.getItem("ble_native_device_id") || "";
+      if (!savedName || !savedId) return "";
+      const expectedPin = extractPinFromName(savedName);
+      if (localStorage.getItem("ble_auth_" + savedName) !== expectedPin) return "";
+      return savedName;
+    }
+
     async function sendBleCmd(cmd, preferNoResp = false) {
       if (!bleChar || !isConnected || sysLocked) return;
       cmdQueue = cmdQueue.then(async () => {
@@ -597,15 +565,20 @@
 
     // ★ 웹앱 실행 시 이전에 직접 선택하고 비밀번호 4자리 인증까지 완료한 '마지막 발전기'만 자동 접속 시도
     async function tryAutoConnectSavedDevice() {
-      if (sysLocked || isConnected || !navigator.bluetooth) return;
-      const savedName = localStorage.getItem("ble_last_name") || localStorage.getItem("ble_native_device_name") || "";
+      if (sysLocked || isConnected || !navigator.bluetooth) {
+        updateConnectionUi(lastCleanName);
+        return;
+      }
+      const savedName = getSavedBleName();
       const savedId   = localStorage.getItem("ble_last_id") || localStorage.getItem("ble_native_device_id") || "";
-      // 처음 설치했거나 초기화된 상태(저장된 기기 또는 비밀번호 인증 기록이 없는 상태)에서는 절대 멋대로 자동 연결하지 않음!
-      if (!savedName || !savedId) return;
-      const expectedPin = extractPinFromName(savedName);
-      if (localStorage.getItem("ble_auth_" + savedName) !== expectedPin) return;
+      if (!savedName || !savedId) {
+        updateConnectionUi("");
+        return;
+      }
 
       lastCleanName = savedName;
+      isReconnecting = true;
+      updateConnectionUi(savedName);
 
       if (typeof navigator.bluetooth.getDevices === "function") {
         try {
@@ -616,7 +589,7 @@
               const tName = sanitizeSsid(target.name || savedName);
               lastCleanName = tName;
               bleDevice = target;
-              document.getElementById("statusText").innerText = "자동 연결 중 (" + tName + ")...";
+              updateConnectionUi(tName);
               const ok = await connectGattAndSubscribe(target, tName);
               if (!ok) {
                 if (typeof target.watchAdvertisements === "function") {
@@ -637,7 +610,6 @@
       }
     }
 
-    // ★ 사용자가 [발전기 블루투스 선택 / 연결 (또는 변경)] 버튼을 눌렀을 때
     async function handleConnectClick() {
       if (sysLocked) return;
       if (!navigator.bluetooth) {
@@ -645,8 +617,21 @@
         return;
       }
 
+      // 이미 연결된 상태에서는 이름만 유지하고 상태 동기화만 수행 (다른 발전기 변경은 설정 화면에서)
+      if (isConnected && bleDevice && bleDevice.gatt && bleDevice.gatt.connected) {
+        await sendBleCmd("REQ_SYNC");
+        return;
+      }
+
+      // 저장된 발전기 객체가 있으면 먼저 즉시 재연결 시도
+      if (bleDevice) {
+        isReconnecting = true;
+        updateConnectionUi(lastCleanName);
+        const ok = await connectGattAndSubscribe(bleDevice, lastCleanName);
+        if (ok) return;
+      }
+
       try {
-        document.getElementById("statusText").innerText = "발전기 목록 탐색 중...";
         const device = await navigator.bluetooth.requestDevice({
           filters: [{ namePrefix: "korea" }],
           optionalServices: [SERVICE_UUID]
@@ -654,22 +639,23 @@
 
         const cleanName = sanitizeSsid(device.name || "korea0000");
         const expectedPin = extractPinFromName(cleanName);
+        const savedAuth = localStorage.getItem("ble_auth_" + cleanName);
 
-        // ★ 발전기 목록에서 블루투스 이름을 클릭했을 때는 무조건 비밀번호 4자리 입력창을 띄워 소비자가 직접 입력하게 함!
-        const userPin = await askPinModal(cleanName);
-        if (userPin === null) {
-          if (!isConnected) updateConnectionUi(lastCleanName);
-          return;
+        if (savedAuth !== expectedPin) {
+          const userPin = await askPinModal(cleanName);
+          if (userPin === null) {
+            updateConnectionUi(lastCleanName);
+            return;
+          }
+          const cleanInput = String(userPin).replace(/\D/g, "").slice(-4);
+          if (cleanInput !== expectedPin) {
+            alert("비밀번호 4자리가 일치하지 않습니다.");
+            updateConnectionUi(lastCleanName);
+            return;
+          }
+          localStorage.setItem("ble_auth_" + cleanName, expectedPin);
         }
-        const cleanInput = String(userPin).replace(/\D/g, "").slice(-4);
-        if (cleanInput !== expectedPin) {
-          alert("비밀번호 4자리가 일치하지 않습니다. (" + cleanName + "의 뒷자리 숫자 " + expectedPin + "을 확인하세요)");
-          if (!isConnected) updateConnectionUi(lastCleanName);
-          return;
-        }
-        localStorage.setItem("ble_auth_" + cleanName, expectedPin);
 
-        // 기존에 다른 발전기에 연결되어 있었다면 먼저 안전하게 연결 해제 후 새 발전기로 전환
         if (autoReconTimer) {
           clearTimeout(autoReconTimer);
           autoReconTimer = null;
@@ -678,7 +664,10 @@
           try { bleDevice.gatt.disconnect(); } catch (e) {}
         }
 
-        document.getElementById("statusText").innerText = cleanName + " 블루투스 연결 중...";
+        lastCleanName = cleanName;
+        isReconnecting = true;
+        updateConnectionUi(cleanName);
+
         const ok = await connectGattAndSubscribe(device, cleanName);
         if (!ok) {
           scheduleAutoReconnect();
@@ -702,33 +691,33 @@
     function updateConnectionUi(devName) {
       const dot = document.getElementById("statusDot");
       const txt = document.getElementById("statusText");
-      const btn = document.getElementById("mainConnectBtn");
+      const hasSaved = Boolean(getSavedBleName() || bleDevice || isReconnecting);
 
       if (isConnected && !sysLocked) {
         dot.className = "status-dot on";
-        txt.innerText = "연결됨: " + devName;
-        btn.className = "connect-banner connected";
-        btn.innerHTML = "<span>✅ " + devName + " 연결됨 (다른 발전기로 변경하려면 터치)</span>";
-        document.getElementById("btnStep1").disabled = false;
+        txt.innerText = devName || lastCleanName || "연결됨";
         document.getElementById("btnStop").disabled = false;
         updateActionButtonsLock();
-      } else if (isReconnecting && !sysLocked && bleDevice) {
-        dot.className = "status-dot wait";
-        txt.innerText = "신호 대기 중... (가까워지면 자동 연결)";
-        btn.className = "connect-banner reconnecting";
-        btn.innerHTML = "<span>🔄 " + (devName || "발전기") + " 자동 재연결 대기 중 (터치하여 발전기 선택)</span>";
+      } else if (sysLocked) {
+        dot.className = "status-dot";
+        txt.innerText = "시스템 잠금 (x3303)";
         document.getElementById("btnPreheat").disabled = true;
         document.getElementById("btnStart").disabled = true;
-        document.getElementById("btnStep1").disabled = true;
+        document.getElementById("btnStop").disabled = true;
+        document.getElementById("valAc").innerText = "--";
+        document.getElementById("valHz").innerText = "--";
+        document.getElementById("valDc").innerText = "--";
+      } else if (hasSaved) {
+        dot.className = "status-dot wait";
+        txt.innerText = "연결 중";
+        document.getElementById("btnPreheat").disabled = true;
+        document.getElementById("btnStart").disabled = true;
         document.getElementById("btnStop").disabled = true;
       } else {
         dot.className = "status-dot";
-        txt.innerText = sysLocked ? "시스템 잠금 (x3303)" : "미연결 (발전기를 선택해 연결하세요)";
-        btn.className = "connect-banner";
-        btn.innerHTML = "<span>📶 발전기 블루투스 선택 / 연결</span>";
+        txt.innerText = "연결하기";
         document.getElementById("btnPreheat").disabled = true;
         document.getElementById("btnStart").disabled = true;
-        document.getElementById("btnStep1").disabled = true;
         document.getElementById("btnStop").disabled = true;
         document.getElementById("valAc").innerText = "--";
         document.getElementById("valHz").innerText = "--";
@@ -797,7 +786,6 @@
           const charging = parseInt(parts[3], 10) === 1;
           curStep1       = parseInt(parts[4], 10) === 1 ? 1 : 0;
           const remSec   = parseInt(parts[5], 10) || 0;
-          const holdRem  = parts.length >= 7 ? (parseInt(parts[6], 10) || 0) : 0;
 
           document.getElementById("valAc").innerText = curAcVolt.toFixed(0);
           document.getElementById("valHz").innerText = curHz.toFixed(1);
@@ -825,19 +813,6 @@
             badgeCharge.className = "badge";
           }
 
-          const btnStep1 = document.getElementById("btnStep1");
-          const txtStep1 = document.getElementById("txtStep1");
-          const subStep1 = document.getElementById("subStep1");
-          if (curStep1 === 1) {
-            btnStep1.classList.add("active");
-            txtStep1.innerText = "🔑 1단 (ACC / 연료) 켜짐";
-            subStep1.innerText = holdRem > 0 ? `시동 대기 자동유지: ${holdRem}초 남음` : "현재 상태: ON (유지 중)";
-          } else {
-            btnStep1.classList.remove("active");
-            txtStep1.innerText = "🔑 1단 (ACC / 연료) 수동 켜기";
-            subStep1.innerText = "현재 상태: OFF";
-          }
-
           renderAutoStopRemain(remSec);
           updateActionButtonsLock();
         }
@@ -849,7 +824,6 @@
       const acDetected = (curAcVolt >= 15 || curHz >= 10);
       document.getElementById("btnPreheat").disabled = acDetected;
       document.getElementById("btnStart").disabled   = acDetected;
-      document.getElementById("btnStep1").disabled   = acDetected;
     }
 
     function renderAutoStopRemain(sec) {
@@ -979,7 +953,7 @@
       try { localStorage.clear(); } catch (e) {}
       closeSettingsModal();
       updateConnectionUi("");
-      alert("🧹 초기화 완료!\n마치 앱을 처음 설치했을 때처럼 모든 연결·비밀번호 기록이 삭제되었습니다.");
+      alert("저장된 발전기 인증 및 자동 연결 정보가 초기화되었습니다.");
     }
 
     // 페이지가 열릴 때 기억된 발전기로 자동 연결 시도 + 화면 복귀 시 즉시 재연결 체크
