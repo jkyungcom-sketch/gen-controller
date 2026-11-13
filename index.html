@@ -91,9 +91,15 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
+      transition: 0.2s;
     }
-    .icon-btn:active {
+    .icon-btn:active:not(:disabled) {
       transform: scale(0.96);
+    }
+    .icon-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      filter: grayscale(0.5);
     }
 
     /* ══════ 3단 수평(2줄) 실측 계기판 ══════ */
@@ -361,21 +367,126 @@
     .btn-start {
       background: linear-gradient(135deg, #10b981, #059669);
     }
+    /* 위 예열/시동 버튼(.action-block 내부 폭)과 좌우 폭을 100% 동일하게 맞춤 */
+    .btn-same-width {
+      width: calc(100% - 26px);
+      margin: 0 auto;
+    }
     .btn-reserve {
       background: #1e293b;
       border: 1px solid #334155;
       padding: 16px 12px;
-      font-size: 18px;
+      font-size: 19px;
       color: #e2e8f0;
+    }
+    .btn-reserve.active-cancel {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      border-color: #a78bfa;
+      color: #ffffff;
     }
     .btn-stop {
       background: linear-gradient(135deg, #ef4444, #dc2626);
-      padding: 19px;
-      font-size: 21px;
-      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+      padding: 16px 12px;
+      font-size: 19px;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
     }
 
-    /* ══════ 모달 공통 ══════ */
+    /* ══════ 전체화면 창 (설정 & 예약 정지 설정 전용) ══════ */
+    .fullscreen-modal {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background: var(--bg);
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 22px 18px;
+      z-index: 999;
+      overflow-y: auto;
+    }
+    .fullscreen-modal.show {
+      display: flex;
+    }
+    .fs-inner {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .fs-header {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      font-size: 20px;
+      font-weight: 900;
+      text-align: center;
+    }
+    .fs-body {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+      flex: 1;
+      justify-content: center;
+    }
+    .fs-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 18px 16px;
+    }
+    .slider-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .modal-range {
+      width: 100%;
+      accent-color: var(--accent);
+      height: 10px;
+      cursor: pointer;
+    }
+    .preset-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .t-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text);
+      padding: 16px 8px;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .t-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* ══════ 일반 팝업 (비밀번호 / 오류창) ══════ */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -384,7 +495,7 @@
       align-items: center;
       justify-content: center;
       padding: 18px;
-      z-index: 999;
+      z-index: 1000;
     }
     .modal-backdrop.show {
       display: flex;
@@ -404,42 +515,6 @@
       font-size: 18px;
       font-weight: 800;
     }
-    .slider-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .slider-top {
-      display: flex;
-      justify-content: space-between;
-      font-size: 14px;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-    }
-    .modal-range {
-      width: 100%;
-      accent-color: var(--accent);
-      height: 8px;
-      cursor: pointer;
-    }
-    .preset-grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-    .t-btn {
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: var(--text);
-      padding: 12px 6px;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 800;
-      cursor: pointer;
-    }
-    .t-btn:active {
-      transform: scale(0.95);
-    }
     .pin-input {
       width: 100%;
       padding: 14px;
@@ -455,13 +530,13 @@
     .modal-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 12px;
     }
     .m-btn {
-      padding: 13px;
+      padding: 16px;
       border-radius: 12px;
       border: none;
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 800;
       cursor: pointer;
     }
@@ -491,7 +566,7 @@
       <div id="statusDot" class="status-dot"></div>
       <div id="statusText" class="status-text">연결하기</div>
     </button>
-    <button class="icon-btn" onclick="openSettingsModal()">⚙️ 설정</button>
+    <button id="btnSettings" class="icon-btn" onclick="openSettingsModal()" disabled>⚙️ 설정</button>
   </div>
 
   <!-- 3단 수평(2줄) 실측 계기판 -->
@@ -577,7 +652,7 @@
 
   <!-- 예열 / 시동 / 예약정지 / 즉시정지 컨트롤 카드 -->
   <div class="ctrl-card">
-    <!-- 예열시간 슬라이더(안전잠금 표시전용) + 예열 버튼 -->
+    <!-- 예열시간 슬라이더(안전잠금 표시전용, 기본 8초) + 예열 버튼 -->
     <div class="action-block">
       <div class="action-slider-row">
         <span class="action-slider-label">예열시간</span>
@@ -588,50 +663,90 @@
       </button>
     </div>
 
-    <!-- 시동시간 슬라이더(안전잠금 표시전용) + 시동 버튼 -->
+    <!-- 시동시간 슬라이더(안전잠금 표시전용, 기본 0.8초, 최대 4.0초) + 시동 버튼 -->
     <div class="action-block">
       <div class="action-slider-row">
         <span class="action-slider-label">시동시간</span>
-        <input id="rngStart" class="action-range start-range" type="range" min="0" max="4.8" step="0.1" value="0.8" tabindex="-1" />
+        <input id="rngStart" class="action-range start-range" type="range" min="0" max="4.0" step="0.1" value="0.8" tabindex="-1" />
       </div>
       <button id="btnStart" class="act-btn btn-start" onclick="triggerStart()" disabled>
         <span id="txtStart">시동 0.8초</span>
       </button>
     </div>
 
-    <!-- 예약 정지 설정 버튼 -->
-    <button id="btnReserveStop" class="act-btn btn-reserve" onclick="openReserveModal()" disabled>
+    <!-- 예약 정지 설정 / 예약 정지 취소 버튼 (위 시동버튼과 동일 폭) -->
+    <button id="btnReserveStop" class="act-btn btn-reserve btn-same-width" onclick="handleReserveBtnClick()" disabled>
       <span id="txtReserveStop">예약 정지 설정 00:00:00</span>
     </button>
 
-    <!-- 즉시 정지 버튼 -->
-    <button id="btnStop" class="act-btn btn-stop" onclick="triggerStop()" disabled>
+    <!-- 즉시 정지 버튼 (위 시동버튼과 동일 폭·크기) -->
+    <button id="btnStop" class="act-btn btn-stop btn-same-width" onclick="triggerStop()" disabled>
       <span>즉시 정지</span>
     </button>
   </div>
 
-  <!-- 예약 정지 설정 팝업 -->
-  <div id="reserveModal" class="modal-backdrop">
-    <div class="modal-box">
-      <div class="modal-title">⏱️ 예약 정지 설정</div>
-      <div class="slider-group">
-        <div class="slider-top">
-          <span>정지 예약 시간 (최대 12시간)</span>
-          <span id="lblReserveModalTime" style="color: var(--amber); font-size: 17px;">00:00:00</span>
+  <!-- ══════ [전체화면] 예약 정지 설정 창 ══════ -->
+  <div id="reserveModal" class="fullscreen-modal">
+    <div class="fs-inner">
+      <div class="fs-header">⏱️ 예약 정지 설정</div>
+
+      <div class="fs-body">
+        <div class="slider-group">
+          <div class="slider-top">
+            <span>정지 예약 시간 (최대 12시간)</span>
+            <span id="lblReserveModalTime" style="color: var(--amber); font-size: 22px; font-weight: 900;">00:00:00</span>
+          </div>
+          <input id="rngReserveSec" class="modal-range" type="range" min="0" max="43200" step="60" value="0"
+                 oninput="onReserveSliderChange(this.value)" />
         </div>
-        <input id="rngReserveSec" class="modal-range" type="range" min="0" max="43200" step="60" value="0"
-               oninput="onReserveSliderChange(this.value)" />
+
+        <div class="preset-grid-3">
+          <button type="button" class="t-btn" onclick="addReserveDraftSec(60)">1분</button>
+          <button type="button" class="t-btn" onclick="addReserveDraftSec(900)">15분</button>
+          <button type="button" class="t-btn" onclick="addReserveDraftSec(3600)">1시간</button>
+        </div>
       </div>
 
-      <div class="preset-grid-3">
-        <button type="button" class="t-btn" onclick="addReserveDraftSec(60)">1분</button>
-        <button type="button" class="t-btn" onclick="addReserveDraftSec(900)">15분</button>
-        <button type="button" class="t-btn" onclick="addReserveDraftSec(3600)">1시간</button>
+      <div class="fs-footer">
+        <div class="modal-actions">
+          <button type="button" class="m-btn cancel" onclick="closeReserveModal()">취소</button>
+          <button type="button" class="m-btn confirm" onclick="confirmReserveModal()">설정</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ [전체화면] 설정 창 (예열 8초 / 시동 0.8초·최대 4초) ══════ -->
+  <div id="settingsModal" class="fullscreen-modal">
+    <div class="fs-inner">
+      <div class="fs-header">⚙️ 설정</div>
+
+      <div class="fs-body">
+        <div class="slider-group">
+          <div class="slider-top">
+            <span>예열시간 설정</span>
+            <span id="lblModalPreheat" style="color: var(--amber); font-size: 20px;">8.0초</span>
+          </div>
+          <input id="rngModalPreheat" class="modal-range" type="range" min="1.0" max="20.0" step="0.5" value="8.0"
+                 oninput="document.getElementById('lblModalPreheat').innerText = parseFloat(this.value).toFixed(1) + '초'" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span>시동시간 설정 (최대 4초)</span>
+            <span id="lblModalStart" style="color: var(--green); font-size: 20px;">0.8초</span>
+          </div>
+          <input id="rngModalStart" class="modal-range" type="range" min="0.3" max="4.0" step="0.1" value="0.8"
+                 oninput="document.getElementById('lblModalStart').innerText = parseFloat(this.value).toFixed(1) + '초'" />
+        </div>
       </div>
 
-      <div class="modal-actions">
-        <button type="button" class="m-btn cancel" onclick="closeReserveModal()">취소</button>
-        <button type="button" class="m-btn confirm" onclick="confirmReserveModal()">설정</button>
+      <div class="fs-footer">
+        <div class="modal-actions">
+          <button type="button" class="m-btn cancel" onclick="cancelSettingsModal()">취소</button>
+          <button type="button" class="m-btn confirm" onclick="confirmSettingsModal()">확인</button>
+        </div>
+        <button type="button" class="m-btn danger" style="width:100%;" onclick="resetSavedDevice()">다른 발전기 선택</button>
       </div>
     </div>
   </div>
@@ -651,38 +766,6 @@
     </div>
   </div>
 
-  <!-- 설정 팝업 (예열/시동 슬라이더 + 취소/확인 + 다른 발전기 선택) -->
-  <div id="settingsModal" class="modal-backdrop">
-    <div class="modal-box">
-      <div class="modal-title">⚙️ 설정</div>
-
-      <div class="slider-group">
-        <div class="slider-top">
-          <span>예열시간 설정</span>
-          <span id="lblModalPreheat">8.0초</span>
-        </div>
-        <input id="rngModalPreheat" class="modal-range" type="range" min="1.0" max="20.0" step="0.5" value="8.0"
-               oninput="document.getElementById('lblModalPreheat').innerText = parseFloat(this.value).toFixed(1) + '초'" />
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-top">
-          <span>시동시간 설정 (최대 4.8초)</span>
-          <span id="lblModalStart">0.8초</span>
-        </div>
-        <input id="rngModalStart" class="modal-range" type="range" min="0.3" max="4.8" step="0.1" value="0.8"
-               oninput="document.getElementById('lblModalStart').innerText = parseFloat(this.value).toFixed(1) + '초'" />
-      </div>
-
-      <div class="modal-actions">
-        <button type="button" class="m-btn cancel" onclick="cancelSettingsModal()">취소</button>
-        <button type="button" class="m-btn confirm" onclick="confirmSettingsModal()">확인</button>
-      </div>
-
-      <button type="button" class="m-btn danger" style="width:100%;" onclick="resetSavedDevice()">다른 발전기 선택</button>
-    </div>
-  </div>
-
   <div id="errModal" class="modal-backdrop">
     <div class="modal-box" style="border-color: var(--red); text-align: center;">
       <div class="modal-title" style="color: var(--red); font-size: 22px;">⚠️ 시스템 오류</div>
@@ -697,16 +780,17 @@
     const SERVICE_UUID        = "12345678-1234-1234-1234-1234567890ab";
     const CHARACTERISTIC_UUID = "abcdefab-1234-5678-1234-abcdefabcdef";
 
-    let bleDevice       = null;
-    let bleChar         = null;
-    let isConnected     = false;
-    let isReconnecting  = false;
-    let autoReconTimer  = null;
-    let sysLocked       = false;
-    let lastCleanName   = "";
+    let bleDevice        = null;
+    let bleChar          = null;
+    let isConnected      = false;
+    let isReconnecting   = false;
+    let autoReconTimer   = null;
+    let sysLocked        = false;
+    let lastCleanName    = "";
+    let connectSessionId = 0; // ★ 1번 클릭 즉시 초기화를 보장하는 세션 토큰
 
-    let setPreheatSec   = 8.0;
-    let setStartSec     = 0.8;
+    let setPreheatSec   = 8.0; // 기본 예열 8초
+    let setStartSec     = 0.8; // 기본 시동 0.8초 (최대 4.0초)
     let curAcVolt       = 0;   // ESP32 수신 원시값 (220V 중간탭 기준)
     let curHz           = 0.0;
     let curDcBatt       = 0.0;
@@ -749,6 +833,19 @@
       return savedName;
     }
 
+    function clearAllBleStorage() {
+      try {
+        localStorage.removeItem("ble_last_name");
+        localStorage.removeItem("ble_last_id");
+        localStorage.removeItem("ble_native_device_name");
+        localStorage.removeItem("ble_native_device_id");
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith("ble_")) localStorage.removeItem(k);
+        });
+        localStorage.clear();
+      } catch (e) {}
+    }
+
     function clampPct(v) {
       return Math.max(0, Math.min(100, v));
     }
@@ -779,9 +876,10 @@
     }
 
     function updateStartUi(sec) {
-      document.getElementById("rngStart").value = sec;
+      const clamped = Math.min(4.0, Math.max(0, Number(sec) || 0));
+      document.getElementById("rngStart").value = clamped;
       if (!isVoltGenerated()) {
-        document.getElementById("txtStart").innerText = `시동 ${Number(sec).toFixed(1)}초`;
+        document.getElementById("txtStart").innerText = `시동 ${clamped.toFixed(1)}초`;
       }
     }
 
@@ -934,8 +1032,9 @@
       return cmdQueue;
     }
 
-    async function connectGattAndSubscribe(device, cleanName) {
+    async function connectGattAndSubscribe(device, cleanName, sessionToken) {
       if (sysLocked) return false;
+      const mySession = (sessionToken !== undefined) ? sessionToken : connectSessionId;
       try {
         bleDevice = device;
         lastCleanName = cleanName || sanitizeSsid(device.name || localStorage.getItem("ble_last_name") || "korea0000");
@@ -944,10 +1043,22 @@
         bleDevice.addEventListener("gattserverdisconnected", onDisconnected);
 
         const server = await bleDevice.gatt.connect();
+        if (mySession !== connectSessionId) {
+          clearAllBleStorage();
+          try { device.gatt.disconnect(); } catch (e) {}
+          return false;
+        }
+
         const service = await server.getPrimaryService(SERVICE_UUID);
         bleChar = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
         await bleChar.startNotifications();
+        if (mySession !== connectSessionId) {
+          clearAllBleStorage();
+          try { device.gatt.disconnect(); } catch (e) {}
+          return false;
+        }
+
         bleChar.removeEventListener("characteristicvaluechanged", onBleNotify);
         bleChar.addEventListener("characteristicvaluechanged", onBleNotify);
 
@@ -967,6 +1078,9 @@
         await sendBleCmd("REQ_SYNC");
         return true;
       } catch (err) {
+        if (mySession !== connectSessionId) {
+          clearAllBleStorage();
+        }
         return false;
       }
     }
@@ -975,13 +1089,14 @@
       if (sysLocked || isConnected || !bleDevice) return;
       if (autoReconTimer) clearTimeout(autoReconTimer);
 
+      const mySession = connectSessionId;
       isReconnecting = true;
       updateConnectionUi(lastCleanName);
 
       autoReconTimer = setTimeout(async () => {
-        if (sysLocked || isConnected || !bleDevice) return;
-        const ok = await connectGattAndSubscribe(bleDevice, lastCleanName);
-        if (!ok && !isConnected && !sysLocked) {
+        if (mySession !== connectSessionId || sysLocked || isConnected || !bleDevice) return;
+        const ok = await connectGattAndSubscribe(bleDevice, lastCleanName, mySession);
+        if (mySession === connectSessionId && !ok && !isConnected && !sysLocked && bleDevice) {
           scheduleAutoReconnect();
         }
       }, 1800);
@@ -999,6 +1114,7 @@
         return;
       }
 
+      const mySession = connectSessionId;
       lastCleanName = savedName;
       isReconnecting = true;
       updateConnectionUi(savedName);
@@ -1006,19 +1122,20 @@
       if (typeof navigator.bluetooth.getDevices === "function") {
         try {
           const devices = await navigator.bluetooth.getDevices();
+          if (mySession !== connectSessionId) return;
           if (devices && devices.length > 0) {
             let target = devices.find(d => (savedId && d.id === savedId) || sanitizeSsid(d.name) === savedName) || devices[0];
-            if (target) {
+            if (target && mySession === connectSessionId) {
               const tName = sanitizeSsid(target.name || savedName);
               lastCleanName = tName;
               bleDevice = target;
               updateConnectionUi(tName);
-              const ok = await connectGattAndSubscribe(target, tName);
-              if (!ok) {
+              const ok = await connectGattAndSubscribe(target, tName, mySession);
+              if (mySession === connectSessionId && !ok) {
                 if (typeof target.watchAdvertisements === "function") {
                   target.addEventListener("advertisementreceived", async () => {
-                    if (!isConnected && !sysLocked) {
-                      await connectGattAndSubscribe(target, tName);
+                    if (mySession === connectSessionId && !isConnected && !sysLocked && bleDevice) {
+                      await connectGattAndSubscribe(target, tName, mySession);
                     }
                   });
                   try { await target.watchAdvertisements(); } catch (e) {}
@@ -1045,11 +1162,12 @@
         return;
       }
 
+      const mySession = connectSessionId;
       if (bleDevice) {
         isReconnecting = true;
         updateConnectionUi(lastCleanName);
-        const ok = await connectGattAndSubscribe(bleDevice, lastCleanName);
-        if (ok) return;
+        const ok = await connectGattAndSubscribe(bleDevice, lastCleanName, mySession);
+        if (ok || mySession !== connectSessionId) return;
       }
 
       try {
@@ -1085,12 +1203,13 @@
           try { bleDevice.gatt.disconnect(); } catch (e) {}
         }
 
+        const newSession = ++connectSessionId;
         lastCleanName = cleanName;
         isReconnecting = true;
         updateConnectionUi(cleanName);
 
-        const ok = await connectGattAndSubscribe(device, cleanName);
-        if (!ok) {
+        const ok = await connectGattAndSubscribe(device, cleanName, newSession);
+        if (!ok && newSession === connectSessionId) {
           scheduleAutoReconnect();
         }
       } catch (err) {
@@ -1106,6 +1225,8 @@
       curHz = 0.0;
       curDcBatt = 0.0;
       curRemainSec = 0;
+      document.getElementById("settingsModal").classList.remove("show");
+      document.getElementById("reserveModal").classList.remove("show");
       renderAutoStopRemain(0);
       syncRunningTimerState();
       updateConnectionUi(lastCleanName);
@@ -1115,20 +1236,22 @@
     }
 
     function updateConnectionUi(devName) {
-      const dot = document.getElementById("statusDot");
-      const txt = document.getElementById("statusText");
-      const hasSaved = Boolean(getSavedBleName() || bleDevice || isReconnecting);
+      const dot         = document.getElementById("statusDot");
+      const txt         = document.getElementById("statusText");
+      const btnSettings = document.getElementById("btnSettings");
+      const hasSaved    = Boolean(getSavedBleName() || bleDevice || isReconnecting);
 
       if (isConnected && !sysLocked) {
         dot.className = "status-dot on";
         txt.innerText = devName || lastCleanName || "연결됨";
-        document.getElementById("btnReserveStop").disabled = false;
+        btnSettings.disabled = false;
         document.getElementById("btnStop").disabled = false;
         updateActionButtonsLock();
         renderGauges();
       } else if (sysLocked) {
         dot.className = "status-dot";
         txt.innerText = "시스템 잠금 (x3303)";
+        btnSettings.disabled = true;
         document.getElementById("btnPreheat").disabled = true;
         document.getElementById("btnStart").disabled = true;
         document.getElementById("btnReserveStop").disabled = true;
@@ -1137,6 +1260,7 @@
       } else if (hasSaved) {
         dot.className = "status-dot wait";
         txt.innerText = "연결 중";
+        btnSettings.disabled = true;
         document.getElementById("btnPreheat").disabled = true;
         document.getElementById("btnStart").disabled = true;
         document.getElementById("btnReserveStop").disabled = true;
@@ -1145,6 +1269,7 @@
       } else {
         dot.className = "status-dot";
         txt.innerText = "연결하기";
+        btnSettings.disabled = true;
         document.getElementById("btnPreheat").disabled = true;
         document.getElementById("btnStart").disabled = true;
         document.getElementById("btnReserveStop").disabled = true;
@@ -1154,12 +1279,15 @@
     }
 
     function triggerLockdown() {
+      connectSessionId++;
       sysLocked = true;
       isReconnecting = false;
       if (autoReconTimer) {
         clearTimeout(autoReconTimer);
         autoReconTimer = null;
       }
+      document.getElementById("settingsModal").classList.remove("show");
+      document.getElementById("reserveModal").classList.remove("show");
       document.getElementById("errModal").classList.add("show");
       if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected) {
         try { bleDevice.gatt.disconnect(); } catch (e) {}
@@ -1193,8 +1321,9 @@
           if (!preheatAnimTimer) updatePreheatUi(v);
         }
       } else if (msg.startsWith("r2_")) {
-        const v = parseFloat(msg.substring(3));
+        let v = parseFloat(msg.substring(3));
         if (!isNaN(v)) {
+          if (v > 4.0) v = 4.0;
           setStartSec = v;
           if (!startAnimTimer) updateStartUi(v);
         }
@@ -1221,13 +1350,23 @@
     function updateActionButtonsLock() {
       if (!isConnected || sysLocked) return;
       const acDetected = (curAcVolt >= 15 || curHz >= 10);
-      document.getElementById("btnPreheat").disabled = acDetected;
-      document.getElementById("btnStart").disabled   = acDetected;
+      const voltOn     = isVoltGenerated();
+      document.getElementById("btnPreheat").disabled     = acDetected;
+      document.getElementById("btnStart").disabled       = acDetected;
+      document.getElementById("btnReserveStop").disabled = !voltOn;
     }
 
     function renderAutoStopRemain(sec) {
       curRemainSec = Math.max(0, parseInt(sec, 10) || 0);
-      document.getElementById("txtReserveStop").innerText = `예약 정지 설정 ${formatHhMmSs(curRemainSec)}`;
+      const btn = document.getElementById("btnReserveStop");
+      const txt = document.getElementById("txtReserveStop");
+      if (curRemainSec > 0 && isVoltGenerated()) {
+        btn.classList.add("active-cancel");
+        txt.innerText = `예약 정지 취소 ${formatHhMmSs(curRemainSec)}`;
+      } else {
+        btn.classList.remove("active-cancel");
+        txt.innerText = "예약 정지 설정 00:00:00";
+      }
     }
 
     function stopPreheatCountdown() {
@@ -1302,13 +1441,17 @@
       sendBleCmd("CMD_STOP_" + getStampStr(), true);
     }
 
-    /* ══════ 예약 정지 설정 팝업 (12시간 슬라이더 + 1분/15분/1시간 + 취소/설정) ══════ */
-    function openReserveModal() {
-      if (!isConnected || sysLocked) return;
-      reserveDraftSec = curRemainSec;
-      if (reserveDraftSec > 43200) reserveDraftSec = 43200;
-      document.getElementById("rngReserveSec").value = reserveDraftSec;
-      document.getElementById("lblReserveModalTime").innerText = formatHhMmSs(reserveDraftSec);
+    /* ══════ 예약 정지 설정(전체화면) / 예약 정지 즉시 취소 ══════ */
+    async function handleReserveBtnClick() {
+      if (!isVoltGenerated()) return;
+      if (curRemainSec > 0) {
+        renderAutoStopRemain(0);
+        await sendBleCmd("OFF_ADD_0");
+        return;
+      }
+      reserveDraftSec = 0;
+      document.getElementById("rngReserveSec").value = 0;
+      document.getElementById("lblReserveModalTime").innerText = "00:00:00";
       document.getElementById("reserveModal").classList.add("show");
     }
 
@@ -1363,9 +1506,9 @@
       pendingPinResolve = null;
     }
 
-    /* ══════ 설정 팝업 (예열/시동 슬라이더 + 취소/확인/다른 발전기 선택 → 모두 홈 복귀) ══════ */
+    /* ══════ 설정 전체화면 창 (예열 8초 / 시동 0.8초·최대 4초) ══════ */
     function openSettingsModal() {
-      if (sysLocked) return;
+      if (!isConnected || sysLocked) return;
       document.getElementById("rngModalPreheat").value = setPreheatSec;
       document.getElementById("lblModalPreheat").innerText = setPreheatSec.toFixed(1) + "초";
       document.getElementById("rngModalStart").value = setStartSec;
@@ -1383,7 +1526,7 @@
       if (isNaN(r1) || r1 < 1.0) r1 = 1.0;
       if (r1 > 20.0) r1 = 20.0;
       if (isNaN(r2) || r2 < 0.3) r2 = 0.3;
-      if (r2 > 4.8) r2 = 4.8;
+      if (r2 > 4.0) r2 = 4.0;
 
       setPreheatSec = r1;
       setStartSec   = r2;
@@ -1396,34 +1539,46 @@
       await sendBleCmd("RELAY2_" + r2.toFixed(1));
     }
 
+    // ★ 단 1번 클릭으로 진행 중인 연결까지 즉시 끊고 완벽 초기화
     async function resetSavedDevice() {
+      connectSessionId++;
       document.getElementById("settingsModal").classList.remove("show");
+
       if (autoReconTimer) {
         clearTimeout(autoReconTimer);
         autoReconTimer = null;
       }
+      const prevDev = bleDevice;
+      bleDevice = null;
+      bleChar = null;
       isReconnecting = false;
       isConnected = false;
-      bleChar = null;
-      if (bleDevice) {
-        try {
-          bleDevice.removeEventListener("gattserverdisconnected", onDisconnected);
-          if (bleDevice.gatt) bleDevice.gatt.disconnect();
-        } catch (e) {}
-      }
-      bleDevice = null;
       lastCleanName = "";
       curAcVolt = 0;
       curHz = 0.0;
       curDcBatt = 0.0;
       curRemainSec = 0;
+
+      clearAllBleStorage();
       renderAutoStopRemain(0);
       syncRunningTimerState();
+      updateConnectionUi("");
+
+      if (prevDev) {
+        try {
+          prevDev.removeEventListener("gattserverdisconnected", onDisconnected);
+          if (prevDev.gatt) prevDev.gatt.disconnect();
+        } catch (e) {}
+      }
       if (typeof window.__bleNativeReset === "function") {
         try { await window.__bleNativeReset(); } catch (e) {}
       }
-      try { localStorage.clear(); } catch (e) {}
+      clearAllBleStorage();
       updateConnectionUi("");
+      setTimeout(() => {
+        clearAllBleStorage();
+        updateConnectionUi("");
+      }, 350);
     }
 
     window.addEventListener("DOMContentLoaded", () => {
