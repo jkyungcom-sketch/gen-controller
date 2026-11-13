@@ -739,6 +739,31 @@ public class AndroidWifiBridge {
         }
     }
 
+    // ==================================================================
+    // 5) closeApp — 우리 발전기 리모컨 앱만 최근 앱 목록에서까지 완전히 종료
+    // ==================================================================
+    @JavascriptInterface
+    public void closeApp() {
+        Log.i(TAG, "closeApp()");
+        main.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        activity.finishAndRemoveTask();
+                    } else {
+                        activity.finishAffinity();
+                    }
+                } catch (Throwable t) {
+                    Log.e(TAG, "closeApp 실패", t);
+                    try {
+                        activity.finish();
+                    } catch (Throwable ignored) {}
+                }
+            }
+        });
+    }
+
     /** Activity 종료 시 정리 */
     public void destroy() {
         try {
