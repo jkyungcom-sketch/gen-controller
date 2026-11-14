@@ -1,11 +1,9 @@
-/* ble-native-adapter.js — Capacitor BLE (BluetoothLe) <-> Web Bluetooth API 완벽 호환 어댑터 (V4.1)
+/* ble-native-adapter.js — Capacitor BLE (BluetoothLe) <-> Web Bluetooth API 완벽 호환 어댑터 (V4)
  * [핵심 수리 내역]
  * 1. ESP32 실제 UUID (12345678-1234-1234-1234-1234567890ab / abcdefab-1234-5678-1234-abcdefabcdef) 완벽 일치
- * 2. 핸드폰 블루투스 스위치 OFF 감지(BLE.isEnabled / onEnabledChanged):
- *    - 블루투스가 꺼져 있으면 연결/스캔 완전 차단 (먹통 유지)
- *    - [연결하기] 터치 시 블루투스가 꺼져 있으면 "설정에서 블루투스를 켜주세요" 안내창 표시
- *    - 사용 중 블루투스를 끄면 즉시 연결 해제 및 비활성화
- * 3. 블루투스 OFF 상태에서 유령처럼 뜨던 가짜 "korea0000"(비번 0000) 생성 로직 완전 제거
+ * 2. BLE.initialize({ androidNeverForLocation: true }) 고정으로 Android 12+ 무권한 스캔 즉시 작동
+ * 3. stopScanning() 비동기 경합 버그 제거 (스캔 시작 직후 스스로 스캔을 끄던 현상 완전 해결)
+ * 4. gatt.connect() 직전 자폭 BLE.disconnect() 제거 및 연결 성공 후 disconnected 리스너 등록
  */
 (function () {
   "use strict";
@@ -25,9 +23,6 @@
   var LS_DEV_NAME  = "ble_native_device_name";
 
   var _bleReadyPromise = null;
-  var _stateWatcherStarted = false;
-  var _isBtEnabled = true;
-
   function getReadyBle() {
     if (_bleReadyPromise) return _bleReadyPromise;
     _bleReadyPromise = new Promise(function (resolve, reject) {
@@ -40,10 +35,7 @@
             .catch(function () {
               return BLE.initialize().catch(function () {});
             })
-            .then(function () {
-              startBleStateWatch(BLE);
-              resolve(BLE);
-            });
+            .then(function () { resolve(BLE); });
           return;
         }
         if (Date.now() - t0 > 10000) {
@@ -54,102 +46,6 @@
       })();
     });
     return _bleReadyPromise;
-  }
-
-  // ★ 핸드폰 블루투스 스위치 실제 ON/OFF 여부 확인
-  function checkBleEnabled(BLE) {
-    if (!BLE || typeof BLE.isEnabled !== "function") {
-      return Promise.resolve(true);
-    }
-    return BLE.isEnabled()
-      .then(function (res) {
-        var en = !!(res && res.value === true);
-        _isBtEnabled = en;
-        return en;
-      })
-      .catch(function () {
-        return _isBtEnabled;
-      });
-  }
-
-  // ★ 핸드폰 상단바에서 블루투스를 끄는 순간 즉시 모든 연결 강제 종료(먹통 처리)
-  function forceDisconnectAllOnBtOff(BLE) {
-    var ids = Object.keys(_activeDevices);
-    for (var i = 0; i < ids.length; i++) {
-      (function (dev) {
-        if (!dev) return;
-        var wasConnected = !!(dev.gatt && dev.gatt.connected);
-        if (dev.gatt) dev.gatt.connected = false;
-        if (BLE && typeof BLE.disconnect === "function") {
-          BLE.disconnect({ deviceId: dev.id }).catch(function () {});
-        }
-        if (wasConnected) {
-          dev._emit("gattserverdisconnected", { target: dev });
-        }
-      })(_activeDevices[ids[i]]);
-    }
-  }
-
-  function startBleStateWatch(BLE) {
-    if (_stateWatcherStarted || !BLE) return;
-    _stateWatcherStarted = true;
-    checkBleEnabled(BLE);
-    if (typeof BLE.addListener === "function") {
-      BLE.addListener("onEnabledChanged", function (evt) {
-        var enabled = !!(evt && evt.value === true);
-        _isBtEnabled = enabled;
-        if (!enabled) {
-          if (typeof BLE.stopLEScan === "function") {
-            BLE.stopLEScan().catch(function () {});
-          }
-          forceDisconnectAllOnBtOff(BLE);
-        }
-      }).catch(function () {});
-    }
-    if (typeof BLE.startEnabledNotifications === "function") {
-      BLE.startEnabledNotifications().catch(function () {});
-    }
-  }
-
-  // ★ 블루투스가 꺼져 있을 때 [연결하기]를 누르면 뜨는 안내 모달
-  function showBtOffNoticeModal() {
-    return new Promise(function (resolve) {
-      var old = document.getElementById("__bleOffNoticeModal");
-      if (old && old.parentNode) old.parentNode.removeChild(old);
-
-      var overlay = document.createElement("div");
-      overlay.id = "__bleOffNoticeModal";
-      overlay.style.cssText = "position:fixed;inset:0;background:rgba(2,6,23,0.85);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;z-index:100000;padding:20px;";
-
-      var box = document.createElement("div");
-      box.style.cssText = "width:100%;max-width:340px;background:#131c2e;border:1px solid #3b82f6;border-radius:22px;padding:24px 20px;color:#f8fafc;font-family:inherit;box-shadow:0 20px 50px rgba(0,0,0,0.75);text-align:center;display:flex;flex-direction:column;gap:18px;";
-
-      var title = document.createElement("div");
-      title.style.cssText = "font-size:1.2rem;font-weight:900;color:#fbbf24;padding-bottom:10px;border-bottom:1px solid #1e293b;";
-      title.textContent = "📡 블루투스 안내";
-
-      var msg = document.createElement("div");
-      msg.style.cssText = "font-size:1.08rem;font-weight:800;color:#f8fafc;line-height:1.6;word-break:keep-all;";
-      msg.textContent = "설정에서 블루투스를 켜주세요";
-
-      var btnOk = document.createElement("button");
-      btnOk.type = "button";
-      btnOk.style.cssText = "width:100%;height:54px;border-radius:14px;border:none;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-size:1.05rem;font-weight:900;cursor:pointer;";
-      btnOk.textContent = "확인";
-
-      btnOk.addEventListener("click", function () {
-        if (overlay && overlay.parentNode) {
-          overlay.parentNode.removeChild(overlay);
-        }
-        resolve();
-      });
-
-      box.appendChild(title);
-      box.appendChild(msg);
-      box.appendChild(btnOk);
-      overlay.appendChild(box);
-      document.body.appendChild(overlay);
-    });
   }
 
   function isKoreaName(name) {
@@ -365,7 +261,7 @@
   function BleDevice(devId, devName) {
     var self = this;
     this.id = devId;
-    this.name = devName || "";
+    this.name = devName || "korea0000";
     this._listeners = {};
     this._discHandle = null;
     _activeDevices[devId] = this;
@@ -374,33 +270,28 @@
       device: self,
       connect: function () {
         return getReadyBle().then(function (BLE) {
-          // ★ 핸드폰 블루투스가 꺼져 있으면 GATT 연결 원천 차단!
-          return checkBleEnabled(BLE).then(function (enabled) {
-            if (!enabled) {
-              throw new Error("핸드폰 블루투스가 꺼져 있습니다.");
-            }
-            var p = Promise.resolve();
-            if (self._discHandle && typeof self._discHandle.remove === "function") {
-              p = self._discHandle.remove().catch(function () {});
-              self._discHandle = null;
-            }
-            return p.then(function () {
-              return BLE.connect({ deviceId: self.id }).catch(function () {
-                return BLE.disconnect({ deviceId: self.id }).catch(function () {})
-                  .then(function () { return new Promise(function (r) { setTimeout(r, 250); }); })
-                  .then(function () { return BLE.connect({ deviceId: self.id }); });
-              });
-            }).then(function () {
-              self.gatt.connected = true;
-              saveDeviceIdentity(self.id, self.name);
-              return BLE.addListener("disconnected|" + self.id, function () {
-                self.gatt.connected = false;
-                self._emit("gattserverdisconnected", { target: self });
-              });
-            }).then(function (h) {
-              self._discHandle = h;
-              return self.gatt;
+          var p = Promise.resolve();
+          if (self._discHandle && typeof self._discHandle.remove === "function") {
+            p = self._discHandle.remove().catch(function () {});
+            self._discHandle = null;
+          }
+          return p.then(function () {
+            // ★ 자폭 disconnect 없이 바로 connect 시도, 실패 시에만 1회 정리 후 재시도
+            return BLE.connect({ deviceId: self.id }).catch(function () {
+              return BLE.disconnect({ deviceId: self.id }).catch(function () {})
+                .then(function () { return new Promise(function (r) { setTimeout(r, 250); }); })
+                .then(function () { return BLE.connect({ deviceId: self.id }); });
             });
+          }).then(function () {
+            self.gatt.connected = true;
+            saveDeviceIdentity(self.id, self.name);
+            return BLE.addListener("disconnected|" + self.id, function () {
+              self.gatt.connected = false;
+              self._emit("gattserverdisconnected", { target: self });
+            });
+          }).then(function (h) {
+            self._discHandle = h;
+            return self.gatt;
           });
         });
       },
@@ -454,7 +345,7 @@
     }).catch(function () {});
   };
 
-  // 한글 발전기 선택 모달창 (블루투스 ON 상태에서만 작동, 가짜 korea0000 제거)
+  // 한글 발전기 선택 모달창 (주변 BLE 실시간 스캔 + 폰 등록 블루투스 동시 탐색)
   function openKoreaDevicePickerModal(BLE) {
     return new Promise(function (resolve, reject) {
       var old = document.getElementById("__koreaBlePickerModal");
@@ -535,14 +426,13 @@
       }
 
       function addCandidate(id, name, sourceLabel) {
-        if (closed || !id || !_isBtEnabled) return;
-        var cleanNm = String(name || "").trim();
-        // ★ 진짜 korea 이름(예: korea1112)이 있는 경우만 표시! 가짜 korea0000 대체 금지!
-        if (!isKoreaName(cleanNm)) return;
-
+        if (closed || !id) return;
+        var cleanNm = String(name || "korea0000").trim();
         if (foundMap[id]) {
-          foundMap[id].name = cleanNm;
-          foundMap[id].btnNameEl.textContent = "⚡ " + cleanNm;
+          if (cleanNm && cleanNm !== "korea0000" && foundMap[id].name === "korea0000") {
+            foundMap[id].name = cleanNm;
+            foundMap[id].btnNameEl.textContent = "⚡ " + cleanNm;
+          }
           return;
         }
         if (emptyMsg && emptyMsg.parentNode === listWrap) {
@@ -580,6 +470,7 @@
           if (overlay && overlay.parentNode) {
             overlay.parentNode.removeChild(overlay);
           }
+          // 스캔을 완전히 멈춘 뒤 120ms 후 dev 반환 -> 즉시 비밀번호 입력창(askPinModal) 표시!
           stopScanningAsync().then(function () {
             return new Promise(function (r) { setTimeout(r, 120); });
           }).then(function () {
@@ -594,79 +485,67 @@
       }
 
       function startDiscovery() {
-        checkBleEnabled(BLE).then(function (enabled) {
-          if (closed) return;
-          if (!enabled) {
-            closed = true;
-            if (overlay && overlay.parentNode) {
-              overlay.parentNode.removeChild(overlay);
+        var statEl = document.getElementById("__bleScanStat");
+        if (statEl) statEl.textContent = "주변 스캔 중...";
+
+        // 1) 폰 블루투스에 등록/연결된 korea 기기 조회
+        var pConn = (typeof BLE.getConnectedDevices === "function")
+          ? BLE.getConnectedDevices({ services: [SERVICE_UUID] }).catch(function () { return { devices: [] }; })
+          : Promise.resolve({ devices: [] });
+        var pBond = (typeof BLE.getBondedDevices === "function")
+          ? BLE.getBondedDevices().catch(function () { return { devices: [] }; })
+          : Promise.resolve({ devices: [] });
+
+        Promise.all([pConn, pBond]).then(function (res) {
+          var l1 = (res[0] && res[0].devices) || [];
+          var l2 = (res[1] && res[1].devices) || [];
+          var all = l1.concat(l2);
+          for (var i = 0; i < all.length; i++) {
+            var d = all[i];
+            var id = d && (d.deviceId || d.id);
+            var nm = d && d.name;
+            if (id && isKoreaName(nm)) {
+              addCandidate(id, nm, "블루투스 기기");
             }
-            stopScanningAsync().then(function () {
-              return showBtOffNoticeModal();
-            }).then(function () {
-              reject(new Error("설정에서 블루투스를 켜주세요"));
-            });
-            return;
-          }
-
-          var statEl = document.getElementById("__bleScanStat");
-          if (statEl) statEl.textContent = "주변 스캔 중...";
-
-          // 1) 폰 블루투스에 등록/연결된 korea 기기 조회
-          var pConn = (typeof BLE.getConnectedDevices === "function")
-            ? BLE.getConnectedDevices({ services: [SERVICE_UUID] }).catch(function () { return { devices: [] }; })
-            : Promise.resolve({ devices: [] });
-          var pBond = (typeof BLE.getBondedDevices === "function")
-            ? BLE.getBondedDevices().catch(function () { return { devices: [] }; })
-            : Promise.resolve({ devices: [] });
-
-          Promise.all([pConn, pBond]).then(function (res) {
-            if (!_isBtEnabled) return;
-            var l1 = (res[0] && res[0].devices) || [];
-            var l2 = (res[1] && res[1].devices) || [];
-            var all = l1.concat(l2);
-            for (var i = 0; i < all.length; i++) {
-              var d = all[i];
-              var id = d && (d.deviceId || d.id);
-              var nm = d && d.name;
-              if (id && isKoreaName(nm)) {
-                addCandidate(id, nm, "블루투스 기기");
-              }
-            }
-          });
-
-          // 2) 주변 실시간 스캔 (진짜 korea 이름만 허용, 가짜 korea0000 생성 금지!)
-          if (typeof BLE.requestLEScan === "function") {
-            stopScanningAsync().then(function () {
-              if (closed || !_isBtEnabled) return;
-              var sEl = document.getElementById("__bleScanStat");
-              if (sEl) sEl.textContent = "주변 스캔 중...";
-              return BLE.addListener("onScanResult", function (res) {
-                if (closed || !res || !_isBtEnabled) return;
-                var d = res.device || res;
-                var id = d.deviceId || d.id;
-                var nm = d.name || res.localName || "";
-                if (id && isKoreaName(nm)) {
-                  addCandidate(id, nm, "실시간 신호");
-                }
-              });
-            }).then(function (h) {
-              if (closed || !_isBtEnabled) {
-                if (h && h.remove) h.remove().catch(function () {});
-                return;
-              }
-              scanHandle = h;
-              return BLE.requestLEScan({ allowDuplicates: true });
-            }).then(function () {
-              if (closed) return;
-              scanTimer = setTimeout(function () {
-                stopScanningAsync();
-              }, 8000);
-            }).catch(function () {
-              stopScanningAsync();
-            });
           }
         });
+
+        // 2) ★ 이전 스캔이 완전히 종료된 뒤에 새 스캔을 시작 (비동기 경합 버그 원천 차단!)
+        if (typeof BLE.requestLEScan === "function") {
+          stopScanningAsync().then(function () {
+            if (closed) return;
+            var sEl = document.getElementById("__bleScanStat");
+            if (sEl) sEl.textContent = "주변 스캔 중...";
+            return BLE.addListener("onScanResult", function (res) {
+              if (closed || !res) return;
+              var d = res.device || res;
+              var id = d.deviceId || d.id;
+              var nm = d.name || res.localName || "";
+              var uuids = res.uuids || [];
+              var hasGenUuid = Array.isArray(uuids) && uuids.some(function (u) {
+                var lu = String(u).toLowerCase();
+                return lu.indexOf("12345678") >= 0 || lu.indexOf("ffe0") >= 0;
+              });
+              if (id && (isKoreaName(nm) || hasGenUuid)) {
+                addCandidate(id, nm || "korea0000", "실시간 신호");
+              }
+            });
+          }).then(function (h) {
+            if (closed) {
+              if (h && h.remove) h.remove().catch(function () {});
+              return;
+            }
+            scanHandle = h;
+            return BLE.requestLEScan({ allowDuplicates: true });
+          }).then(function () {
+            if (closed) return;
+            scanTimer = setTimeout(function () {
+              stopScanningAsync();
+            }, 8000);
+          }).catch(function () {
+            stopScanningAsync();
+          });
+        }
       }
 
       btnRescan.addEventListener("click", function () {
@@ -690,44 +569,30 @@
 
   navigator.bluetooth = {
     getAvailability: function () {
-      return getReadyBle().then(function (BLE) {
-        return checkBleEnabled(BLE);
-      }).catch(function () {
-        return false;
-      });
+      return Promise.resolve(true);
     },
     getDevices: function () {
-      return getReadyBle().then(function (BLE) {
-        return checkBleEnabled(BLE).then(function (enabled) {
-          // ★ 핸드폰 블루투스가 꺼져 있으면 자동 재연결용 기기 목록도 빈 배열 반환!
-          if (!enabled) return [];
-          var savedId = getSavedId();
-          var savedName = getSavedName();
-          if (savedId && savedName) {
-            if (!_cachedDevice || _cachedDevice.id !== savedId) {
-              _cachedDevice = new BleDevice(savedId, savedName);
-            }
-            return [_cachedDevice];
+      return getReadyBle().then(function () {
+        // 오직 이전에 사용자가 직접 선택하고 비밀번호 인증까지 완료하여 저장된 기기만 반환!
+        var savedId = getSavedId();
+        var savedName = getSavedName();
+        if (savedId && savedName) {
+          if (!_cachedDevice || _cachedDevice.id !== savedId) {
+            _cachedDevice = new BleDevice(savedId, savedName);
           }
-          return [];
-        });
+          return [_cachedDevice];
+        }
+        return [];
       }).catch(function () {
         return [];
       });
     },
     requestDevice: function () {
       return getReadyBle().then(function (BLE) {
-        return checkBleEnabled(BLE).then(function (enabled) {
-          if (!enabled) {
-            return showBtOffNoticeModal().then(function () {
-              throw new Error("설정에서 블루투스를 켜주세요");
-            });
-          }
-          return openKoreaDevicePickerModal(BLE);
-        });
+        return openKoreaDevicePickerModal(BLE);
       });
     }
   };
 
-  console.log("[ble-native-adapter V4.1] 장착 완료 (블루투스 OFF 시 완전 차단 + 안내 모달 + korea0000 유령 제거)");
+  console.log("[ble-native-adapter V4] 장착 완료 (UUID 12345678 일치 + 스캔 경합 수정 + 수동선택 시 무조건 PIN창 표시)");
 })();
