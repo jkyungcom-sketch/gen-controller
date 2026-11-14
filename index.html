@@ -47,18 +47,19 @@
         gap: 8px;
       }
 
-      /* 좌측 블루투스 상태/연결 버튼 */
+      /* 좌측 블루투스 상태/연결 버튼 (최초 실행 '연결하기' 상태일 때 밝고 선명하게 표시) */
       .status-badge {
         display: flex;
         align-items: center;
         gap: 7px;
-        font-size: 0.9rem;
-        font-weight: 800;
-        padding: 8px 14px;
+        font-size: 0.92rem;
+        font-weight: 900;
+        padding: 8px 15px;
         border-radius: 20px;
-        background: #1e293b;
-        color: #94a3b8;
-        border: 1px solid #334155;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #ffffff;
+        border: 1px solid #60a5fa;
+        box-shadow: 0 0 14px rgba(59, 130, 246, 0.45);
         cursor: pointer;
         transition: all 0.2s;
         white-space: nowrap;
@@ -68,19 +69,22 @@
       }
       .status-badge.connecting {
         color: #fbbf24;
-        border-color: rgba(251, 191, 36, 0.45);
-        background: rgba(251, 191, 36, 0.1);
+        border-color: rgba(251, 191, 36, 0.55);
+        background: rgba(251, 191, 36, 0.14);
+        box-shadow: 0 0 12px rgba(251, 191, 36, 0.25);
       }
       .status-badge.connected {
         color: #34d399;
-        border-color: rgba(52, 211, 153, 0.5);
-        background: rgba(16, 185, 129, 0.14);
+        border-color: rgba(52, 211, 153, 0.55);
+        background: rgba(16, 185, 129, 0.16);
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
       }
       .dot {
         width: 9px;
         height: 9px;
         border-radius: 50%;
-        background-color: #ef4444;
+        background-color: #93c5fd;
+        box-shadow: 0 0 8px #ffffff;
         flex-shrink: 0;
       }
       .dot.connecting {
@@ -390,6 +394,38 @@
         margin: 0 auto;
       }
 
+      /* 원클릭 자동 시동 버튼 (예열 버튼 위 배치, 작동 중 텍스트 깜빡임 퍼포먼스) */
+      .btn-autostart {
+        background: linear-gradient(135deg, #2563eb, #4f46e5);
+        border: 1px solid rgba(96, 165, 250, 0.45);
+      }
+      .btn-autostart.blinking:disabled {
+        opacity: 0.95;
+        background: linear-gradient(135deg, #0284c7, #2563eb);
+        border-color: #38bdf8;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.55);
+      }
+      .btn-autostart.blinking span {
+        animation: blinkAutoStartText 0.65s infinite ease-in-out;
+      }
+      @keyframes blinkAutoStartText {
+        0%,
+        100% {
+          opacity: 1;
+          text-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+        }
+        50% {
+          opacity: 0.2;
+          text-shadow: none;
+        }
+      }
+      .btn-autostart.success:disabled {
+        opacity: 0.95;
+        background: linear-gradient(135deg, #059669, #047857);
+        border-color: rgba(52, 211, 153, 0.6);
+        box-shadow: 0 0 18px rgba(16, 185, 129, 0.5);
+      }
+
       /* 예열 버튼 */
       .btn-preheat {
         background: linear-gradient(135deg, #d97706, #b45309);
@@ -597,21 +633,17 @@
         transform: scale(0.97);
       }
 
-      /* 앱 종료 카운트다운 모달 스타일 */
-      .exit-count-circle {
-        width: 130px;
-        height: 130px;
-        border-radius: 50%;
-        background: rgba(239, 68, 68, 0.12);
-        border: 4px solid #ef4444;
+      /* 앱 종료 카운트다운 숫자 스타일 (동그라미 테두리 제거, 깔끔한 대형 숫자) */
+      .exit-count-number {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 4rem;
+        font-size: 5.5rem;
         font-weight: 900;
         color: #f87171;
         margin: 0 auto;
-        box-shadow: 0 0 30px rgba(239, 68, 68, 0.35);
+        line-height: 1;
+        text-shadow: 0 0 24px rgba(239, 68, 68, 0.4);
         font-variant-numeric: tabular-nums;
       }
       .exit-msg-box {
@@ -639,6 +671,57 @@
       }
       .btn-exit-cancel-full:active {
         transform: scale(0.97);
+      }
+
+      /* 비밀번호 4자리 입력 모달 (컴팩트 센터 카드) */
+      .pin-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.85);
+        backdrop-filter: blur(5px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+      }
+      .pin-backdrop.show {
+        display: flex;
+      }
+      .pin-box {
+        width: 100%;
+        max-width: 360px;
+        background: #131c2e;
+        border: 1px solid #334155;
+        border-radius: 22px;
+        padding: 24px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+      }
+      .pin-desc {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-align: center;
+        line-height: 1.5;
+        word-break: keep-all;
+      }
+      .pin-input {
+        width: 100%;
+        background: #0f172a;
+        border: 1px solid #3b82f6;
+        border-radius: 14px;
+        padding: 14px;
+        color: #f8fafc;
+        font-size: 1.75rem;
+        font-weight: 900;
+        text-align: center;
+        letter-spacing: 10px;
+        outline: none;
+        user-select: text;
+        -webkit-user-select: text;
       }
     </style>
   </head>
@@ -732,6 +815,16 @@
 
     <!-- 메인 컨트롤 패널 -->
     <div class="control-panel">
+      <!-- 예열 버튼 위 원클릭 "자동 시동" 버튼 -->
+      <button
+        id="btnAutoStart"
+        class="btn btn-autostart btn-same-width"
+        onclick="triggerAutoStart()"
+        disabled
+      >
+        <span id="autoStartBtnText">자동 시동</span>
+      </button>
+
       <!-- 예열 블록 (홈 슬라이더는 안전장치로 조작 잠금) -->
       <div class="action-block">
         <div class="slider-inline-row">
@@ -810,6 +903,53 @@
       >
         앱 종료
       </button>
+    </div>
+
+    <!-- [팝업 0] 발전기 비밀번호 4자리 입력 모달 -->
+    <div id="pinModal" class="pin-backdrop">
+      <div class="pin-box">
+        <div class="modal-title" style="font-size: 1.2rem; padding-bottom: 10px">
+          🔒 발전기 비밀번호 입력
+        </div>
+        <div id="pinDesc" class="pin-desc">
+          선택한 발전기 이름의 맨 뒤 숫자 4자리를 입력하세요.
+        </div>
+        <input
+          id="pinInput"
+          type="tel"
+          inputmode="numeric"
+          maxlength="4"
+          class="pin-input"
+          placeholder="0000"
+          onkeydown="if(event.key==='Enter') confirmPinModal()"
+        />
+        <div class="modal-action-row">
+          <button class="btn-modal-cancel" onclick="cancelPinModal()">
+            취소
+          </button>
+          <button class="btn-modal-confirm" onclick="confirmPinModal()">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- [팝업 0-2] 시스템 오류 모달 (x3303) -->
+    <div id="errModal" class="pin-backdrop">
+      <div class="pin-box" style="border-color: #ef4444; text-align: center">
+        <div
+          class="modal-title"
+          style="color: #ef4444; font-size: 1.35rem; padding-bottom: 10px"
+        >
+          ⚠️ 시스템 오류
+        </div>
+        <div style="font-size: 1rem; line-height: 1.6; color: #f8fafc">
+          제어기 통신 및 모듈 점검이 필요합니다.<br />
+          <strong style="color: #f87171; font-size: 1.25rem"
+            >오류코드: x3303</strong
+          >
+        </div>
+      </div>
     </div>
 
     <!-- [전체화면 팝업 1] 예약 정지 설정 모달 -->
@@ -926,15 +1066,15 @@
       </div>
     </div>
 
-    <!-- [전체화면 팝업 3] 앱 종료 5초 카운트다운 모달 -->
+    <!-- [전체화면 팝업 3] 앱 종료 5초 카운트다운 모달 (운전 중일 때만 표시, 동그라미 제거) -->
     <div id="exitModal" class="modal-backdrop">
       <div class="modal-card">
         <div class="modal-title">앱 종료</div>
 
         <div class="modal-body-center">
-          <div id="exitCountNum" class="exit-count-circle">5</div>
+          <div id="exitCountNum" class="exit-count-number">5</div>
           <div id="exitStatusMsg" class="exit-msg-box">
-            발전기가 꺼져있습니다.<br />앱을 종료합니다.
+            앱을 종료합니다.<br />발전기가 운전 중입니다.
           </div>
         </div>
 
@@ -950,23 +1090,24 @@
 
     <script src="ble-native-adapter.js"></script>
   <script>
-      // BLE UUIDs
-      const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
-      const CHAR_CMD_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
-      const CHAR_STAT_UUID = "1c95d5e3-d8f7-413a-bf3d-7a2e5d7be87e";
+      // ESP32 정식 BLE UUID
+      const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
+      const CHARACTERISTIC_UUID = "abcdefab-1234-5678-1234-abcdefabcdef";
 
-      const STORAGE_KEY_ID = "jkyung_ble_device_id";
-      const STORAGE_KEY_NAME = "jkyung_ble_device_name";
+      const STORAGE_KEY_ID = "ble_last_id";
+      const STORAGE_KEY_NAME = "ble_last_name";
       const STORAGE_KEY_PREHEAT = "jkyung_preheat_sec";
       const STORAGE_KEY_START = "jkyung_start_sec";
 
       let bleDevice = null;
-      let cmdChar = null;
-      let statChar = null;
+      let bleChar = null;
       let isConnected = false;
       let isConnecting = false;
+      let sysLocked = false;
       let autoReconnectTimer = null;
       let connectSessionId = 0;
+      let cmdQueue = Promise.resolve();
+      let pendingPinResolve = null;
 
       // 기본 설정값: 예열 8초, 시동 0.8초 (시동 최대 4.0초)
       let savedPreheatSec =
@@ -980,7 +1121,13 @@
       let preheatCountdownTimer = null;
       let startCountdownTimer = null;
 
-      // 발전기 가동 상태 및 운전 시간 카운터
+      // 원클릭 자동 시동 상태 및 타이머
+      let isAutoStartActive = false;
+      let isAutoStartSucceeded = false;
+      let autoStartStepTimeout = null;
+      let autoStartFinishTimeout = null;
+
+      // 발전기 가동 상태 및 운전 시간 카운터 (ESP32 실시간 동기화 지원)
       let isGeneratorRunning = false;
       let runElapsedSeconds = 0;
       let runElapsedTimer = null;
@@ -998,6 +1145,25 @@
       let curAcVolt = 0.0;
       let curAcFreq = 0.0;
       let curDcBatt = 0.0;
+
+      function sanitizeSsid(raw) {
+        return String(raw || "")
+          .replace(/["'\s]/g, "")
+          .trim();
+      }
+
+      function extractPinFromName(name) {
+        const digits = String(name || "").replace(/\D/g, "");
+        return digits.length >= 4 ? digits.slice(-4) : "0000";
+      }
+
+      function getStampStr() {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}${m}${day}`;
+      }
 
       function formatSecondsText(val) {
         const num = Number(val);
@@ -1025,24 +1191,204 @@
       }
 
       function getSavedDeviceId() {
-        return localStorage.getItem(STORAGE_KEY_ID) || "";
+        return (
+          localStorage.getItem(STORAGE_KEY_ID) ||
+          localStorage.getItem("ble_native_device_id") ||
+          localStorage.getItem("jkyung_ble_device_id") ||
+          ""
+        );
       }
+
       function getSavedDeviceName() {
-        return localStorage.getItem(STORAGE_KEY_NAME) || "";
+        const savedName = sanitizeSsid(
+          localStorage.getItem(STORAGE_KEY_NAME) ||
+            localStorage.getItem("ble_native_device_name") ||
+            localStorage.getItem("jkyung_ble_device_name") ||
+            ""
+        );
+        const savedId = getSavedDeviceId();
+        if (!savedName || !savedId) return "";
+        const expectedPin = extractPinFromName(savedName);
+        if (localStorage.getItem("ble_auth_" + savedName) !== expectedPin) {
+          return "";
+        }
+        return savedName;
       }
+
       function saveDeviceInfo(id, name) {
-        if (id) localStorage.setItem(STORAGE_KEY_ID, id);
-        if (name) localStorage.setItem(STORAGE_KEY_NAME, name);
+        const cleanName = sanitizeSsid(name);
+        if (id) {
+          localStorage.setItem(STORAGE_KEY_ID, id);
+          localStorage.setItem("ble_native_device_id", id);
+          localStorage.setItem("jkyung_ble_device_id", id);
+        }
+        if (cleanName) {
+          localStorage.setItem(STORAGE_KEY_NAME, cleanName);
+          localStorage.setItem("ble_native_device_name", cleanName);
+          localStorage.setItem("jkyung_ble_device_name", cleanName);
+        }
       }
+
       function clearSavedDeviceInfo() {
-        localStorage.removeItem(STORAGE_KEY_ID);
-        localStorage.removeItem(STORAGE_KEY_NAME);
+        try {
+          localStorage.removeItem(STORAGE_KEY_ID);
+          localStorage.removeItem(STORAGE_KEY_NAME);
+          localStorage.removeItem("ble_native_device_id");
+          localStorage.removeItem("ble_native_device_name");
+          localStorage.removeItem("jkyung_ble_device_id");
+          localStorage.removeItem("jkyung_ble_device_name");
+          Object.keys(localStorage).forEach((k) => {
+            if (k.startsWith("ble_")) localStorage.removeItem(k);
+          });
+        } catch (e) {}
       }
 
       function calcGaugePercent(val, min, max) {
         if (val <= 0) return 0;
         const clamped = Math.max(min, Math.min(max, val));
         return ((clamped - min) / (max - min)) * 100;
+      }
+
+      function calcBattGaugePercent(v) {
+        if (v <= 0) return 0;
+        if (v <= 10) return 0;
+        if (v >= 15) return 100;
+        if (v <= 13) return ((v - 10) / 3.0) * 50.0;
+        return 50.0 + ((v - 13) / 2.0) * 50.0;
+      }
+
+      /* ══════ 비밀번호 4자리 입력 모달 ══════ */
+      function askPinModal(devName) {
+        return new Promise((resolve) => {
+          pendingPinResolve = resolve;
+          document.getElementById("pinDesc").innerText =
+            `선택한 발전기(${devName})의 맨 뒤 숫자 4자리를 입력하세요.`;
+          const inp = document.getElementById("pinInput");
+          inp.value = "";
+          document.getElementById("pinModal").classList.add("show");
+          setTimeout(() => inp.focus(), 120);
+        });
+      }
+
+      function cancelPinModal() {
+        document.getElementById("pinModal").classList.remove("show");
+        if (pendingPinResolve) pendingPinResolve(null);
+        pendingPinResolve = null;
+      }
+
+      function confirmPinModal() {
+        const val = document.getElementById("pinInput").value;
+        document.getElementById("pinModal").classList.remove("show");
+        if (pendingPinResolve) pendingPinResolve(val);
+        pendingPinResolve = null;
+      }
+
+      /* ══════ 원클릭 자동 시동 상태/UI 관리 (카운터 없이 텍스트 깜빡임 퍼포먼스) ══════ */
+      function clearAutoStartTimers() {
+        if (autoStartStepTimeout) {
+          clearTimeout(autoStartStepTimeout);
+          autoStartStepTimeout = null;
+        }
+        if (autoStartFinishTimeout) {
+          clearTimeout(autoStartFinishTimeout);
+          autoStartFinishTimeout = null;
+        }
+      }
+
+      function resetAutoStartState() {
+        clearAutoStartTimers();
+        isAutoStartActive = false;
+        isAutoStartSucceeded = false;
+        syncAutoStartButtonUI();
+      }
+
+      function markAutoStartSuccess() {
+        clearAutoStartTimers();
+        isAutoStartActive = false;
+        isAutoStartSucceeded = true;
+        syncAutoStartButtonUI();
+      }
+
+      function syncAutoStartButtonUI() {
+        const btn = document.getElementById("btnAutoStart");
+        const txt = document.getElementById("autoStartBtnText");
+        if (!btn || !txt) return;
+
+        btn.classList.remove("blinking", "success");
+
+        if (!isConnected || sysLocked) {
+          btn.disabled = true;
+          txt.innerText = "자동 시동";
+          return;
+        }
+
+        if (isAutoStartSucceeded || isGeneratorRunning) {
+          btn.disabled = true;
+          btn.classList.add("success");
+          txt.innerText = "자동 시동 성공";
+          return;
+        }
+
+        if (isAutoStartActive) {
+          btn.disabled = true;
+          btn.classList.add("blinking");
+          txt.innerText = "자동 시동";
+          return;
+        }
+
+        const acDetected = curAcVolt >= 15 || curAcFreq >= 10;
+        btn.disabled = acDetected;
+        txt.innerText = "자동 시동";
+      }
+
+      async function triggerAutoStart() {
+        if (
+          !isConnected ||
+          sysLocked ||
+          isGeneratorRunning ||
+          isAutoStartActive ||
+          curAcVolt >= 15 ||
+          curAcFreq >= 10
+        ) {
+          return;
+        }
+
+        clearAutoStartTimers();
+        isAutoStartActive = true;
+        isAutoStartSucceeded = false;
+        syncAutoStartButtonUI();
+
+        // 설정된 예열/시동 시간을 ESP32에 먼저 확정 동기화 후 예열 시작
+        await sendBleCmd("RELAY1_" + savedPreheatSec.toFixed(1));
+        await sendBleCmd("RELAY2_" + savedStartSec.toFixed(1));
+        if (!isAutoStartActive) return;
+
+        // 1단계: 설정된 값으로 예열 실행
+        triggerPreheat();
+
+        // 2단계: 설정된 예열시간이 끝나고 1단이 붙는 즉시 설정된 값으로 시동 실행
+        const preheatWaitMs = Math.round(savedPreheatSec * 1000) + 150;
+        autoStartStepTimeout = setTimeout(() => {
+          if (
+            !isAutoStartActive ||
+            isGeneratorRunning ||
+            !isConnected ||
+            sysLocked
+          ) {
+            return;
+          }
+          triggerStart();
+
+          // 시동 크랭킹(1단 대기 1초 + 설정 시동시간 + 여유 3초) 후에도 미시동 시 버튼 복구
+          const startWaitMs = Math.round((1.0 + savedStartSec + 3.0) * 1000);
+          autoStartFinishTimeout = setTimeout(() => {
+            if (isGeneratorRunning) {
+              markAutoStartSuccess();
+            } else if (isAutoStartActive) {
+              resetAutoStartState();
+            }
+          }, startWaitMs);
+        }, preheatWaitMs);
       }
 
       function syncHomeSlidersAndButtons() {
@@ -1076,19 +1422,20 @@
               `시동 ${formatSecondsText(savedStartSec)}초`;
           }
         }
+        syncAutoStartButtonUI();
       }
 
       function syncReserveButtonUI() {
         const btnReserve = document.getElementById("btnReserveStop");
         const txtReserve = document.getElementById("reserveBtnText");
 
-        if (!isConnected || !isGeneratorRunning) {
+        if (!isConnected || !isGeneratorRunning || sysLocked) {
           btnReserve.disabled = true;
         } else {
           btnReserve.disabled = false;
         }
 
-        if (reserveCountdownTimer && reserveRemainSeconds > 0) {
+        if (reserveRemainSeconds > 0) {
           btnReserve.classList.add("active");
           txtReserve.innerText = `예약 정지 취소 ${formatHMS(reserveRemainSeconds)}`;
         } else {
@@ -1099,7 +1446,6 @@
 
       function startRunElapsedTimer() {
         if (runElapsedTimer) return;
-        runElapsedSeconds = 0;
         syncHomeSlidersAndButtons();
         runElapsedTimer = setInterval(() => {
           runElapsedSeconds++;
@@ -1118,6 +1464,21 @@
         runElapsedSeconds = 0;
       }
 
+      function applyEspRunElapsedSec(espSec) {
+        if (typeof espSec !== "number" || isNaN(espSec) || espSec < 0) return;
+        // ESP32에서 보내준 누적 가동시간과 동기화 (앱 재시작 시에도 이어서 표시)
+        if (
+          espSec > 0 &&
+          (runElapsedSeconds === 0 || Math.abs(espSec - runElapsedSeconds) >= 2)
+        ) {
+          runElapsedSeconds = espSec;
+          if (isGeneratorRunning) {
+            document.getElementById("startBtnText").innerText =
+              formatHMS(runElapsedSeconds);
+          }
+        }
+      }
+
       function updateConditionUI() {
         const cardVolt = document.getElementById("cardVolt");
         const cardFreq = document.getElementById("cardFreq");
@@ -1133,24 +1494,40 @@
         const chargeBadge = document.getElementById("chargeBadge");
 
         // 1. 전압 컨디션 (실측치 * 2.0 표시, 400~480V)
-        const displayVolt = isConnected && curAcVolt > 0 ? curAcVolt * 2.0 : 0;
-        const nowRunning = isConnected && displayVolt >= 20.0;
+        const displayVolt =
+          isConnected && !sysLocked && curAcVolt > 0 ? curAcVolt * 2.0 : 0;
+        const nowRunning =
+          isConnected &&
+          !sysLocked &&
+          (displayVolt >= 20.0 || curAcFreq >= 45.0);
 
         if (nowRunning && !isGeneratorRunning) {
           isGeneratorRunning = true;
           stopPreheatVisualCountdown();
           stopStartVisualCountdown();
+          markAutoStartSuccess();
           startRunElapsedTimer();
         } else if (!nowRunning && isGeneratorRunning) {
           isGeneratorRunning = false;
           stopRunElapsedTimer();
           cancelReserveCountdown(false);
+          resetAutoStartState();
           syncHomeSlidersAndButtons();
         }
 
+        // 가동 중 또는 자동 시동 중에는 예열/시동 중복 터치 잠금
+        if (isConnected && !sysLocked) {
+          const acDetected =
+            curAcVolt >= 15 || curAcFreq >= 10 || isAutoStartActive;
+          document.getElementById("btnPreheat").disabled = acDetected;
+          document.getElementById("btnStart").disabled = acDetected;
+          document.getElementById("btnStop").disabled = false;
+        }
+
+        syncAutoStartButtonUI();
         syncReserveButtonUI();
 
-        if (!isConnected || displayVolt < 10) {
+        if (!isConnected || sysLocked || displayVolt < 20) {
           cardVolt.classList.add("is-off");
           elVolt.innerText = "0";
           ptrVolt.style.left = "0%";
@@ -1168,7 +1545,7 @@
         }
 
         // 2. 엔진 컨디션 (실측 주파수, 57~63Hz)
-        if (!isConnected || curAcFreq < 1.0) {
+        if (!isConnected || sysLocked || curAcFreq < 5.0) {
           cardFreq.classList.add("is-off");
           elFreq.innerText = "0.0";
           ptrFreq.style.left = "0%";
@@ -1185,8 +1562,8 @@
           }
         }
 
-        // 3. 밧데리 컨디션 (실측 전압, 10~15V, 13.5V 이상만 충전중)
-        if (!isConnected || curDcBatt < 1.0) {
+        // 3. 밧데리 컨디션 (실측 전압, 10~13~15V, AC가 측정되고 동시에 DC 13.0V 이상일 때만 충전중 표시)
+        if (!isConnected || sysLocked || curDcBatt < 5.0) {
           cardBatt.classList.add("is-off");
           elBatt.innerText = "0.0";
           ptrBatt.style.left = "0%";
@@ -1195,9 +1572,11 @@
         } else {
           cardBatt.classList.remove("is-off");
           elBatt.innerText = curDcBatt.toFixed(1);
-          ptrBatt.style.left = calcGaugePercent(curDcBatt, 10, 15) + "%";
+          ptrBatt.style.left = calcBattGaugePercent(curDcBatt) + "%";
 
-          if (curDcBatt >= 13.5) {
+          const isAcMeasured =
+            displayVolt >= 20.0 || curAcVolt >= 15.0 || curAcFreq >= 10.0;
+          if (isAcMeasured && curDcBatt >= 13.0) {
             chargeBadge.innerText = "충전중";
             chargeBadge.classList.add("charging");
           } else {
@@ -1221,18 +1600,25 @@
         const text = document.getElementById("statusText");
         const btnSettings = document.getElementById("btnSettings");
         const savedName = getSavedDeviceName();
-        const savedId = getSavedDeviceId();
 
         badge.classList.remove("connecting", "connected");
         dot.classList.remove("connecting", "connected");
+
+        if (sysLocked) {
+          text.innerText = "시스템 잠금 (x3303)";
+          btnSettings.disabled = true;
+          return;
+        }
 
         if (isConnected) {
           badge.classList.add("connected");
           dot.classList.add("connected");
           text.innerText =
-            savedName || (bleDevice && bleDevice.name) || "발전기";
+            savedName ||
+            (bleDevice && sanitizeSsid(bleDevice.name)) ||
+            "발전기";
           btnSettings.disabled = false;
-        } else if (isConnecting || savedId || savedName) {
+        } else if (isConnecting || savedName) {
           badge.classList.add("connecting");
           dot.classList.add("connecting");
           text.innerText = "연결 중";
@@ -1244,10 +1630,12 @@
       }
 
       function setControlsEnabled(enabled) {
+        document.getElementById("btnAutoStart").disabled = !enabled;
         document.getElementById("btnPreheat").disabled = !enabled;
         document.getElementById("btnStart").disabled = !enabled;
         document.getElementById("btnStop").disabled = !enabled;
         document.getElementById("btnSettings").disabled = !enabled;
+        syncAutoStartButtonUI();
         syncReserveButtonUI();
       }
 
@@ -1255,23 +1643,44 @@
         syncHomeSlidersAndButtons();
         updateTopBarUI();
         updateConditionUI();
-        const savedId = getSavedDeviceId();
-        const savedName = getSavedDeviceName();
-        if (savedId || savedName) {
+        if (getSavedDeviceName()) {
           tryAutoConnectSavedDevice();
         }
       });
 
-      function handleTopLeftClick() {
-        if (isConnected) return;
+      document.addEventListener("visibilitychange", () => {
+        if (
+          document.visibilityState === "visible" &&
+          !isConnected &&
+          !sysLocked &&
+          getSavedDeviceName()
+        ) {
+          scheduleAutoReconnect();
+        }
+      });
+
+      async function handleTopLeftClick() {
+        if (sysLocked) return;
+        if (
+          isConnected &&
+          bleDevice &&
+          bleDevice.gatt &&
+          bleDevice.gatt.connected
+        ) {
+          await sendBleCmd("REQ_SYNC");
+          return;
+        }
         connectBluetooth(true);
       }
 
       async function tryAutoConnectSavedDevice() {
-        if (isConnected || isConnecting) return;
-        const savedId = getSavedDeviceId();
+        if (sysLocked || isConnected || isConnecting) return;
         const savedName = getSavedDeviceName();
-        if (!savedId && !savedName) return;
+        const savedId = getSavedDeviceId();
+        if (!savedName) {
+          updateTopBarUI();
+          return;
+        }
 
         const mySession = connectSessionId;
         isConnecting = true;
@@ -1279,29 +1688,31 @@
 
         try {
           if (bleDevice && bleDevice.gatt) {
-            await connectGattAndSubscribe(bleDevice, mySession);
-            return;
+            const ok = await connectGattAndSubscribe(
+              bleDevice,
+              savedName,
+              mySession
+            );
+            if (ok) return;
           }
           if (navigator.bluetooth && navigator.bluetooth.getDevices) {
             const devices = await navigator.bluetooth.getDevices();
             if (mySession !== connectSessionId) return;
-            const matched = devices.find(
-              (d) =>
-                (savedId && d.id === savedId) ||
-                (savedName && d.name === savedName)
-            );
+            const matched =
+              (devices || []).find(
+                (d) =>
+                  (savedId && d.id === savedId) ||
+                  sanitizeSsid(d.name) === savedName
+              ) ||
+              (devices && devices[0]);
             if (matched) {
               bleDevice = matched;
-              bleDevice.removeEventListener(
-                "gattserverdisconnected",
-                onDisconnected
+              const ok = await connectGattAndSubscribe(
+                bleDevice,
+                savedName,
+                mySession
               );
-              bleDevice.addEventListener(
-                "gattserverdisconnected",
-                onDisconnected
-              );
-              await connectGattAndSubscribe(bleDevice, mySession);
-              return;
+              if (ok) return;
             }
           }
         } catch (err) {
@@ -1316,35 +1727,21 @@
       }
 
       function scheduleAutoReconnect() {
+        if (sysLocked) return;
         if (autoReconnectTimer) clearTimeout(autoReconnectTimer);
-        const savedId = getSavedDeviceId();
         const savedName = getSavedDeviceName();
-        if (!savedId && !savedName) return;
+        if (!savedName) return;
         const scheduledSession = connectSessionId;
 
         autoReconnectTimer = setTimeout(async () => {
           if (scheduledSession !== connectSessionId) return;
-          if (isConnected || isConnecting) return;
-          if (bleDevice && bleDevice.gatt) {
-            try {
-              isConnecting = true;
-              updateTopBarUI();
-              await connectGattAndSubscribe(bleDevice, scheduledSession);
-              return;
-            } catch (e) {
-              if (scheduledSession === connectSessionId) {
-                isConnecting = false;
-                updateTopBarUI();
-              }
-            }
-          }
-          if (scheduledSession === connectSessionId) {
-            tryAutoConnectSavedDevice();
-          }
-        }, 3500);
+          if (isConnected || isConnecting || sysLocked) return;
+          tryAutoConnectSavedDevice();
+        }, 2200);
       }
 
       async function connectBluetooth(isUserGesture = false) {
+        if (sysLocked) return;
         if (!navigator.bluetooth) {
           alert(
             "이 기기 또는 브라우저에서는 블루투스(Web Bluetooth)를 지원하지 않습니다."
@@ -1353,40 +1750,103 @@
         }
         const mySession = connectSessionId;
         try {
-          isConnecting = true;
-          updateTopBarUI();
-
           if (bleDevice && bleDevice.gatt && !isUserGesture) {
-            await connectGattAndSubscribe(bleDevice, mySession);
+            isConnecting = true;
+            updateTopBarUI();
+            await connectGattAndSubscribe(
+              bleDevice,
+              getSavedDeviceName(),
+              mySession
+            );
             return;
           }
 
-          const savedName = getSavedDeviceName();
-          let requestOptions = {
-            optionalServices: [SERVICE_UUID],
-          };
-
-          if (savedName) {
-            requestOptions.filters = [{ name: savedName }];
-          } else {
-            requestOptions.acceptAllDevices = true;
-          }
-
+          // 1) 발전기 선택창 열기
+          let device = null;
           try {
-            bleDevice = await navigator.bluetooth.requestDevice(requestOptions);
+            device = await navigator.bluetooth.requestDevice({
+              filters: [{ namePrefix: "korea" }],
+              optionalServices: [SERVICE_UUID],
+            });
           } catch (filterErr) {
             if (mySession !== connectSessionId) return;
-            if (savedName && isUserGesture) {
-              bleDevice = await navigator.bluetooth.requestDevice({
-                acceptAllDevices: true,
-                optionalServices: [SERVICE_UUID],
-              });
-            } else {
-              throw filterErr;
-            }
+            throw filterErr;
           }
 
-          if (mySession !== connectSessionId) return;
+          if (!device || mySession !== connectSessionId) return;
+
+          // 2) 선택한 발전기 이름의 맨 뒤 숫자 4자리 비밀번호 확인!
+          const cleanName = sanitizeSsid(device.name || "korea0000");
+          const expectedPin = extractPinFromName(cleanName);
+          const savedAuth = localStorage.getItem("ble_auth_" + cleanName);
+
+          if (savedAuth !== expectedPin) {
+            const userPin = await askPinModal(cleanName);
+            if (userPin === null) {
+              isConnecting = false;
+              updateTopBarUI();
+              return;
+            }
+            const cleanInput = String(userPin).replace(/\D/g, "").slice(-4);
+            if (cleanInput !== expectedPin) {
+              alert("비밀번호 4자리가 일치하지 않습니다.");
+              isConnecting = false;
+              updateTopBarUI();
+              return;
+            }
+            localStorage.setItem("ble_auth_" + cleanName, expectedPin);
+          }
+
+          // 3) 비밀번호 인증 통과 후 GATT 연결 시작
+          if (autoReconnectTimer) {
+            clearTimeout(autoReconnectTimer);
+            autoReconnectTimer = null;
+          }
+          if (bleDevice && bleDevice.id !== device.id && bleDevice.gatt) {
+            try {
+              bleDevice.gatt.disconnect();
+            } catch (e) {}
+          }
+
+          const newSession = ++connectSessionId;
+          bleDevice = device;
+          saveDeviceInfo(device.id, cleanName);
+          isConnecting = true;
+          updateTopBarUI();
+
+          const ok = await connectGattAndSubscribe(
+            device,
+            cleanName,
+            newSession
+          );
+          if (!ok && newSession === connectSessionId) {
+            isConnecting = false;
+            updateTopBarUI();
+            scheduleAutoReconnect();
+          }
+        } catch (err) {
+          console.warn("BLE 연결 취소/실패:", err);
+          if (mySession === connectSessionId) {
+            isConnecting = false;
+            updateTopBarUI();
+            if (getSavedDeviceName()) {
+              scheduleAutoReconnect();
+            }
+          }
+        }
+      }
+
+      async function connectGattAndSubscribe(
+        device,
+        cleanName,
+        sessionToken = connectSessionId
+      ) {
+        if (sysLocked) return false;
+        try {
+          bleDevice = device;
+          const targetName =
+            cleanName ||
+            sanitizeSsid(device.name || getSavedDeviceName() || "korea0000");
 
           bleDevice.removeEventListener(
             "gattserverdisconnected",
@@ -1394,68 +1854,63 @@
           );
           bleDevice.addEventListener("gattserverdisconnected", onDisconnected);
 
-          saveDeviceInfo(bleDevice.id, bleDevice.name || "발전기");
-          await connectGattAndSubscribe(bleDevice, mySession);
-        } catch (err) {
-          console.error(err);
-          if (mySession === connectSessionId) {
-            isConnecting = false;
-            updateTopBarUI();
-            if (getSavedDeviceId() || getSavedDeviceName()) {
-              scheduleAutoReconnect();
-            }
+          const server = await bleDevice.gatt.connect();
+          if (sessionToken !== connectSessionId) {
+            try {
+              device.gatt.disconnect();
+            } catch (e) {}
+            return false;
           }
+
+          const service = await server.getPrimaryService(SERVICE_UUID);
+          if (sessionToken !== connectSessionId) return false;
+
+          bleChar = await service.getCharacteristic(CHARACTERISTIC_UUID);
+          if (sessionToken !== connectSessionId) return false;
+
+          await bleChar.startNotifications();
+          if (sessionToken !== connectSessionId) return false;
+
+          bleChar.removeEventListener(
+            "characteristicvaluechanged",
+            handleStatusNotification
+          );
+          bleChar.addEventListener(
+            "characteristicvaluechanged",
+            handleStatusNotification
+          );
+
+          isConnected = true;
+          isConnecting = false;
+          if (autoReconnectTimer) {
+            clearTimeout(autoReconnectTimer);
+            autoReconnectTimer = null;
+          }
+
+          saveDeviceInfo(device.id, targetName);
+          updateTopBarUI();
+          setControlsEnabled(true);
+          updateConditionUI();
+
+          // 연결 직후 날짜 스탬프 및 상태 동기화 요청
+          await sendBleCmd("DATE_" + getStampStr());
+          await sendBleCmd("REQ_SYNC");
+          return true;
+        } catch (err) {
+          console.warn("GATT 연결 오류:", err);
+          return false;
         }
-      }
-
-      async function connectGattAndSubscribe(device, sessionToken = connectSessionId) {
-        const server = await device.gatt.connect();
-        if (sessionToken !== connectSessionId) {
-          try {
-            device.gatt.disconnect();
-          } catch (e) {}
-          return;
-        }
-        const service = await server.getPrimaryService(SERVICE_UUID);
-        if (sessionToken !== connectSessionId) return;
-        cmdChar = await service.getCharacteristic(CHAR_CMD_UUID);
-        statChar = await service.getCharacteristic(CHAR_STAT_UUID);
-        if (sessionToken !== connectSessionId) return;
-
-        await statChar.startNotifications();
-        statChar.removeEventListener(
-          "characteristicvaluechanged",
-          handleStatusNotification
-        );
-        statChar.addEventListener(
-          "characteristicvaluechanged",
-          handleStatusNotification
-        );
-
-        isConnected = true;
-        isConnecting = false;
-        if (autoReconnectTimer) {
-          clearTimeout(autoReconnectTimer);
-          autoReconnectTimer = null;
-        }
-        saveDeviceInfo(device.id, device.name || getSavedDeviceName() || "발전기");
-        updateTopBarUI();
-        setControlsEnabled(true);
-
-        // 연결 직후 저장된 예열/시동 시간 ESP32에 동기화
-        await sendBleCmd(`SET_PREHEAT:${Math.round(savedPreheatSec * 1000)}`);
-        await sendBleCmd(`SET_START:${Math.round(savedStartSec * 1000)}`);
       }
 
       function onDisconnected() {
         isConnected = false;
         isConnecting = false;
-        cmdChar = null;
-        statChar = null;
+        bleChar = null;
         curAcVolt = 0;
         curAcFreq = 0;
         curDcBatt = 0;
 
+        resetAutoStartState();
         stopPreheatVisualCountdown();
         stopStartVisualCountdown();
         isGeneratorRunning = false;
@@ -1465,45 +1920,135 @@
         updateTopBarUI();
         updateConditionUI();
 
-        if (getSavedDeviceId() || getSavedDeviceName()) {
+        if (!sysLocked && getSavedDeviceName()) {
           scheduleAutoReconnect();
         }
       }
 
-      function handleStatusNotification(event) {
-        const value = new TextDecoder().decode(event.target.value);
-        try {
-          const data = JSON.parse(value);
-          if (data.acV !== undefined) curAcVolt = parseFloat(data.acV) || 0;
-          if (data.acF !== undefined) curAcFreq = parseFloat(data.acF) || 0;
-          if (data.dcV !== undefined) curDcBatt = parseFloat(data.dcV) || 0;
-          updateConditionUI();
+      function triggerLockdown() {
+        connectSessionId++;
+        sysLocked = true;
+        isConnecting = false;
+        if (autoReconnectTimer) {
+          clearTimeout(autoReconnectTimer);
+          autoReconnectTimer = null;
+        }
+        document.getElementById("settingsModal").classList.remove("show");
+        document.getElementById("reserveModal").classList.remove("show");
+        document.getElementById("pinModal").classList.remove("show");
+        document.getElementById("errModal").classList.add("show");
+        if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected) {
+          try {
+            bleDevice.gatt.disconnect();
+          } catch (e) {}
+        }
+        bleDevice = null;
+        onDisconnected();
+      }
 
-          if (data.state !== undefined) {
-            const btnPre = document.getElementById("btnPreheat");
-            const btnSt = document.getElementById("btnStart");
-            btnPre.classList.toggle("active", data.state === "PREHEAT");
-            btnSt.classList.toggle("active", data.state === "START");
-          }
-        } catch (e) {
-          const parts = value.split(",");
-          if (parts.length >= 3) {
-            curAcVolt = parseFloat(parts[0]) || 0;
-            curAcFreq = parseFloat(parts[1]) || 0;
-            curDcBatt = parseFloat(parts[2]) || 0;
-            updateConditionUI();
-          }
+      function handleStatusNotification(event) {
+        const raw = new TextDecoder("utf-8")
+          .decode(event.target.value)
+          .trim();
+        if (!raw) return;
+
+        const lines = raw.split(/\r?\n/);
+        for (const line of lines) {
+          parsePacket(line.trim());
         }
       }
 
-      async function sendBleCmd(cmdStr) {
-        if (!isConnected || !cmdChar) return;
-        try {
-          const encoder = new TextEncoder();
-          await cmdChar.writeValue(encoder.encode(cmdStr));
-        } catch (err) {
-          console.error("명령 전송 실패:", err);
+      function parsePacket(msg) {
+        if (!msg) return;
+        if (msg === "err_x3303") {
+          triggerLockdown();
+          return;
         }
+        if (sysLocked) return;
+
+        if (msg.startsWith("r1_")) {
+          const v = parseFloat(msg.substring(3));
+          if (!isNaN(v) && v >= 1.0 && v <= 20.0) {
+            savedPreheatSec = v;
+            localStorage.setItem(STORAGE_KEY_PREHEAT, String(savedPreheatSec));
+            if (!preheatCountdownTimer) syncHomeSlidersAndButtons();
+          }
+        } else if (msg.startsWith("r2_")) {
+          let v = parseFloat(msg.substring(3));
+          if (!isNaN(v) && v >= 0.3) {
+            if (v > 4.0) v = 4.0;
+            savedStartSec = v;
+            localStorage.setItem(STORAGE_KEY_START, String(savedStartSec));
+            if (!startCountdownTimer) syncHomeSlidersAndButtons();
+          }
+        } else if (msg.startsWith("off_")) {
+          const sec = parseInt(msg.substring(4), 10) || 0;
+          applyEspRemainSec(sec);
+        } else if (msg.startsWith("st_")) {
+          const parts = msg.substring(3).split(",");
+          if (parts.length >= 6) {
+            curAcVolt = parseFloat(parts[0]) || 0;
+            curAcFreq = parseFloat(parts[1]) || 0;
+            curDcBatt = parseFloat(parts[2]) || 0;
+            const remSec = parseInt(parts[5], 10) || 0;
+            if (parts.length >= 8) {
+              const espRunSec = parseInt(parts[7], 10) || 0;
+              applyEspRunElapsedSec(espRunSec);
+            }
+            applyEspRemainSec(remSec);
+            updateConditionUI();
+            if (exitCountdownTimer) updateExitModalMessage();
+          }
+        } else {
+          try {
+            const data = JSON.parse(msg);
+            if (data.acV !== undefined) curAcVolt = parseFloat(data.acV) || 0;
+            if (data.acF !== undefined) curAcFreq = parseFloat(data.acF) || 0;
+            if (data.dcV !== undefined) curDcBatt = parseFloat(data.dcV) || 0;
+            updateConditionUI();
+          } catch (e) {}
+        }
+      }
+
+      function applyEspRemainSec(sec) {
+        reserveRemainSeconds = Math.max(0, sec);
+        if (reserveRemainSeconds > 0 && !reserveCountdownTimer) {
+          reserveCountdownTimer = setInterval(() => {
+            if (reserveRemainSeconds > 0) {
+              reserveRemainSeconds--;
+              syncReserveButtonUI();
+              if (exitCountdownTimer) updateExitModalMessage();
+            } else {
+              clearInterval(reserveCountdownTimer);
+              reserveCountdownTimer = null;
+              syncReserveButtonUI();
+            }
+          }, 1000);
+        } else if (reserveRemainSeconds <= 0 && reserveCountdownTimer) {
+          clearInterval(reserveCountdownTimer);
+          reserveCountdownTimer = null;
+        }
+        syncReserveButtonUI();
+      }
+
+      async function sendBleCmd(cmdStr, preferNoResp = false) {
+        if (!isConnected || !bleChar || sysLocked) return;
+        cmdQueue = cmdQueue.then(async () => {
+          if (!isConnected || !bleChar || sysLocked) return;
+          try {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(cmdStr);
+            if (preferNoResp && bleChar.writeValueWithoutResponse) {
+              await bleChar.writeValueWithoutResponse(data);
+            } else {
+              await bleChar.writeValue(data);
+            }
+            await new Promise((r) => setTimeout(r, 35));
+          } catch (err) {
+            console.warn("명령 전송 실패:", err);
+          }
+        });
+        return cmdQueue;
       }
 
       // 1. 예열 버튼
@@ -1520,11 +2065,10 @@
       }
 
       async function triggerPreheat() {
-        if (isGeneratorRunning) return;
+        if (isGeneratorRunning || curAcVolt >= 15 || curAcFreq >= 10) return;
         const durationSec = savedPreheatSec;
         const ms = Math.round(durationSec * 1000);
-        await sendBleCmd(`SET_PREHEAT:${ms}`);
-        await sendBleCmd("CMD_PREHEAT");
+        sendBleCmd("CMD_PREHEAT");
 
         if (preheatCountdownTimer) clearInterval(preheatCountdownTimer);
         const slider = document.getElementById("preheatSlider");
@@ -1536,7 +2080,7 @@
         const endTime = Date.now() + ms;
 
         preheatCountdownTimer = setInterval(() => {
-          if (isGeneratorRunning) {
+          if (isGeneratorRunning || curAcVolt >= 15 || curAcFreq >= 10) {
             stopPreheatVisualCountdown();
             return;
           }
@@ -1546,7 +2090,7 @@
           if (remainSec <= 0) {
             stopPreheatVisualCountdown();
           }
-        }, 100);
+        }, 80);
       }
 
       // 2. 시동 버튼
@@ -1563,11 +2107,10 @@
       }
 
       async function triggerStart() {
-        if (isGeneratorRunning) return;
+        if (isGeneratorRunning || curAcVolt >= 15 || curAcFreq >= 10) return;
         const durationSec = savedStartSec;
         const ms = Math.round(durationSec * 1000);
-        await sendBleCmd(`SET_START:${ms}`);
-        await sendBleCmd("CMD_START");
+        sendBleCmd("CMD_START");
 
         if (startCountdownTimer) clearInterval(startCountdownTimer);
         const slider = document.getElementById("startSlider");
@@ -1579,7 +2122,7 @@
         const endTime = Date.now() + ms;
 
         startCountdownTimer = setInterval(() => {
-          if (isGeneratorRunning) {
+          if (isGeneratorRunning || curAcVolt >= 15 || curAcFreq >= 10) {
             stopStartVisualCountdown();
             return;
           }
@@ -1589,13 +2132,13 @@
           if (remainSec <= 0) {
             stopStartVisualCountdown();
           }
-        }, 100);
+        }, 60);
       }
 
       // 3. 예약 정지 설정 / 취소 버튼
       function handleReserveStopButton() {
-        if (!isConnected || !isGeneratorRunning) return;
-        if (reserveCountdownTimer && reserveRemainSeconds > 0) {
+        if (!isConnected || !isGeneratorRunning || sysLocked) return;
+        if (reserveRemainSeconds > 0) {
           cancelReserveCountdown(true);
           return;
         }
@@ -1603,9 +2146,11 @@
       }
 
       function openReserveModal() {
-        tempReserveMinutes = 0;
-        document.getElementById("reserveRangeInput").value = 0;
-        document.getElementById("reserveModalVal").innerText = "00:00:00";
+        tempReserveMinutes = Math.floor(reserveRemainSeconds / 60);
+        document.getElementById("reserveRangeInput").value = tempReserveMinutes;
+        document.getElementById("reserveModalVal").innerText = formatHMS(
+          tempReserveMinutes * 60
+        );
         document.getElementById("reserveModal").classList.add("show");
       }
 
@@ -1635,45 +2180,35 @@
         }
         reserveRemainSeconds = 0;
         if (sendCancelCmd) {
-          sendBleCmd("TIMER_CANCEL");
+          sendBleCmd("OFF_ADD_0");
         }
         syncReserveButtonUI();
       }
 
-      function confirmReserveModal() {
+      async function confirmReserveModal() {
         closeReserveModal();
         if (tempReserveMinutes <= 0) {
           cancelReserveCountdown(true);
           return;
         }
-        reserveRemainSeconds = tempReserveMinutes * 60;
-        sendBleCmd(`TIMER_SEC:${reserveRemainSeconds}`);
-
-        if (reserveCountdownTimer) clearInterval(reserveCountdownTimer);
-        syncReserveButtonUI();
-
-        reserveCountdownTimer = setInterval(() => {
-          reserveRemainSeconds--;
-          if (reserveRemainSeconds <= 0) {
-            cancelReserveCountdown(false);
-            emergencyStop();
-          } else {
-            syncReserveButtonUI();
-          }
-        }, 1000);
+        const targetSec = Math.min(43200, tempReserveMinutes * 60);
+        applyEspRemainSec(targetSec);
+        await sendBleCmd("OFF_ADD_0");
+        await sendBleCmd("OFF_ADD_" + targetSec);
       }
 
       // 4. 즉시 정지
       function emergencyStop() {
+        resetAutoStartState();
         stopPreheatVisualCountdown();
         stopStartVisualCountdown();
-        cancelReserveCountdown(true);
-        sendBleCmd("CMD_STOP");
+        cancelReserveCountdown(false);
+        sendBleCmd("CMD_STOP_" + getStampStr(), true);
       }
 
       // 5. 설정 모달 (예열 기본 8초, 시동 기본 0.8초 / 최대 4초, 다른 발전기 선택)
       function openSettingsModal() {
-        if (!isConnected) return;
+        if (!isConnected || sysLocked) return;
         document.getElementById("setPreheatRange").value = savedPreheatSec;
         document.getElementById("setPreheatVal").innerText =
           `${formatSecondsText(savedPreheatSec)}초`;
@@ -1713,12 +2248,12 @@
         closeSettingsModal();
 
         if (isConnected) {
-          await sendBleCmd(`SET_PREHEAT:${Math.round(savedPreheatSec * 1000)}`);
-          await sendBleCmd(`SET_START:${Math.round(savedStartSec * 1000)}`);
+          await sendBleCmd("RELAY1_" + savedPreheatSec.toFixed(1));
+          await sendBleCmd("RELAY2_" + savedStartSec.toFixed(1));
         }
       }
 
-      function selectAnotherGenerator() {
+      async function selectAnotherGenerator() {
         closeSettingsModal();
         connectSessionId++;
         clearSavedDeviceInfo();
@@ -1727,28 +2262,17 @@
           clearTimeout(autoReconnectTimer);
           autoReconnectTimer = null;
         }
-        if (bleDevice) {
-          try {
-            bleDevice.removeEventListener(
-              "gattserverdisconnected",
-              onDisconnected
-            );
-            if (bleDevice.gatt) {
-              bleDevice.gatt.disconnect();
-            }
-          } catch (e) {}
-          bleDevice = null;
-        }
-
+        const prevDev = bleDevice;
+        bleDevice = null;
+        bleChar = null;
         isConnected = false;
         isConnecting = false;
-        cmdChar = null;
-        statChar = null;
         curAcVolt = 0;
         curAcFreq = 0;
         curDcBatt = 0;
         isGeneratorRunning = false;
 
+        resetAutoStartState();
         stopPreheatVisualCountdown();
         stopStartVisualCountdown();
         stopRunElapsedTimer();
@@ -1757,14 +2281,31 @@
         setControlsEnabled(false);
         updateTopBarUI();
         updateConditionUI();
+
+        if (prevDev) {
+          try {
+            prevDev.removeEventListener(
+              "gattserverdisconnected",
+              onDisconnected
+            );
+            if (prevDev.gatt) {
+              prevDev.gatt.disconnect();
+            }
+          } catch (e) {}
+        }
+        if (typeof window.__bleNativeReset === "function") {
+          try {
+            await window.__bleNativeReset();
+          } catch (e) {}
+        }
+        clearSavedDeviceInfo();
+        updateTopBarUI();
       }
 
-      // 6. 맨 밑 "앱 종료" 버튼 & 5초 카운트다운 모달
+      // 6. 맨 밑 "앱 종료" 버튼 & 운전 중일 때만 5초 카운트다운 모달 (꺼져있으면 즉시 종료)
       function updateExitModalMessage() {
         const msgEl = document.getElementById("exitStatusMsg");
-        if (!isGeneratorRunning) {
-          msgEl.innerHTML = "발전기가 꺼져있습니다.<br>앱을 종료합니다.";
-        } else if (reserveCountdownTimer && reserveRemainSeconds > 0) {
+        if (reserveRemainSeconds > 0) {
           msgEl.innerHTML = `앱을 종료합니다.<br><span style="color:#a78bfa;">${formatKoreanDuration(reserveRemainSeconds)}</span> 후에 발전기가 자동으로 꺼집니다.`;
         } else {
           msgEl.innerHTML = "앱을 종료합니다.<br>발전기가 운전 중입니다.";
@@ -1772,6 +2313,12 @@
       }
 
       function openExitModal() {
+        // 발전기가 꺼져있을 때는 5초 카운터 없이 즉시 앱 종료!
+        if (!isGeneratorRunning) {
+          executeAppExit();
+          return;
+        }
+
         if (exitCountdownTimer) clearInterval(exitCountdownTimer);
         exitRemainSeconds = 5;
         document.getElementById("exitCountNum").innerText = "5";
@@ -1803,7 +2350,20 @@
       }
 
       function executeAppExit() {
-        // 우리 발전기 리모컨 앱만 최근 실행 목록에서 깔끔하게 완전 종료 (다른 앱에는 영향 없음, 설정 초기화 안 함)
+        connectSessionId++;
+        if (autoReconnectTimer) {
+          clearTimeout(autoReconnectTimer);
+          autoReconnectTimer = null;
+        }
+        if (bleDevice) {
+          try {
+            bleDevice.removeEventListener(
+              "gattserverdisconnected",
+              onDisconnected
+            );
+            if (bleDevice.gatt) bleDevice.gatt.disconnect();
+          } catch (e) {}
+        }
         try {
           if (
             window.AndroidWifiBridge &&
