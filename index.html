@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- 스마트 발전기 리모컨 앱 17번 (앱 17 · ESP32 17 · 마스터 설계도 17): AC 처짐 20초 유예 연동 / st_ 16필드 단계 복원 / 시동 최저전압 ESP 실측값만 표시 -->
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
@@ -595,6 +596,36 @@
       .btn-autostart.success .autostart-thumb,
       .btn-autostart.success .autostart-fill { display: none; }
       .btn-autostart.success .autostart-label { padding-left: 0; }
+      .autostart-bell-cnt {
+        display: none;
+        position: relative;
+        z-index: 2;
+        font-size: 1.02rem;
+        font-weight: 900;
+        color: #fef08a;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .btn-autostart.bell-active {
+        opacity: 0.98 !important;
+        background: linear-gradient(135deg, #b45309, #d97706);
+        border-color: #fbbf24;
+        box-shadow: 0 0 22px rgba(245, 158, 11, 0.55);
+        pointer-events: none;
+        justify-content: space-between;
+        padding: 0 20px;
+      }
+      .btn-autostart.bell-active .autostart-thumb,
+      .btn-autostart.bell-active .autostart-fill { display: none; }
+      .btn-autostart.bell-active .autostart-label {
+        width: auto;
+        padding-left: 0;
+        text-align: left;
+        font-size: 1rem;
+      }
+      .btn-autostart.bell-active .autostart-bell-cnt {
+        display: inline-block;
+      }
 
       /* preheat */
       .btn-preheat { background: linear-gradient(135deg, #e08a00, #b45309); }
@@ -617,6 +648,37 @@
       .btn-start.running {
         background: linear-gradient(135deg, #0284c7, #0369a1);
         box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+      }
+
+      /* manual bell (20s toggle) */
+      .manual-bell-row {
+        width: 100%;
+        display: flex;
+      }
+      .btn-manual-bell {
+        height: 50px;
+        font-size: 1.02rem;
+        background: linear-gradient(135deg, #451a03, #78350f);
+        border: 1px solid rgba(251, 191, 36, 0.45);
+        color: #fde68a;
+        box-shadow: 0 5px 14px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      }
+      .btn-manual-bell.active {
+        background: linear-gradient(135deg, #b45309, #d97706);
+        border-color: #fbbf24;
+        color: #fff;
+        box-shadow: 0 0 22px rgba(245, 158, 11, 0.55);
+      }
+      .manual-bell-cnt {
+        display: none;
+        font-size: 0.98rem;
+        font-weight: 900;
+        color: #fef08a;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .btn-manual-bell.active .manual-bell-cnt {
+        display: inline-block;
       }
 
       /* reserve (auto-off) */
@@ -1133,7 +1195,7 @@
       /* =====================================================================
          NEW LAYOUT (v13): 큰 상태 카드 + 계기판식 다이얼 + 하단 고정 버튼 바
          ===================================================================== */
-      body { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
+      body { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
 
       /* ---------- Hero status card ---------- */
       .hero {
@@ -1202,6 +1264,22 @@
       .hero[data-state="pre"] .hero-orb { border-color: rgba(255, 176, 32, 0.7); background: rgba(255, 176, 32, 0.12); }
       .hero[data-state="pre"] .hero-dot { background: var(--amber); box-shadow: 0 0 14px var(--amber); animation: pulseDot 0.9s infinite; }
       .hero[data-state="pre"] .hero-state { color: #ffd36a; }
+      .hero[data-state="bell"] {
+        border-color: rgba(255, 176, 32, 0.65);
+        background: radial-gradient(300px 100px at 0% 0%, rgba(255, 176, 32, 0.22), transparent 70%), linear-gradient(145deg, #1b1a14, #0b121e);
+        box-shadow: 0 0 22px rgba(255, 176, 32, 0.24);
+      }
+      .hero[data-state="bell"] .hero-orb { border-color: rgba(255, 176, 32, 0.75); background: rgba(255, 176, 32, 0.14); }
+      .hero[data-state="bell"] .hero-dot { background: var(--amber); box-shadow: 0 0 14px var(--amber); animation: pulseDot 0.8s infinite; }
+      .hero[data-state="bell"] .hero-state {
+        font-size: 1.22rem;
+        letter-spacing: 0;
+        color: #ffd36a;
+        white-space: nowrap;
+      }
+      .hero[data-state="bell"] .hero-sub {
+        display: none;
+      }
       .hero[data-state="start"] {
         border-color: rgba(34, 211, 238, 0.65);
         background: radial-gradient(300px 100px at 0% 0%, rgba(34, 211, 238, 0.22), transparent 70%), linear-gradient(145deg, #0e1c2b, #0b121e);
@@ -1347,8 +1425,10 @@
         border-top: 1px solid rgba(34, 211, 238, 0.2);
         box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.55);
       }
-      .bottom-actions { display: flex; gap: 8px; }
+      .bottom-actions { display: flex; gap: 8px; width: 100%; }
       .bottom-actions .action-block { flex: 1; min-width: 0; gap: 6px; }
+      .bottom-actions .btn { height: 50px; font-size: 0.96rem; border-radius: 13px; }
+      .bottom-actions .slider-inline-input { height: 9px; }
       .bottom-bar .btn { height: 46px; font-size: 0.92rem; border-radius: 12px; }
       .bottom-bar .slider-inline-input { height: 8px; }
 
@@ -1389,9 +1469,11 @@
       .dial-hub { z-index: 4; }
       .dial-range { flex-wrap: nowrap; justify-content: space-between; margin-top: 6px; }
       .oil-card { margin-bottom: 8px; }
-      #settingsModal .modal-card { padding: 18px 16px; gap: 12px; }
-      #settingsModal .modal-body-center { gap: 10px; }
-      #settingsModal .modal-slider-box { padding: 12px 14px; gap: 8px; border-radius: 14px; }
+      .main-area .oil-card { margin-bottom: 0; }
+      #settingsModal .modal-card { padding: 16px 15px; gap: 10px; }
+      #settingsModal .modal-body-center { gap: 8px; }
+      #settingsModal .modal-slider-box { padding: 10px 14px; gap: 6px; border-radius: 14px; }
+      #settingsModal .modal-slider-val { font-size: 1.32rem; }
       .modal-title-row {
         display: grid;
         grid-template-columns: 1fr auto 1fr;
@@ -1417,6 +1499,256 @@
         cursor: not-allowed;
         pointer-events: none;
         box-shadow: none;
+      }
+      #settingsModal .btn-modal-cancel {
+        border: 1.5px solid rgba(110, 231, 183, 0.78);
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #ffffff;
+        font-weight: 900;
+        box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      }
+
+      /* ---------- 홈 화면 배터리 컨디션 카드 (시동시 전압 눈금 슬라이더) ---------- */
+      #crankVoltVal {
+        color: #34d399;
+        text-shadow: 0 0 14px rgba(52, 211, 153, 0.25);
+      }
+      .cond-sub-note {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--txt3);
+        white-space: nowrap;
+        transition: color 0.3s;
+      }
+      .cond-card.is-off .cond-sub-note {
+        color: #2c384b;
+      }
+      .batt-drop-scale-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+      .batt-scale-end {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: var(--txt3);
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        transition: color 0.3s;
+      }
+      .cond-card.is-off .batt-scale-end {
+        color: #2c384b;
+      }
+      .batt-drop-ticks {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        height: 7px;
+        padding: 0 2px;
+        margin-bottom: 0;
+        transition: opacity 0.3s;
+      }
+      .batt-drop-ticks i {
+        display: block;
+        width: 1.5px;
+        height: 4px;
+        background: rgba(148, 163, 184, 0.45);
+        border-radius: 1px;
+      }
+      .batt-drop-ticks i.maj {
+        width: 2px;
+        height: 7px;
+        background: rgba(226, 232, 240, 0.78);
+      }
+      .cond-card.is-off .batt-drop-ticks {
+        opacity: 0.22;
+      }
+      .gauge-track-battdrop {
+        position: relative;
+        width: 100%;
+        height: 10px;
+        border-radius: 7px;
+        background: linear-gradient(90deg, #ef4444 0%, #ef4444 34%, #facc15 47%, #facc15 55%, #38bdf8 68%, #2563eb 100%);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+        margin-bottom: 6px;
+        transition: filter 0.3s, opacity 0.3s;
+      }
+      .cond-card.is-off .gauge-track-battdrop {
+        filter: grayscale(100%);
+        opacity: 0.25;
+      }
+      #ptrBattCond {
+        transition: left 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .batt-cond-labels .bd-lbl-1 { color: #fca5a5; }
+      .batt-cond-labels .bd-lbl-2 { color: #fde68a; }
+      .batt-cond-labels .bd-lbl-3 { color: #93c5fd; }
+      .cond-card.is-off .batt-cond-labels .bd-lbl-1,
+      .cond-card.is-off .batt-cond-labels .bd-lbl-2,
+      .cond-card.is-off .batt-cond-labels .bd-lbl-3 {
+        color: #2c384b;
+      }
+      @keyframes bdCardPulse {
+        0% { opacity: 0.2; transform: translateY(2px); }
+        55% { opacity: 1; transform: translateY(-1px); filter: brightness(1.35); }
+        100% { opacity: 1; transform: translateY(0); filter: brightness(1); }
+      }
+      #cardBattCond.perf-run .bd-lbl-1 { animation: bdCardPulse 0.55s ease-out 0.05s both; }
+      #cardBattCond.perf-run .bd-lbl-2 { animation: bdCardPulse 0.55s ease-out 0.22s both; }
+      #cardBattCond.perf-run .bd-lbl-3 { animation: bdCardPulse 0.55s ease-out 0.39s both; }
+
+      /* ---------- 발전기 시동 예약 전체화면 팝업 (1단계 안전동의/3지선다 + 2단계 슬라이더 + 메인 작은 예약취소 버튼) ---------- */
+      .sched-warn-box {
+        background: rgba(255, 77, 94, 0.1);
+        border: 1px solid rgba(255, 77, 94, 0.45);
+        border-radius: 15px;
+        padding: 15px 14px;
+        color: #fecdd3;
+        font-size: 0.9rem;
+        font-weight: 700;
+        line-height: 1.58;
+        word-break: keep-all;
+        text-align: center;
+      }
+      .sched-agree-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(180deg, #111b2d, #0b121e);
+        border: 1px solid var(--line2);
+        border-radius: 14px;
+        padding: 14px 14px;
+        color: #f8fafc;
+        font-size: 0.94rem;
+        font-weight: 800;
+        cursor: pointer;
+        word-break: keep-all;
+        line-height: 1.4;
+      }
+      .sched-agree-label input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+        accent-color: #10b981;
+        flex-shrink: 0;
+        cursor: pointer;
+      }
+      .sched-math-box {
+        background: linear-gradient(180deg, #0f172a, #090e1a);
+        border: 1px solid rgba(59, 130, 246, 0.45);
+        border-radius: 16px;
+        padding: 16px 14px;
+        text-align: center;
+      }
+      .sched-math-prompt {
+        font-size: 0.98rem;
+        font-weight: 800;
+        color: #dbeafe;
+        margin-bottom: 14px;
+        line-height: 1.5;
+        word-break: keep-all;
+      }
+      .sched-math-num {
+        color: #fbbf24;
+        font-size: 1.22rem;
+        font-weight: 900;
+      }
+      .sched-opt-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+      .btn-sched-opt {
+        height: 54px;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: linear-gradient(180deg, #162136, #0d1524);
+        color: #e2e8f0;
+        font-size: 1.28rem;
+        font-weight: 900;
+        cursor: pointer;
+        font-variant-numeric: tabular-nums;
+        transition: transform 0.08s, border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      }
+      .btn-sched-opt:active {
+        transform: scale(0.96);
+      }
+      .btn-sched-opt.selected {
+        border: 2px solid #22d3ee;
+        background: linear-gradient(135deg, #1d4ed8, #0284c7);
+        color: #ffffff;
+        box-shadow: 0 0 18px rgba(34, 211, 238, 0.45);
+      }
+      .sched-time-card {
+        background: linear-gradient(180deg, #0f172a, #09101d);
+        border: 1px solid rgba(34, 211, 238, 0.45);
+        border-radius: 16px;
+        padding: 15px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .sched-sentence-row {
+        font-size: 1.04rem;
+        font-weight: 800;
+        color: #f1f5f9;
+        line-height: 1.85;
+        text-align: center;
+        word-break: keep-all;
+      }
+      .sched-hour-badge {
+        display: inline-block;
+        min-width: 48px;
+        padding: 2px 10px;
+        margin: 0 3px;
+        border-radius: 10px;
+        border: 1px solid #38bdf8;
+        background: #040812;
+        color: #34d399;
+        font-size: 1.22rem;
+        font-weight: 900;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .sched-notice-box {
+        background: rgba(255, 176, 32, 0.1);
+        border: 1px solid rgba(255, 176, 32, 0.42);
+        border-radius: 14px;
+        padding: 11px 13px;
+        color: #fde68a;
+        font-size: 0.85rem;
+        font-weight: 800;
+        line-height: 1.6;
+        word-break: keep-all;
+      }
+      .hero-right-col {
+        margin-left: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 5px;
+        flex-shrink: 0;
+      }
+      .hero-right-col .hero-charge {
+        margin-left: 0;
+      }
+      .btn-hero-sched-cancel {
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 3px 9px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 77, 94, 0.6);
+        background: rgba(255, 77, 94, 0.16);
+        color: #fda4af;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: transform 0.1s, background 0.2s;
+      }
+      .btn-hero-sched-cancel:active {
+        transform: scale(0.94);
       }
     </style>
   </head>
@@ -1451,7 +1783,18 @@
         <div id="heroState" class="hero-state">연결 안됨</div>
         <div id="heroSub" class="hero-sub">[연결하기]를 눌러 발전기를 선택하세요</div>
       </div>
-      <span id="chargeBadge" class="charge-badge hero-charge">대기중</span>
+      <div class="hero-right-col">
+        <span id="chargeBadge" class="charge-badge hero-charge">대기중</span>
+        <button
+          type="button"
+          id="btnHeroSchedCancel"
+          class="btn-hero-sched-cancel"
+          style="display: none"
+          onclick="openSchedCancelModal()"
+        >
+          예약취소
+        </button>
+      </div>
     </div>
 
     <!-- 계기판식 다이얼 3개 (발전기 전압 / 엔진 Hz / 밧데리 V) -->
@@ -1515,60 +1858,6 @@
       </div>
     </div>
 
-    <!-- 오일 컨디션 -->
-    <div id="cardDrive" class="cond-card oil-card is-off">
-      <div class="cond-top">
-        <span class="cond-title">오일 컨디션</span>
-        <div class="cond-val-wrap">
-          <span id="oilRemainVal" class="cond-val">0.0</span>
-          <span class="cond-unit">KM</span>
-        </div>
-        <button
-          type="button"
-          id="btnOilChange"
-          class="btn-fuel-charge"
-          onclick="openOilResetModal()"
-        >
-          교환
-        </button>
-      </div>
-      <div class="gauge-track-burn">
-        <div id="ptrOil" class="gauge-pointer" style="left: 0%"></div>
-      </div>
-      <div class="gauge-labels">
-        <span>0KM</span>
-        <span class="center-lbl">주행 거리</span>
-        <span>10만KM</span>
-      </div>
-    </div>
-
-    <!-- 연료 컨디션 -->
-    <div id="cardFuel" class="cond-card oil-card is-off">
-      <div class="cond-top">
-        <span class="cond-title">연료 컨디션</span>
-        <div class="cond-val-wrap">
-          <span id="fuelUsedVal" class="cond-val">0.0</span>
-          <span class="cond-unit">L</span>
-        </div>
-        <button
-          type="button"
-          id="btnFuelCharge"
-          class="btn-fuel-charge"
-          onclick="openFuelResetModal()"
-        >
-          충전
-        </button>
-      </div>
-      <div class="gauge-track-burn">
-        <div id="ptrFuel" class="gauge-pointer" style="left: 0%"></div>
-      </div>
-      <div class="gauge-labels">
-        <span>0L</span>
-        <span class="center-lbl">연료 소모량</span>
-        <span id="fuelMaxLabel">200L</span>
-      </div>
-    </div>
-
     <!-- 메인 컨트롤 영역 -->
     <div class="main-area">
       <!-- [전압 없을 때만 표시] 밀어서 "자동 시동" 스와이프 바 -->
@@ -1579,43 +1868,25 @@
         <div id="autoStartFill" class="autostart-fill"></div>
         <div id="autoStartThumb" class="autostart-thumb">❯❯</div>
         <span id="autoStartBtnText" class="autostart-label">AI 자동 시동</span>
+        <span id="autoStartBellCnt" class="autostart-bell-cnt"></span>
       </div>
 
-      <!-- [전압 있을 때만 표시] 운전 중입니다 / 00:00:00 -->
-      <div id="runningStatusBox" class="running-status-box">
-        <div id="runningStatusTitle" class="running-status-title">운전 중입니다.</div>
-        <div id="runElapsedText" class="running-status-time">00:00:00</div>
+      <!-- [전압 없을 때만 표시] 수동 경고벨 버튼 (AI 자동 시동 바로 아래 · 20초 울림 / 재터치 시 즉시 정지) -->
+      <div id="manualBellRow" class="manual-bell-row">
+        <button
+          id="btnManualBell"
+          type="button"
+          class="btn btn-manual-bell btn-same-width"
+          onclick="toggleManualBell()"
+          disabled
+        >
+          <span id="manualBellBtnText">🔔 경고벨 20초</span>
+          <span id="manualBellCnt" class="manual-bell-cnt"></span>
+        </button>
       </div>
 
-      <!-- [전압 있을 때만 표시] 인라인 자동 꺼짐(예약 정지) -->
-      <div id="reserveBlock" class="action-block" style="display: none">
-        <div id="reserveInlineCard" class="reserve-inline-card">
-          <div class="reserve-inline-header">
-            <div class="reserve-inline-title">자동 꺼짐 설정</div>
-            <span id="reserveBtnText" class="time-val">00:00:00</span>
-          </div>
-          <div class="reserve-inline-btn-row">
-            <button type="button" class="btn-res-inline" onclick="addInlineReserveMinutes(1)">1분</button>
-            <button type="button" class="btn-res-inline" onclick="addInlineReserveMinutes(15)">15분</button>
-            <button type="button" class="btn-res-inline" onclick="addInlineReserveMinutes(60)">60분</button>
-            <button type="button" class="btn-res-inline btn-cancel" onclick="cancelInlineReserve()">취소</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 앱 종료 -->
-      <button
-        id="btnExitApp"
-        class="btn btn-exit-app btn-same-width"
-        onclick="openExitModal()"
-      >
-        앱 종료
-      </button>
-    </div>
-
-    <!-- 하단 고정 버튼 바 (예열 / 시동 / 엔진 정지) -->
-    <div class="bottom-bar">
-      <div class="bottom-actions">
+      <!-- [전압 없을 때만 표시] 예열 / 시동 수동 2열 버튼 -->
+      <div id="manualStartRow" class="bottom-actions">
         <!-- [전압 없을 때만 표시] 예열 -->
         <div id="preheatBlock" class="action-block">
           <div class="slider-inline-row">
@@ -1665,6 +1936,121 @@
         </div>
       </div>
 
+      <!-- [전압 있을 때만 표시] 운전 중입니다 / 00:00:00 -->
+      <div id="runningStatusBox" class="running-status-box">
+        <div id="runningStatusTitle" class="running-status-title">운전 중입니다.</div>
+        <div id="runElapsedText" class="running-status-time">00:00:00</div>
+      </div>
+
+      <!-- [전압 있을 때만 표시] 인라인 자동 꺼짐(예약 정지) -->
+      <div id="reserveBlock" class="action-block" style="display: none">
+        <div id="reserveInlineCard" class="reserve-inline-card">
+          <div class="reserve-inline-header">
+            <div class="reserve-inline-title">자동 꺼짐 설정</div>
+            <span id="reserveBtnText" class="time-val">00:00:00</span>
+          </div>
+          <div class="reserve-inline-btn-row">
+            <button type="button" class="btn-res-inline" onclick="addInlineReserveMinutes(1)">1분</button>
+            <button type="button" class="btn-res-inline" onclick="addInlineReserveMinutes(15)">15분</button>
+            <button type="button" class="btn-res-inline" onclick="addInlineReserveMinutes(60)">60분</button>
+            <button type="button" class="btn-res-inline btn-cancel" onclick="cancelInlineReserve()">취소</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 오일 컨디션 -->
+      <div id="cardDrive" class="cond-card oil-card is-off">
+        <div class="cond-top">
+          <span class="cond-title">오일 컨디션</span>
+          <div class="cond-val-wrap">
+            <span id="oilRemainVal" class="cond-val">0.0</span>
+            <span class="cond-unit">KM</span>
+          </div>
+          <button
+            type="button"
+            id="btnOilChange"
+            class="btn-fuel-charge"
+            onclick="openOilResetModal()"
+          >
+            교환
+          </button>
+        </div>
+        <div class="gauge-track-burn">
+          <div id="ptrOil" class="gauge-pointer" style="left: 0%"></div>
+        </div>
+        <div class="gauge-labels">
+          <span>0KM</span>
+          <span class="center-lbl">주행 거리</span>
+          <span id="oilMaxLabel">10만KM</span>
+        </div>
+      </div>
+
+      <!-- 연료 컨디션 -->
+      <div id="cardFuel" class="cond-card oil-card is-off">
+        <div class="cond-top">
+          <span class="cond-title">연료 컨디션</span>
+          <div class="cond-val-wrap">
+            <span id="fuelUsedVal" class="cond-val">0.0</span>
+            <span class="cond-unit">L</span>
+          </div>
+          <button
+            type="button"
+            id="btnFuelCharge"
+            class="btn-fuel-charge"
+            onclick="openFuelResetModal()"
+          >
+            충전
+          </button>
+        </div>
+        <div class="gauge-track-burn">
+          <div id="ptrFuel" class="gauge-pointer" style="left: 0%"></div>
+        </div>
+        <div class="gauge-labels">
+          <span>0L</span>
+          <span class="center-lbl">연료 소모량</span>
+          <span id="fuelMaxLabel">200L</span>
+        </div>
+      </div>
+
+      <!-- 배터리 컨디션 -->
+      <div id="cardBattCond" class="cond-card oil-card is-off">
+        <div class="cond-top">
+          <span class="cond-title">배터리 컨디션</span>
+          <div class="cond-val-wrap">
+            <span id="crankVoltVal" class="cond-val">0.0</span>
+            <span class="cond-unit">V</span>
+          </div>
+          <span class="cond-sub-note">시동시 전압</span>
+        </div>
+        <div class="batt-drop-scale-head">
+          <span class="batt-scale-end">4V</span>
+          <div class="batt-drop-ticks" aria-hidden="true">
+            <i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i>
+          </div>
+          <span class="batt-scale-end">15V</span>
+        </div>
+        <div class="gauge-track-battdrop">
+          <div id="ptrBattCond" class="gauge-pointer" style="left: 0%"></div>
+        </div>
+        <div class="gauge-labels batt-cond-labels">
+          <span class="bd-lbl bd-lbl-1">교체필요</span>
+          <span class="center-lbl bd-lbl bd-lbl-2">보통</span>
+          <span class="bd-lbl bd-lbl-3">양호</span>
+        </div>
+      </div>
+
+      <!-- 앱 종료 -->
+      <button
+        id="btnExitApp"
+        class="btn btn-exit-app btn-same-width"
+        onclick="openExitModal()"
+      >
+        앱 종료
+      </button>
+    </div>
+
+    <!-- 하단 고정 버튼 바 (엔진 정지) -->
+    <div class="bottom-bar">
       <button
         id="btnStop"
         class="btn btn-stop btn-same-width"
@@ -1924,7 +2310,7 @@
             />
           </div>
 
-          <!-- 전압 없으면 엔진끄기 슬라이더 (기본 안꺼짐, 1분~1시간[80%] / 그 위 안꺼짐) -->
+          <!-- 100V이하 정지 슬라이더 (기본 1시간, 1분~1시간 / 슬라이더 마지막 값=1시간, "안꺼짐" 없음) -->
           <div id="setBoxNoAc" class="modal-slider-box">
             <div class="modal-slider-top">
               <span class="modal-slider-title">100V이하 정지</span>
@@ -1939,6 +2325,24 @@
               step="1"
               value="60"
               oninput="onSettingsNoAcInput(this.value)"
+            />
+          </div>
+
+          <!-- 오일 교체 주기 슬라이더 (기본 10만KM, 5만~15만KM) -->
+          <div id="setBoxOilMax" class="modal-slider-box">
+            <div class="modal-slider-top">
+              <span class="modal-slider-title">오일 교체 주기</span>
+              <span id="setOilMaxVal" class="modal-slider-val">10만KM</span>
+            </div>
+            <input
+              type="range"
+              id="setOilMaxRange"
+              class="modal-range"
+              min="5"
+              max="15"
+              step="1"
+              value="10"
+              oninput="onSettingsOilMaxInput(this.value)"
             />
           </div>
 
@@ -1991,6 +2395,17 @@
             </button>
           </div>
 
+          <!-- 발전기 시동 예약 (연결됨 + 발전기 꺼져 있을 때만 활성화) -->
+          <button
+            type="button"
+            id="btnOpenSchedSafety"
+            class="btn-modal-drive-reset"
+            onclick="openSchedSafetyModal()"
+            disabled
+          >
+            발전기 시동 예약
+          </button>
+
           <!-- 다른 발전기 선택 (초기화 후 홈 복귀) -->
           <button class="btn-modal-reset" onclick="selectAnotherGenerator()">
             다른 발전기 선택
@@ -1999,7 +2414,164 @@
       </div>
     </div>
 
-    <!-- [전체화면 팝업 3] 앱 종료 5초 카운트다운 모달 (운전 중일 때만 표시, 동그라미 제거) -->
+    <!-- [팝업 0-0C] 메인창 시동 예약 취소 확인 모달 -->
+    <div id="schedCancelModal" class="pin-backdrop">
+      <div class="pin-box" style="border-color: #f59e0b; text-align: center">
+        <div
+          class="modal-title"
+          style="color: #fbbf24; font-size: 1.2rem; padding-bottom: 10px"
+        >
+          ⏰ 시동 예약 취소
+        </div>
+        <div
+          style="
+            font-size: 1.12rem;
+            font-weight: 800;
+            line-height: 1.6;
+            color: #f8fafc;
+            word-break: keep-all;
+            margin: 6px 0 4px;
+          "
+        >
+          시동 예약을 취소하시겠습니까?
+        </div>
+        <div class="pin-btn-row">
+          <button type="button" class="btn-modal-cancel" onclick="closeSchedCancelModal()">
+            취소
+          </button>
+          <button type="button" class="btn-modal-confirm" onclick="confirmSchedCancelModal()">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- [전체화면 팝업 2-B] 발전기 시동 예약 1단계: 안전 경고 + 동의 체크 + 비밀번호 랜덤 더하기 3지선다 -->
+    <div id="schedSafetyModal" class="modal-backdrop">
+      <div class="modal-card">
+        <div class="modal-title">발전기 시동 예약</div>
+
+        <div class="modal-body-center">
+          <div class="sched-warn-box">
+            무인 시동은 사람과 동물들에게 위협을 가할 수 있습니다.<br />
+            안전한 장소에 주차를 확인하셨습니까?
+          </div>
+
+          <label class="sched-agree-label" for="schedAgreeChk">
+            <input type="checkbox" id="schedAgreeChk" />
+            <span>안전한 장소 주차를 확인하였으며 무인 시동에 동의합니다.</span>
+          </label>
+
+          <div class="sched-math-box">
+            <div id="schedMathPrompt" class="sched-math-prompt">
+              비밀번호에 <span class="sched-math-num">3</span>을 더한 값을 선택하세요.
+            </div>
+            <div class="sched-opt-row">
+              <button
+                type="button"
+                id="schedOpt0"
+                class="btn-sched-opt"
+                onclick="selectSchedMathOption(0)"
+              >
+                0000
+              </button>
+              <button
+                type="button"
+                id="schedOpt1"
+                class="btn-sched-opt"
+                onclick="selectSchedMathOption(1)"
+              >
+                0000
+              </button>
+              <button
+                type="button"
+                id="schedOpt2"
+                class="btn-sched-opt"
+                onclick="selectSchedMathOption(2)"
+              >
+                0000
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-action-row">
+          <button type="button" class="btn-modal-cancel" onclick="closeSchedSafetyModal()">
+            취소
+          </button>
+          <button type="button" class="btn-modal-confirm" onclick="confirmSchedSafetyModal()">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- [전체화면 팝업 2-C] 발전기 시동 예약 2단계: 시간 슬라이더 2개 (1~48시간 후 시동 / 1~12시간 가동 후 꺼짐) -->
+    <div id="schedTimeModal" class="modal-backdrop">
+      <div class="modal-card">
+        <div class="modal-title">발전기 시동 예약</div>
+
+        <div class="modal-body-center">
+          <div class="modal-slider-box">
+            <div class="modal-slider-top">
+              <span class="modal-slider-title">시동 예약 시간</span>
+              <span id="schedWaitSliderVal" class="modal-slider-val">1시간</span>
+            </div>
+            <input
+              type="range"
+              id="schedWaitRange"
+              class="modal-range"
+              min="1"
+              max="48"
+              step="1"
+              value="1"
+              oninput="onSchedWaitSliderInput(this.value)"
+            />
+          </div>
+
+          <div class="modal-slider-box">
+            <div class="modal-slider-top">
+              <span class="modal-slider-title">가동 유지 시간</span>
+              <span id="schedRunSliderVal" class="modal-slider-val">1시간</span>
+            </div>
+            <input
+              type="range"
+              id="schedRunRange"
+              class="modal-range"
+              min="1"
+              max="12"
+              step="1"
+              value="1"
+              oninput="onSchedRunSliderInput(this.value)"
+            />
+          </div>
+
+          <div class="sched-time-card">
+            <div class="sched-sentence-row">
+              <span id="schedWaitHourBox" class="sched-hour-badge">1</span>시간 후에 자동 시동되며<br />
+              <span id="schedRunHourBox" class="sched-hour-badge">1</span>시간 동안 가동된 후<br />
+              자동으로 꺼집니다.
+            </div>
+          </div>
+
+          <div class="sched-notice-box">
+            • 예약 중 시동이 걸리면 예약이 취소됩니다.<br />
+            • 모듈 스위치를 내리면 예약이 취소됩니다.
+          </div>
+        </div>
+
+        <div class="modal-action-row">
+          <button type="button" class="btn-modal-cancel" onclick="closeSchedTimeModal()">
+            취소
+          </button>
+          <button type="button" class="btn-modal-confirm" onclick="confirmSchedTimeModal()">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- [전체화면 팝업 3] 앱 종료 5초 카운트다운 모달 (시동 예약 중일 때는 카운트다운 없이 확인 버튼으로 종료) -->
     <div id="exitModal" class="modal-backdrop">
       <div class="modal-card">
         <div class="modal-title">앱 종료</div>
@@ -2011,13 +2583,23 @@
           </div>
         </div>
 
-        <button
-          id="btnCancelExit"
-          class="btn-exit-cancel-full"
-          onclick="cancelExitModal()"
-        >
-          취소
-        </button>
+        <div id="exitSingleActionRow">
+          <button
+            id="btnCancelExit"
+            class="btn-exit-cancel-full"
+            onclick="cancelExitModal()"
+          >
+            취소
+          </button>
+        </div>
+        <div id="exitSchedActionRow" class="modal-action-row" style="display: none">
+          <button type="button" class="btn-modal-cancel" onclick="cancelExitModal()">
+            취소
+          </button>
+          <button type="button" id="btnConfirmExit" class="btn-modal-confirm" onclick="executeAppExit()">
+            확인
+          </button>
+        </div>
       </div>
     </div>
 
@@ -2035,6 +2617,10 @@
       const STORAGE_KEY_FUEL = "jkyung_fuel_liters";
       const STORAGE_KEY_FUEL_RATE = "jkyung_fuel_rate_lph";
       const STORAGE_KEY_OIL = "jkyung_oil_hours";
+      const STORAGE_KEY_OIL_MAX = "jkyung_oil_max_mankm";
+      const STORAGE_KEY_CRANK_V = "jkyung_last_crank_v";
+      const AUTO_BELL_PRE_SEC = 20.0;
+      const MANUAL_BELL_SEC = 20.0;
 
       let bleDevice = null;
       let bleChar = null;
@@ -2049,6 +2635,7 @@
       let toastTimer = null;
       let stopRetryTimer = null;   // 엔진 정지 재전송 타이머
       let packetCsSeen = false;    // 체크섬 붙은 패킷을 한 번이라도 받으면 이후엔 체크섬 필수(엄격 모드)
+      let rxLineBuf = "";          // BLE 조각 패킷(MTU 분할) 줄 단위 재조립 버퍼
 
       // 기본 설정값: 예열 8초(1~15초), 시동 0.9초(0.5~4.0초) - 범위 밖 값은 자동으로 최소/최대값으로 맞춤
       let rawSavedPreheat = parseFloat(localStorage.getItem(STORAGE_KEY_PREHEAT));
@@ -2059,7 +2646,7 @@
       let savedStartSec = isNaN(rawSavedStart)
         ? 0.9
         : Math.max(0.5, Math.min(4.0, rawSavedStart));
-      // 전압 없으면 엔진끄기(초): 기본값 0(안꺼짐), 60~3600(1분~1시간)
+      // 전압 없으면 엔진끄기(초): 기본값 3600(1시간), 설정 범위 60~3600(1분~1시간). "안꺼짐" 없음
       let rawSavedNoAc = parseInt(localStorage.getItem(STORAGE_KEY_NOAC), 10);
       let savedNoAcSec =
         isNaN(rawSavedNoAc) || rawSavedNoAc <= 0 || rawSavedNoAc > 3600
@@ -2075,15 +2662,41 @@
       let savedFuelRateLph = isNaN(rawSavedFuelRate)
         ? 3.2
         : Math.max(1.0, Math.min(6.0, Math.round(rawSavedFuelRate * 10) / 10));
+      let rawSavedOilMax = parseInt(localStorage.getItem(STORAGE_KEY_OIL_MAX), 10);
+      let savedOilMaxManKm = isNaN(rawSavedOilMax)
+        ? 10
+        : Math.max(5, Math.min(15, rawSavedOilMax));
       let curFuelRunSec = 0; // 연료 충전 후 누적 가동시간(초)
       let curOilRunSec = 0;  // 오일 교환 후 누적 가동시간(초)
 
+      let autoBellCountdownTimer = null;
+      let autoBellRemainText = "";
+      let isAutoBellRinging = false;
+      let manualBellTimer = null;
+      let manualBellEndAtMs = 0;
+      let manualBellRemainText = "";
+      let isStartCrankingPhase = false;
       let preheatCountdownTimer = null;
       let startCountdownTimer = null;
+
+      let rawSavedCrankV = parseFloat(localStorage.getItem(STORAGE_KEY_CRANK_V));
+      let curCrankMinVolt = isNaN(rawSavedCrankV) || rawSavedCrankV <= 0 ? 0 : rawSavedCrankV;
+      let hasEspCrankField = false;
+      let battCondPerfRunning = false;
+      let battCondPerfTimer = null;
+      let pendingStartDiag = false;
+      let pendingStartExpireMs = 0;
+      let startDiagShownForRun = false;
+
+      // [v17] ESP32 st_ 확장 필드: 시동/벨 진행 단계 코드(0~7)와 해당 단계 남은 시간(ms) / 마지막 예약 남은 초
+      let espStage = 0;
+      let espStageRemMs = 0;
+      let curEspRemainSec = 0;
 
       // 원클릭 자동 시동 상태 및 타이머
       let isAutoStartActive = false;
       let isAutoStartSucceeded = false;
+      let autoStartBellTimeout = null;
       let autoStartStepTimeout = null;
       let autoStartCrankTimeout = null;
       let autoStartFinishTimeout = null;
@@ -2101,6 +2714,13 @@
       let tempReserveMinutes = 0;
       let pendingReserveTargetSec = null;
       let pendingReserveUntilMs = 0;
+
+      // 발전기 시동 예약 상태 (최대 48시간 후 시동 / 최대 12시간 가동 후 꺼짐)
+      let schedStartRemainSec = 0;
+      let schedRunDurationSec = 0;
+      let schedCountdownTimer = null;
+      let schedRandomAdd = 3;
+      let pendingSchedUntilMs = 0;
 
       // 앱 종료 5초 카운트다운 타이머
       let exitCountdownTimer = null;
@@ -2353,6 +2973,10 @@
 
       /* ══════ 원클릭 자동 시동 상태/UI 관리 (예열 합니다 -> 시동 전 점검 -> 시동합니다 순차 표시) ══════ */
       function clearAutoStartTimers() {
+        if (autoStartBellTimeout) {
+          clearTimeout(autoStartBellTimeout);
+          autoStartBellTimeout = null;
+        }
         if (autoStartStepTimeout) {
           clearTimeout(autoStartStepTimeout);
           autoStartStepTimeout = null;
@@ -2371,15 +2995,71 @@
         clearAutoStartTimers();
         isAutoStartActive = false;
         isAutoStartSucceeded = false;
+        isAutoBellRinging = false;
         autoStartPhaseText = "예열 합니다";
+        stopAutoBellVisualCountdown();
         syncAutoStartButtonUI();
         syncReserveButtonUI();
+      }
+
+
+      // ★ [v17] 발전기 시동 예약 카운트다운 동기화 (ESP32 실시간 sch_ / st_[16..17] 단일 기준 · localStorage 저장/복원 및 중복 발동 없음)
+      function stopScheduledStartLocal() {
+        if (schedCountdownTimer) {
+          clearInterval(schedCountdownTimer);
+          schedCountdownTimer = null;
+        }
+        schedStartRemainSec = 0;
+        schedRunDurationSec = 0;
+        updateHero();
+      }
+
+      function applyEspScheduleSec(waitSec, runSec, forceSet = false) {
+        if (!forceSet && Date.now() < pendingSchedUntilMs) return;
+        const cleanWait = Math.max(0, parseInt(waitSec, 10) || 0);
+        const cleanRun = Math.max(0, parseInt(runSec, 10) || 0);
+
+        if (!isConnected || sysLocked || isGeneratorRunning || cleanWait <= 0 || cleanRun <= 0) {
+          stopScheduledStartLocal();
+          return;
+        }
+
+        schedRunDurationSec = cleanRun;
+        if (
+          forceSet ||
+          schedStartRemainSec === 0 ||
+          Math.abs(cleanWait - schedStartRemainSec) >= 2
+        ) {
+          schedStartRemainSec = cleanWait;
+        }
+
+        if (schedStartRemainSec > 0 && !schedCountdownTimer) {
+          schedCountdownTimer = setInterval(() => {
+            if (!isConnected || sysLocked || isGeneratorRunning) {
+              stopScheduledStartLocal();
+              return;
+            }
+            if (schedStartRemainSec > 1) {
+              schedStartRemainSec--;
+              updateHero();
+              if (document.getElementById("exitModal").classList.contains("show")) {
+                updateExitModalMessage();
+              }
+            } else {
+              // ★ 0초 도달 시 자동 시동 및 가동시간 세팅은 ESP32가 단독 실행 (앱 중복 발동 금지)
+              stopScheduledStartLocal();
+            }
+          }, 1000);
+        }
+        updateHero();
       }
 
       function markAutoStartSuccess() {
         clearAutoStartTimers();
         isAutoStartActive = false;
         isAutoStartSucceeded = true;
+        isAutoBellRinging = false;
+        stopAutoBellVisualCountdown();
         syncAutoStartButtonUI();
       }
 
@@ -2395,9 +3075,172 @@
         }
       }
 
+      function stopAutoBellVisualCountdown() {
+        const wasBell = !!autoBellCountdownTimer;
+        if (autoBellCountdownTimer) {
+          clearInterval(autoBellCountdownTimer);
+          autoBellCountdownTimer = null;
+        }
+        autoBellRemainText = "";
+        if (wasBell) {
+          syncAutoStartButtonUI();
+          updateConditionUI();
+        }
+      }
+
+      function startAutoBellVisualCountdown(onComplete, remainMsOverride = null) {
+        if (autoBellCountdownTimer) {
+          clearInterval(autoBellCountdownTimer);
+          autoBellCountdownTimer = null;
+        }
+        // [v17] remainMsOverride: 재연결 복원 시 선행 경고벨 남은 시간(ms)
+        const bellMs =
+          remainMsOverride !== null
+            ? Math.max(0, Math.round(remainMsOverride))
+            : Math.round(AUTO_BELL_PRE_SEC * 1000);
+        const endTime = Date.now() + bellMs;
+        autoBellRemainText = `${(bellMs / 1000).toFixed(1)}초`;
+        isAutoBellRinging = true;
+
+        autoBellCountdownTimer = setInterval(() => {
+          if (
+            isGeneratorRunning ||
+            curAcVolt >= 50 ||
+            curAcFreq >= 10 ||
+            !isConnected ||
+            sysLocked ||
+            !isAutoStartActive
+          ) {
+            stopAutoBellVisualCountdown();
+            return;
+          }
+          const remainSec = Math.max(0, (endTime - Date.now()) / 1000);
+          if (remainSec <= 0) {
+            stopAutoBellVisualCountdown();
+            if (typeof onComplete === "function") onComplete();
+            return;
+          }
+          autoBellRemainText = `${remainSec.toFixed(1)}초`;
+          const cntEl = document.getElementById("autoStartBellCnt");
+          if (cntEl) cntEl.innerText = autoBellRemainText;
+        }, 80);
+
+        syncAutoStartButtonUI();
+        updateConditionUI();
+        updateHero();
+      }
+
+      function syncManualBellButtonUI() {
+        const btn = document.getElementById("btnManualBell");
+        const txt = document.getElementById("manualBellBtnText");
+        const cnt = document.getElementById("manualBellCnt");
+        if (!btn || !txt || !cnt) return;
+
+        const disabled =
+          !isConnected ||
+          sysLocked ||
+          isGeneratorRunning ||
+          isAutoStartActive ||
+          isStartCrankingPhase ||
+          curAcVolt >= 50 ||
+          curAcFreq >= 10;
+        btn.disabled = disabled;
+
+        if (manualBellTimer && !disabled) {
+          btn.classList.add("active");
+          txt.innerText = `🔔 경고벨 ${manualBellRemainText || MANUAL_BELL_SEC.toFixed(1) + "초"}`;
+          cnt.innerText = "";
+        } else {
+          btn.classList.remove("active");
+          txt.innerText = "🔔 경고벨 20초";
+          cnt.innerText = "";
+        }
+      }
+
+      function stopManualBellCountdown() {
+        const wasActive = !!manualBellTimer;
+        if (manualBellTimer) {
+          clearInterval(manualBellTimer);
+          manualBellTimer = null;
+        }
+        manualBellEndAtMs = 0;
+        manualBellRemainText = "";
+        syncManualBellButtonUI();
+        if (wasActive) {
+          updateConditionUI();
+        }
+      }
+
+      function startManualBellCountdown(remainMsOverride = null) {
+        if (manualBellTimer) {
+          clearInterval(manualBellTimer);
+          manualBellTimer = null;
+        }
+        // [v17] remainMsOverride: 재연결 복원 시 수동 경고벨 남은 시간(ms)
+        const bellMs =
+          remainMsOverride !== null
+            ? Math.max(0, Math.round(remainMsOverride))
+            : Math.round(MANUAL_BELL_SEC * 1000);
+        manualBellEndAtMs = Date.now() + bellMs;
+        manualBellRemainText = `${(bellMs / 1000).toFixed(1)}초`;
+
+        manualBellTimer = setInterval(() => {
+          if (
+            isGeneratorRunning ||
+            curAcVolt >= 50 ||
+            curAcFreq >= 10 ||
+            !isConnected ||
+            sysLocked ||
+            isAutoStartActive ||
+            isStartCrankingPhase
+          ) {
+            stopManualBellCountdown();
+            return;
+          }
+          const remainSec = Math.max(0, (manualBellEndAtMs - Date.now()) / 1000);
+          if (remainSec <= 0) {
+            stopManualBellCountdown();
+            return;
+          }
+          manualBellRemainText = `${remainSec.toFixed(1)}초`;
+          syncManualBellButtonUI();
+        }, 80);
+
+        syncManualBellButtonUI();
+        updateConditionUI();
+      }
+
+      async function toggleManualBell() {
+        if (
+          !isConnected ||
+          sysLocked ||
+          isGeneratorRunning ||
+          isAutoStartActive ||
+          isStartCrankingPhase ||
+          curAcVolt >= 50 ||
+          curAcFreq >= 10
+        ) {
+          return;
+        }
+        if (manualBellTimer) {
+          stopManualBellCountdown();
+          updateHero();
+          await sendBleCmd("CMD_BELL_OFF");
+        } else {
+          if (!(await sendBleCmd("CMD_BELL"))) return;
+          startManualBellCountdown();
+        }
+      }
+
       function isAutoStartSwipeAllowed() {
         if (!isConnected || sysLocked) return false;
-        if (isAutoStartSucceeded || isGeneratorRunning || isAutoStartActive)
+        if (
+          isAutoStartSucceeded ||
+          isGeneratorRunning ||
+          isAutoStartActive ||
+          preheatCountdownTimer ||
+          startCountdownTimer
+        )
           return false;
         const acDetected = curAcVolt >= 50 || curAcFreq >= 10;
         return !acDetected;
@@ -2408,12 +3251,15 @@
         const txt = document.getElementById("autoStartBtnText");
         if (!btn || !txt) return;
 
-        btn.classList.remove("blinking", "success", "is-disabled");
+        btn.classList.remove("blinking", "bell-active", "success", "is-disabled");
+        const cntEl = document.getElementById("autoStartBellCnt");
+        if (cntEl) cntEl.innerText = "";
 
         if (!isConnected || sysLocked) {
           btn.classList.add("is-disabled");
           txt.innerText = "AI 자동 시동";
           resetAutoStartThumbPosition();
+          syncManualBellButtonUI();
           return;
         }
 
@@ -2421,13 +3267,26 @@
           btn.classList.add("success");
           txt.innerText = "자동 시동 성공";
           resetAutoStartThumbPosition();
+          syncManualBellButtonUI();
           return;
         }
 
         const btnPre = document.getElementById("btnPreheat");
         const btnSt = document.getElementById("btnStart");
-        if (btnPre) btnPre.classList.toggle("autostart-lock", !!isAutoStartActive);
-        if (btnSt) btnSt.classList.toggle("autostart-lock", !!isAutoStartActive);
+        const lockManual = !!isAutoStartActive;
+        if (btnPre) btnPre.classList.toggle("autostart-lock", lockManual);
+        if (btnSt) btnSt.classList.toggle("autostart-lock", lockManual);
+
+        if (autoBellCountdownTimer) {
+          btn.classList.add("bell-active");
+          if (btnPre) btnPre.disabled = true;
+          if (btnSt) btnSt.disabled = true;
+          txt.innerText = "경고벨 작동";
+          if (cntEl) cntEl.innerText = autoBellRemainText || `${AUTO_BELL_PRE_SEC.toFixed(1)}초`;
+          resetAutoStartThumbPosition();
+          syncManualBellButtonUI();
+          return;
+        }
 
         if (isAutoStartActive) {
           btn.classList.add("blinking");
@@ -2435,6 +3294,7 @@
           if (btnSt) btnSt.disabled = true;
           txt.innerText = autoStartPhaseText || "예열 합니다";
           resetAutoStartThumbPosition();
+          syncManualBellButtonUI();
           return;
         }
 
@@ -2444,6 +3304,7 @@
         }
         txt.innerText = "AI 자동 시동";
         resetAutoStartThumbPosition();
+        syncManualBellButtonUI();
       }
 
       function initAutoStartSwipe() {
@@ -2520,52 +3381,50 @@
         }
 
         clearAutoStartTimers();
+        if (manualBellTimer) stopManualBellCountdown();
         autoStartPhaseText = "예열 합니다";
         isAutoStartActive = true;
         isAutoStartSucceeded = false;
+        isAutoBellRinging = true;
         syncAutoStartButtonUI();
 
-        // ★ 블루투스로는 CMD_AUTO 단 1회만 전송! (실제 예열 -> 1단 -> 시동 제어는 ESP32가 자체 저장값으로 100% 단독 수행)
+        // ★ 블루투스로는 CMD_AUTO 단 1회만 전송! (ESP32가 독립 20초 연속 부저 -> 예열·1초·4초 온도점검 1초 끊김음 -> 셀모터 시동 직전 벨 OFF)
         const autoOk = await sendBleCmd("CMD_AUTO");
         if (!autoOk) {
           resetAutoStartState();
           return;
         }
+        armStartDiagnostics();
 
-        // 아래는 앱 화면용 슬라이더 및 순차 텍스트 퍼포먼스 (블루투스 추가 송신 없음)
-        startPreheatVisualCountdown();
+        runAutoStartTimeline(1, Math.round(AUTO_BELL_PRE_SEC * 1000));
+      }
 
-        // 1단계("예열 합니다") 종료 + 노이즈 방지 1초 후 -> 2단계("시동 전 점검") 시작
-        const preheatAndStep1Ms = Math.round((savedPreheatSec + 1.0) * 1000);
-        autoStartStepTimeout = setTimeout(() => {
-          if (
-            !isAutoStartActive ||
-            isGeneratorRunning ||
-            !isConnected ||
-            sysLocked
-          ) {
-            return;
-          }
+      // [v17] 자동시동 화면 타임라인 (선행벨 -> 예열 -> 1초 대기 -> 시동 전 점검 -> 시동합니다).
+      //   stage 1: 선행 20초 경고벨 남은 시간 remMs 부터 / stage 4: 예열+1초 대기 합산 remMs 부터(재연결 복원용)
+      //   단계 4 매핑: ESP가 보내는 '예열 남은 + 1초 대기'에서 1.0초를 빼서 예열 슬라이더/버튼이 설정 시간보다 부풀지 않게 함 (1초 이하면 대기 상태)
+      function runAutoStartTimeline(stage, remMs) {
+        clearAutoStartTimers();
+        const alive = () =>
+          isAutoStartActive && !isGeneratorRunning && isConnected && !sysLocked;
+        let preheatBegun = false;
+
+        // 2단계("시동 전 점검", 4.0초) -> 3단계("시동합니다", 이때 경고벨 종료)
+        const beginCheck = (prepMs) => {
+          if (!alive()) return;
           autoStartPhaseText = "시동 전 점검";
           syncAutoStartButtonUI();
-          startStartVisualCountdown();
+          startStartVisualCountdown(prepMs, false);
 
-          // 2단계("시동 전 점검", 4.0초) 종료 후 -> 3단계("시동합니다") 표시
           autoStartCrankTimeout = setTimeout(() => {
-            if (
-              !isAutoStartActive ||
-              isGeneratorRunning ||
-              !isConnected ||
-              sysLocked
-            ) {
-              return;
-            }
+            if (!alive()) return;
+            isAutoBellRinging = false;
             autoStartPhaseText = "시동합니다";
             syncAutoStartButtonUI();
-          }, 4000);
+            updateHero();
+          }, prepMs);
 
-          // 연료 점검(4초) + 설정 시동시간 + 여유 3초 후에도 미시동 시 버튼 복구
-          const startWaitMs = Math.round((4.0 + savedStartSec + 3.0) * 1000);
+          // 온도 점검 + 설정 시동시간 + 여유 3초 후에도 미시동 시 버튼 복구
+          const startWaitMs = Math.round(prepMs + savedStartSec * 1000 + 3000);
           autoStartFinishTimeout = setTimeout(() => {
             if (isGeneratorRunning) {
               markAutoStartSuccess();
@@ -2573,7 +3432,78 @@
               resetAutoStartState();
             }
           }, startWaitMs);
-        }, preheatAndStep1Ms);
+        };
+
+        // 1단계("예열 합니다", 1초 끊김음) + 예열 종료 후 노이즈 방지 1초 대기
+        const beginPreheat = (preheatMs, waitMs) => {
+          if (preheatBegun) return;
+          preheatBegun = true;
+          if (!alive()) return;
+          if (autoBellCountdownTimer) stopAutoBellVisualCountdown();
+          autoStartPhaseText = "예열 합니다";
+          syncAutoStartButtonUI();
+          if (preheatMs > 0 && !preheatCountdownTimer) startPreheatVisualCountdown(preheatMs);
+          autoStartStepTimeout = setTimeout(() => beginCheck(4000), preheatMs + waitMs);
+        };
+
+        if (stage === 4) {
+          preheatBegun = true;
+          autoStartPhaseText = "예열 합니다";
+          syncAutoStartButtonUI();
+          const preMs = remMs - 1000; // 합산(예열 남은 + 1초 대기)에서 1초 제외
+          if (preMs > 0 && !preheatCountdownTimer) startPreheatVisualCountdown(preMs);
+          autoStartStepTimeout = setTimeout(() => beginCheck(4000), Math.max(0, remMs));
+          return;
+        }
+
+        // stage 1: 0단계 독립 20초 연속 부저 동안 자동시동 바 좌측 "경고벨 작동" + 우측 초 카운터 표시
+        const finishAutoBellToPreheat = () =>
+          beginPreheat(Math.round(savedPreheatSec * 1000), 1000);
+        startAutoBellVisualCountdown(finishAutoBellToPreheat, remMs);
+        autoStartBellTimeout = setTimeout(finishAutoBellToPreheat, Math.max(0, remMs));
+      }
+
+      // [v17] ESP32 st_[14]=단계코드, st_[15]=남은 0.1초 -> 앱 재연결/재시작 시 진행 중이던 단계를 이어받아 표시
+      //   0=대기/운전 1=자동 20초 선행벨 2=수동 20초 경고벨 3=수동 예열 4=자동 예열+1초 대기
+      //   5=시동 전 4초 점검(자동/수동 구분 필드 없음 -> 수동 점검 문구로 통합) 6=예열 중 1초 1단 ON 7=크랭킹
+      //   앱이 이미 자체 카운트다운 중이면 건드리지 않고(깜빡임 방지), 아무것도 안 돌고 있을 때만 복원한다.
+      function applyEspSequenceStage(stage, remMs) {
+        espStage = stage;
+        espStageRemMs = remMs;
+        if (!isConnected || sysLocked || isGeneratorRunning) return;
+        if (stage <= 0 || stage > 7 || remMs <= 200) return;
+        const busy =
+          isAutoStartActive ||
+          autoBellCountdownTimer ||
+          manualBellTimer ||
+          preheatCountdownTimer ||
+          startCountdownTimer;
+        if (busy) return;
+
+        if (stage === 1 || stage === 4) {
+          isAutoStartActive = true;
+          isAutoStartSucceeded = false;
+          armStartDiagnostics();
+          autoStartPhaseText = "예열 합니다";
+          runAutoStartTimeline(stage, remMs);
+        } else if (stage === 2) {
+          startManualBellCountdown(remMs);
+        } else if (stage === 3) {
+          startPreheatVisualCountdown(remMs);
+        } else if (stage === 5) {
+          armStartDiagnostics();
+          startStartVisualCountdown(remMs, false);
+        } else if (stage === 6) {
+          armStartDiagnostics();
+          startStartVisualCountdown(remMs, true);
+        } else if (stage === 7) {
+          armStartDiagnostics();
+          startStartVisualCountdown(0, false, remMs);
+        }
+        syncAutoStartButtonUI();
+        syncManualBellButtonUI();
+        updateConditionUI();
+        updateHero();
       }
 
       function updateSliderVisualFill(slider) {
@@ -2589,6 +3519,8 @@
         const pSlider = document.getElementById("preheatSlider");
         const sSlider = document.getElementById("startSlider");
         const autoBtn = document.getElementById("btnAutoStart");
+        const manualRow = document.getElementById("manualStartRow");
+        const manualBellRow = document.getElementById("manualBellRow");
         const preBlock = document.getElementById("preheatBlock");
         const stBlock = document.getElementById("startBlock");
         const runBox = document.getElementById("runningStatusBox");
@@ -2612,6 +3544,8 @@
         const showRunView = isGeneratorRunning || disconnectedWhileRunning;
         if (showRunView) {
           if (autoBtn) autoBtn.style.display = "none";
+          if (manualRow) manualRow.style.display = "none";
+          if (manualBellRow) manualBellRow.style.display = "none";
           if (preBlock) preBlock.style.display = "none";
           if (stBlock) stBlock.style.display = "none";
           if (runBox) runBox.style.display = "flex";
@@ -2625,6 +3559,8 @@
         } else {
           if (runTitle) runTitle.innerText = "운전 중입니다.";
           if (autoBtn) autoBtn.style.display = "flex";
+          if (manualRow) manualRow.style.display = "flex";
+          if (manualBellRow) manualBellRow.style.display = "flex";
           if (preBlock) preBlock.style.display = "flex";
           if (stBlock) stBlock.style.display = "flex";
           if (runBox) runBox.style.display = "none";
@@ -2739,16 +3675,33 @@
 
         if (nowRunning && !isGeneratorRunning) {
           isGeneratorRunning = true;
+          // ★ 시동이 걸려 운전 확정 시 로컬 예약 표시 정리 (예약 시동 가동시간은 ESP32가 자동 세팅)
+          stopScheduledStartLocal();
+          stopManualBellCountdown();
+          stopAutoBellVisualCountdown();
           stopPreheatVisualCountdown();
           stopStartVisualCountdown();
           markAutoStartSuccess();
           startRunElapsedTimer();
           syncHomeSlidersAndButtons();
+          if (pendingStartDiag && !startDiagShownForRun && Date.now() < pendingStartExpireMs) {
+            pendingStartDiag = false;
+            startDiagShownForRun = true;
+            // [v17] 오직 ESP32가 실측·저장한 시동 최저전압(crk_ / cv_ / st_[13])만 표시. 일반 텔레메트리 전압 대체 경로 제거.
+            if (hasEspCrankField && curCrankMinVolt > 0) {
+              triggerBattCondPerformance(curCrankMinVolt, true);
+            }
+          }
         } else if (!nowRunning && isGeneratorRunning) {
           isGeneratorRunning = false;
+          startDiagShownForRun = false;
           stopRunElapsedTimer();
-          // ★ 발전기 전압이 없어지면(0.1초×5회 연속 무전압) 가동시간과 예약정지 시간 모두 즉시 0으로 리셋!
-          cancelReserveCountdown(false);
+          // ★ [v17] 가동시간·예약정지 리셋은 ESP32(st_[7], st_[5])가 판단한다.
+          //   (1단 ON 상태 AC 처짐 20초 유예 중에는 ESP가 값을 유지해서 보내므로 앱이 혼자 먼저 cancelReserveCountdown 하지 않음)
+          //   ESP가 예약 남은 시간을 이미 0으로 보냈거나 연결이 없을 때만 앱 예약 카운트다운을 정리한다.
+          if (curEspRemainSec <= 0 || !isConnected || sysLocked) {
+            cancelReserveCountdown(false);
+          }
           resetAutoStartState();
           syncHomeSlidersAndButtons();
         }
@@ -2756,10 +3709,11 @@
         // 가동 중 또는 자동 시동 중에는 예열/시동 중복 터치 잠금
         if (isConnected && !sysLocked) {
           const acDetected =
-            curAcVolt >= 50 || curAcFreq >= 10 || isAutoStartActive;
+            curAcVolt >= 50 || curAcFreq >= 10 || isAutoStartActive || isGeneratorRunning;
           document.getElementById("btnPreheat").disabled = acDetected;
           document.getElementById("btnStart").disabled = acDetected;
           document.getElementById("btnStop").disabled = false;
+          syncManualBellButtonUI();
         }
 
         syncAutoStartButtonUI();
@@ -2831,10 +3785,14 @@
           }
         }
 
-        // 4. 오일 컨디션 (중간 소수점 1자리 KM 표시 + 오른쪽 [교환] 버튼 + 하단 0~10만KM 슬라이더 게이지)
+        // 4. 오일 컨디션 (중간 소수점 1자리 KM 표시 + 오른쪽 [교환] 버튼 + 하단 0~설정한 오일 교체 주기(만KM) 슬라이더 게이지)
         const cardDrive = document.getElementById("cardDrive");
         const elDist = document.getElementById("oilRemainVal");
         const ptrOil = document.getElementById("ptrOil");
+        const elOilMax = document.getElementById("oilMaxLabel");
+        if (elOilMax) {
+          elOilMax.innerText = `${savedOilMaxManKm}만KM`;
+        }
         if (cardDrive && elDist && ptrOil) {
           if (!isConnected || sysLocked) {
             cardDrive.classList.add("is-off");
@@ -2842,14 +3800,15 @@
             ptrOil.style.left = "0%";
           } else {
             cardDrive.classList.remove("is-off");
-            // 1시간(3600초) = 100KM 기준으로 100000KM(10만KM, 1000시간) 이상 달려도 숫자는 계속 올라가고, 슬라이더 포인터만 오른쪽 끝(100%)에 고정!
+            // 1시간(3600초) = 100KM 기준으로 설정된 오일 교체 주기(5만~15만KM, 기본 10만KM) 이상 달려도 숫자는 계속 올라가고, 슬라이더 포인터만 오른쪽 끝(100%)에 고정!
             const totalKm = Math.max(0.0, (curOilRunSec * 100.0) / 3600.0);
-            const pct = Math.max(0.0, Math.min(100.0, (totalKm / 100000.0) * 100.0));
+            const maxOilKm = Math.max(50000.0, savedOilMaxManKm * 10000.0);
+            const pct = Math.max(0.0, Math.min(100.0, (totalKm / maxOilKm) * 100.0));
             elDist.innerText = totalKm.toFixed(1);
             ptrOil.style.left = pct.toFixed(1) + "%";
-            if (totalKm < 70000.0) {
+            if (totalKm < maxOilKm * 0.7) {
               elDist.style.color = "#34d399";
-            } else if (totalKm < 90000.0) {
+            } else if (totalKm < maxOilKm * 0.9) {
               elDist.style.color = "#fbbf24";
             } else {
               elDist.style.color = "#f87171";
@@ -2886,6 +3845,34 @@
             }
           }
         }
+
+        // 6. 배터리 컨디션 (시동시 최저 전압 표시 + 눈금 3색 슬라이더: 교체필요 / 보통 / 양호)
+        const cardBattCond = document.getElementById("cardBattCond");
+        const elCrankV = document.getElementById("crankVoltVal");
+        const ptrBattCond = document.getElementById("ptrBattCond");
+        if (cardBattCond && elCrankV && ptrBattCond) {
+          if (!isConnected || sysLocked) {
+            cardBattCond.classList.add("is-off");
+            cardBattCond.classList.remove("perf-run");
+            elCrankV.innerText = "0.0";
+            elCrankV.style.color = "";
+            ptrBattCond.style.left = "0%";
+          } else {
+            cardBattCond.classList.remove("is-off");
+            elCrankV.style.color = "#34d399";
+            if (curCrankMinVolt >= 4.0) {
+              elCrankV.innerText = curCrankMinVolt.toFixed(1);
+              if (!battCondPerfRunning) {
+                ptrBattCond.style.left = calcCrankDropPercent(curCrankMinVolt).toFixed(1) + "%";
+              }
+            } else {
+              elCrankV.innerText = "0.0";
+              if (!battCondPerfRunning) {
+                ptrBattCond.style.left = "0%";
+              }
+            }
+          }
+        }
       }
 
       function updateTopBarUI() {
@@ -2900,7 +3887,7 @@
         dot.classList.remove("connecting", "connected");
 
         if (sysLocked) {
-          text.innerText = "시스템 잠금 (x3303)";
+          text.innerText = "시스템 오류 (x3303)";
           btnSettings.disabled = true;
           return;
         }
@@ -2929,14 +3916,21 @@
         document.getElementById("btnAutoStart").disabled = !enabled;
         document.getElementById("btnPreheat").disabled = !enabled;
         document.getElementById("btnStart").disabled = !enabled;
+        const btnBell = document.getElementById("btnManualBell");
+        if (btnBell) btnBell.disabled = !enabled;
         document.getElementById("btnStop").disabled = !enabled;
         document.getElementById("btnSettings").disabled = !enabled;
         syncAutoStartButtonUI();
         syncReserveButtonUI();
       }
 
+
       window.addEventListener("DOMContentLoaded", () => {
         initAutoStartSwipe();
+        try {
+          localStorage.removeItem("jkyung_sched_end_ms");
+          localStorage.removeItem("jkyung_sched_run_sec");
+        } catch (e) {}
         syncHomeSlidersAndButtons();
         updateTopBarUI();
         updateConditionUI();
@@ -2953,6 +3947,14 @@
           getSavedDeviceName()
         ) {
           scheduleAutoReconnect();
+        }
+      });
+
+      window.addEventListener("pagehide", () => {
+        if (typeof window.__bleNativeReset === "function") {
+          try {
+            window.__bleNativeReset();
+          } catch (e) {}
         }
       });
 
@@ -3066,6 +4068,25 @@
           );
           return;
         }
+        if (isUserGesture) {
+          connectSessionId++;
+          isConnecting = false;
+          if (autoReconnectTimer) {
+            clearTimeout(autoReconnectTimer);
+            autoReconnectTimer = null;
+          }
+          if (bleDevice && bleDevice.gatt) {
+            try {
+              bleDevice.gatt.disconnect();
+            } catch (e) {}
+          }
+          if (typeof window.__bleNativeReset === "function") {
+            try {
+              await window.__bleNativeReset();
+            } catch (e) {}
+          }
+          updateTopBarUI();
+        }
         const mySession = connectSessionId;
         try {
           if (bleDevice && bleDevice.gatt && !isUserGesture) {
@@ -3129,7 +4150,7 @@
             clearTimeout(autoReconnectTimer);
             autoReconnectTimer = null;
           }
-          if (bleDevice && bleDevice.id !== device.id && bleDevice.gatt) {
+          if (bleDevice && bleDevice !== device && bleDevice.gatt) {
             try {
               bleDevice.gatt.disconnect();
             } catch (e) {}
@@ -3221,9 +4242,14 @@
           setControlsEnabled(true);
           updateConditionUI();
 
-          // 연결 직후 날짜 스탬프 및 상태 동기화 요청
+          // 연결 직후 날짜 스탬프 및 상태 동기화 요청 (시동 예약은 보드 sch_ / st_[16..17] 응답으로만 동기화)
           await sendBleCmd("DATE_" + getStampStr());
           await sendBleCmd("REQ_SYNC");
+          setTimeout(() => {
+            if (sessionToken === connectSessionId && isConnected) {
+              sendBleCmd("REQ_SYNC");
+            }
+          }, 350);
           return true;
         } catch (err) {
           console.warn("GATT 연결 오류:", err);
@@ -3235,20 +4261,38 @@
         isConnected = false;
         isConnecting = false;
         bleChar = null;
+        rxLineBuf = "";
         curAcVolt = 0;
         curAcFreq = 0;
         curDcBatt = 0;
         curEspRunSec = 0;
+        curEspRemainSec = 0;
+        espStage = 0;
+        espStageRemMs = 0;
 
         if (isGeneratorRunning) {
           disconnectedWhileRunning = true;
         }
         isGeneratorRunning = false;
+        pendingStartDiag = false;
+        startDiagShownForRun = false;
+        hasEspCrankField = false;
+        battCondPerfRunning = false;
+        if (battCondPerfTimer) {
+          clearTimeout(battCondPerfTimer);
+          battCondPerfTimer = null;
+        }
+        stopManualBellCountdown();
+        stopAutoBellVisualCountdown();
         resetAutoStartState();
         stopPreheatVisualCountdown();
         stopStartVisualCountdown();
         stopRunElapsedTimer();
         cancelReserveCountdown(false);
+        stopScheduledStartLocal();
+        document.getElementById("schedSafetyModal").classList.remove("show");
+        document.getElementById("schedTimeModal").classList.remove("show");
+        document.getElementById("schedCancelModal").classList.remove("show");
 
         setControlsEnabled(false);
         updateTopBarUI();
@@ -3286,15 +4330,26 @@
       }
 
       function handleStatusNotification(event) {
-        const raw = new TextDecoder("utf-8")
-          .decode(event.target.value)
-          .trim();
-        if (!raw) return;
+        const chunk = new TextDecoder("utf-8").decode(event.target.value);
+        if (!chunk) return;
 
-        const lines = raw.split(/\r?\n/);
+        rxLineBuf += chunk;
+        if (rxLineBuf.length > 1024) {
+          rxLineBuf = chunk;
+        }
+        const lines = rxLineBuf.split(/\r?\n/);
+        rxLineBuf = lines.pop() || "";
         for (const line of lines) {
-          const clean = verifyPacketLine(line.trim());
+          const t = line.trim();
+          if (!t) continue;
+          const clean = verifyPacketLine(t);
           if (clean) parsePacket(clean);
+        }
+        const rem = rxLineBuf.trim();
+        if (rem && /\*[0-9A-Fa-f]{2}$/.test(rem)) {
+          rxLineBuf = "";
+          const cleanRem = verifyPacketLine(rem);
+          if (cleanRem) parsePacket(cleanRem);
         }
       }
 
@@ -3339,9 +4394,16 @@
             curOilRunSec = Math.max(0, v);
             updateConditionUI();
           }
+        } else if (msg.startsWith("om_")) {
+          const v = parseInt(msg.substring(3), 10);
+          if (!isNaN(v) && v >= 5 && v <= 15) {
+            savedOilMaxManKm = v;
+            localStorage.setItem(STORAGE_KEY_OIL_MAX, String(savedOilMaxManKm));
+            updateConditionUI();
+          }
         } else if (msg.startsWith("tk_")) {
           const v = parseInt(msg.substring(3), 10);
-          if (!isNaN(v) && v >= 50 && v <= 500) {
+          if (!isNaN(v) && v >= 100 && v <= 500) {
             savedTankCapLiters = Math.max(100, Math.min(500, v));
             localStorage.setItem(STORAGE_KEY_FUEL, String(savedTankCapLiters));
             updateConditionUI();
@@ -3356,6 +4418,22 @@
             localStorage.setItem(STORAGE_KEY_FUEL_RATE, String(savedFuelRateLph));
             updateConditionUI();
           }
+        } else if (msg.startsWith("cv_")) {
+          const v10 = parseInt(msg.substring(3), 10);
+          if (!isNaN(v10) && v10 >= 40 && v10 <= 200) {
+            hasEspCrankField = true;
+            curCrankMinVolt = v10 / 10.0;
+            localStorage.setItem(STORAGE_KEY_CRANK_V, String(curCrankMinVolt));
+            updateConditionUI();
+          }
+        } else if (msg.startsWith("crk_")) {
+          const v = parseFloat(msg.substring(4));
+          if (!isNaN(v)) {
+            hasEspCrankField = true;
+            pendingStartDiag = false;
+            startDiagShownForRun = true;
+            triggerBattCondPerformance(v, true);
+          }
         } else if (msg.startsWith("off_")) {
           const sec = parseInt(msg.substring(4), 10) || 0;
           if (pendingReserveTargetSec === null || sec === pendingReserveTargetSec) {
@@ -3363,13 +4441,21 @@
             pendingReserveUntilMs = 0;
           }
           applyEspRemainSec(sec, true);
+        } else if (msg.startsWith("sch_")) {
+          const sp = msg.substring(4).split(",");
+          const wSec = parseInt(sp[0], 10) || 0;
+          const rSec = sp.length >= 2 ? parseInt(sp[1], 10) || 0 : 0;
+          pendingSchedUntilMs = 0;
+          applyEspScheduleSec(wSec, rSec, true);
         } else if (msg.startsWith("st_")) {
           const parts = msg.substring(3).split(",");
           if (parts.length >= 6) {
             curAcVolt = parseFloat(parts[0]) || 0;
             curAcFreq = parseFloat(parts[1]) || 0;
             curDcBatt = parseFloat(parts[2]) || 0;
+            // [v17] 일반 텔레메트리 전압(curDcBatt)을 시동 최저전압 후보로 수집하던 경로 제거 (ESP 실측 crk_/cv_/st_[13]만 사용)
             const remSec = parseInt(parts[5], 10) || 0;
+            curEspRemainSec = remSec;
             if (parts.length >= 8) {
               const espRunSec = parseInt(parts[7], 10) || 0;
               applyEspRunElapsedSec(espRunSec);
@@ -3382,7 +4468,7 @@
             }
             if (parts.length >= 11) {
               const espTankCap = parseInt(parts[10], 10);
-              if (!isNaN(espTankCap) && espTankCap >= 50 && espTankCap <= 500) {
+              if (!isNaN(espTankCap) && espTankCap >= 100 && espTankCap <= 500) {
                 savedTankCapLiters = Math.max(100, Math.min(500, espTankCap));
                 localStorage.setItem(STORAGE_KEY_FUEL, String(savedTankCapLiters));
               }
@@ -3394,12 +4480,42 @@
                 localStorage.setItem(STORAGE_KEY_FUEL_RATE, String(savedFuelRateLph));
               }
             }
+            if (parts.length >= 13) {
+              const espOilMax = parseInt(parts[12], 10);
+              if (!isNaN(espOilMax) && espOilMax >= 5 && espOilMax <= 15) {
+                savedOilMaxManKm = espOilMax;
+                localStorage.setItem(STORAGE_KEY_OIL_MAX, String(savedOilMaxManKm));
+              }
+            }
+            if (parts.length >= 14) {
+              const espCrk10 = parseInt(parts[13], 10);
+              if (!isNaN(espCrk10) && espCrk10 >= 40 && espCrk10 <= 200) {
+                hasEspCrankField = true;
+                curCrankMinVolt = espCrk10 / 10.0;
+                localStorage.setItem(STORAGE_KEY_CRANK_V, String(curCrankMinVolt));
+              }
+            }
             const wasDiscWhileRun = disconnectedWhileRunning;
             disconnectedWhileRunning = false;
             applyEspRemainSec(remSec, false);
             updateConditionUI();
+            // [v17] st_[14] 단계 코드 / st_[15] 남은 시간(0.1초 단위): 16필드 이상일 때만 (구형 14필드와 호환)
+            if (parts.length >= 16) {
+              const espStageCode = parseInt(parts[14], 10);
+              const espStageRem100 = parseInt(parts[15], 10);
+              if (!isNaN(espStageCode) && !isNaN(espStageRem100)) {
+                applyEspSequenceStage(espStageCode, Math.max(0, espStageRem100) * 100);
+              }
+            }
+            if (parts.length >= 18) {
+              const espSchWait = parseInt(parts[16], 10) || 0;
+              const espSchRun = parseInt(parts[17], 10) || 0;
+              applyEspScheduleSec(espSchWait, espSchRun, false);
+            }
             if (wasDiscWhileRun) syncHomeSlidersAndButtons();
-            if (exitCountdownTimer) updateExitModalMessage();
+            if (exitCountdownTimer || document.getElementById("exitModal").classList.contains("show")) {
+              updateExitModalMessage();
+            }
           }
         } else {
           try {
@@ -3446,6 +4562,7 @@
         syncReserveButtonUI();
       }
 
+
       // ★ 명령 전송: 성공 true / 실패 false 반환. 실패하면 1회 자동 재시도 (실패 토스트 팝업 띄우지 않음)
       async function sendBleCmd(cmdStr, preferNoResp = false) {
         if (!isConnected || !bleChar || sysLocked) {
@@ -3475,7 +4592,7 @@
         return job;
       }
 
-      // 1. 예열 버튼
+      // 1. 수동 예열 버튼 (예열 시간 동안 1초 끊김음 삐- 삐- 동시 작동 / 종료 시 함께 OFF)
       function stopPreheatVisualCountdown() {
         if (preheatCountdownTimer) {
           clearInterval(preheatCountdownTimer);
@@ -3488,9 +4605,13 @@
         syncHomeSlidersAndButtons();
       }
 
-      function startPreheatVisualCountdown() {
+      function startPreheatVisualCountdown(remainMsOverride = null) {
+        // [v17] remainMsOverride: 재연결 복원 시 예열 남은 시간(ms). 없으면 설정 예열 시간 전체.
         const durationSec = savedPreheatSec;
-        const ms = Math.round(durationSec * 1000);
+        const ms =
+          remainMsOverride !== null
+            ? Math.max(0, Math.round(remainMsOverride))
+            : Math.round(durationSec * 1000);
 
         if (preheatCountdownTimer) clearInterval(preheatCountdownTimer);
         const slider = document.getElementById("preheatSlider");
@@ -3498,7 +4619,7 @@
         const btnText = document.getElementById("preheatBtnText");
 
         slider.max = 15;
-        slider.value = durationSec;
+        slider.value = Math.min(durationSec, ms / 1000);
         updateSliderVisualFill(slider);
         btn.classList.add("active");
         const endTime = Date.now() + ms;
@@ -3519,17 +4640,21 @@
       }
 
       async function triggerPreheat() {
+        if (preheatCountdownTimer || isAutoStartActive) return;
         if (isGeneratorRunning || curAcVolt >= 50 || curAcFreq >= 10) return;
         if (!(await sendBleCmd("CMD_PREHEAT"))) return;
+        if (manualBellTimer) stopManualBellCountdown();
         startPreheatVisualCountdown();
+        updateHero();
       }
 
-      // 2. 시동 버튼
+      // 2. 수동 시동 버튼 (미예열: 1단+온도점검 4초 동안 1초 끊김음 -> 시동 / 예열중: 1단 ON 1초 끊김음 -> 시동)
       function stopStartVisualCountdown() {
         if (startCountdownTimer) {
           clearInterval(startCountdownTimer);
           startCountdownTimer = null;
         }
+        isStartCrankingPhase = false;
         const slider = document.getElementById("startSlider");
         slider.max = 4;
         slider.value = savedStartSec;
@@ -3538,12 +4663,16 @@
         syncHomeSlidersAndButtons();
       }
 
-      function startStartVisualCountdown() {
+      function startStartVisualCountdown(prepMs = 4000, fastOverride = null, crankMsOverride = null) {
+        // [v17] prepMs = "남은" 준비(점검/1단ON) 시간(ms). fastOverride: true=1단 ON 대기, false=온도 점검, null=prepMs<=1000으로 자동판정.
+        //        crankMsOverride: 재연결 복원 시 크랭킹 남은 시간(ms)
         const durationSec = savedStartSec;
-        const prepMs = 4000; // ESP32 1단 기름 공급 대기(4초) 동안 "연료 점검" 표시
-        const crankMs = Math.round(durationSec * 1000);
+        const crankMs =
+          crankMsOverride !== null ? Math.max(0, Math.round(crankMsOverride)) : Math.round(durationSec * 1000);
+        const fastMode = fastOverride !== null ? !!fastOverride : prepMs <= 1000;
 
         if (startCountdownTimer) clearInterval(startCountdownTimer);
+        isStartCrankingPhase = false;
         const slider = document.getElementById("startSlider");
         const btn = document.getElementById("btnStart");
         const btnText = document.getElementById("startBtnText");
@@ -3551,12 +4680,17 @@
         slider.max = 4;
         slider.value = durationSec;
         updateSliderVisualFill(slider);
-        btn.classList.add("active", "fuel-checking");
+        btn.classList.add("active");
+        if (fastMode) {
+          btn.classList.remove("fuel-checking");
+          btnText.innerText = "1단 ON";
+        } else {
+          btn.classList.add("fuel-checking");
+          btnText.innerText = "온도 점검";
+        }
         const startTime = Date.now();
-        const prepEndTime = startTime + prepMs;
+        const prepEndTime = startTime + Math.max(0, prepMs);
         const totalEndTime = prepEndTime + crankMs;
-
-        btnText.innerText = "연료 점검";
 
         startCountdownTimer = setInterval(() => {
           if (isGeneratorRunning || curAcVolt >= 50 || curAcFreq >= 10) {
@@ -3565,19 +4699,30 @@
           }
           const now = Date.now();
           if (now < prepEndTime) {
-            // 기름 공급 대기(4초) 동안 "연료 점검" 표시
-            btnText.innerText = "연료 점검";
-            btn.classList.add("fuel-checking");
+            if (fastMode) {
+              btn.classList.remove("fuel-checking");
+              btnText.innerText = "1단 ON";
+            } else {
+              btn.classList.add("fuel-checking");
+              btnText.innerText = "온도 점검";
+            }
             slider.value = durationSec;
             updateSliderVisualFill(slider);
           } else {
-            // 시동 모터 구동 시간 동안 초 숫자 카운트다운 표시 (예: 시동 0.9초 -> 0.0초)
+            if (!isStartCrankingPhase) {
+              isStartCrankingPhase = true;
+              isAutoBellRinging = false;
+              if (manualBellTimer) stopManualBellCountdown();
+              else syncManualBellButtonUI();
+              updateHero();
+            }
             btn.classList.remove("fuel-checking");
             const remainSec = Math.max(0, (totalEndTime - now) / 1000);
             slider.value = remainSec.toFixed(1);
             updateSliderVisualFill(slider);
             btnText.innerText = `시동 ${remainSec.toFixed(1)}초`;
             if (remainSec <= 0) {
+              // [v17] 일반 텔레메트리 전압으로 배터리 컨디션을 강제 표시하던 대체 경로 제거 (ESP 실측 crk_/cv_/st_[13]만 표시)
               stopStartVisualCountdown();
             }
           }
@@ -3585,9 +4730,15 @@
       }
 
       async function triggerStart() {
+        if (startCountdownTimer || isAutoStartActive) return;
         if (isGeneratorRunning || curAcVolt >= 50 || curAcFreq >= 10) return;
-        if (!(await sendBleCmd("CMD_START"))) return;
-        startStartVisualCountdown();
+        const fastDuringPreheat = !!preheatCountdownTimer;
+        const cmd = fastDuringPreheat ? "CMD_START_FAST" : "CMD_START";
+        if (!(await sendBleCmd(cmd))) return;
+        if (manualBellTimer) stopManualBellCountdown();
+        armStartDiagnostics();
+        startStartVisualCountdown(fastDuringPreheat ? 1000 : 4000);
+        updateHero();
       }
 
       // 3. 홈 화면 인라인 자동 꺼짐(예약 정지) 조작: 보드로 전송 -> 보드 응답(off_) 수신 시 표시 -> 앱 자율 카운트다운 & 주기 동기화
@@ -3677,6 +4828,7 @@
         syncReserveButtonUI();
       }
 
+
       async function confirmReserveModal() {
         closeReserveModal();
         if (tempReserveMinutes <= 0) {
@@ -3693,8 +4845,11 @@
         }
       }
 
-      // 4. 즉시 정지
+      // 4. 즉시 정지 (시동 예약은 시동이 걸려 전압이 나왔을 때 또는 [예약취소] 확인 시에만 취소되므로 정지 버튼으로는 취소하지 않음)
       function emergencyStop() {
+        pendingStartDiag = false;
+        stopManualBellCountdown();
+        stopAutoBellVisualCountdown();
         resetAutoStartState();
         stopPreheatVisualCountdown();
         stopStartVisualCountdown();
@@ -3719,13 +4874,11 @@
         }, 2500);
       }
 
-      // 5. 설정 모달 (예열 기본 8초 / 1~15초, 시동 기본 0.9초 / 0.5~4초, 전압 없으면 엔진끄기 기본 안꺼짐 / 1분~1시간[80%], 다른 발전기 선택)
+      // 5. 설정 모달 (예열 기본 8초 / 1~15초, 시동 기본 0.9초 / 0.5~4초, 100V이하 정지 기본 1시간 / 1분~1시간, 다른 발전기 선택)
       function formatNoAcSliderText(sliderVal) {
-        const v = parseInt(sliderVal, 10);
-        // 슬라이더 min=1, max=74 기준: 1~60(약 80% 지점)까지는 1분~1시간(60분), 61 이상(80% 초과 구간)은 "안꺼짐"
-        if (isNaN(v) || v > 60) return "안꺼짐";
-        if (v === 60) return "1시간";
-        return `${Math.max(1, v)}분`;
+        const v = Math.max(1, Math.min(60, parseInt(sliderVal, 10) || 60));
+        if (v >= 60) return "1시간";
+        return `${v}분`;
       }
 
       function secToNoAcSliderVal(sec) {
@@ -3781,11 +4934,13 @@
         const preRange = document.getElementById("setPreheatRange");
         const stRange = document.getElementById("setStartRange");
         const noAcRange = document.getElementById("setNoAcRange");
+        const oilMaxRange = document.getElementById("setOilMaxRange");
         const tankRange = document.getElementById("setTankRange");
         const rateRange = document.getElementById("setFuelRateRange");
         const boxPre = document.getElementById("setBoxPreheat");
         const boxSt = document.getElementById("setBoxStart");
         const boxNoAc = document.getElementById("setBoxNoAc");
+        const boxOilMax = document.getElementById("setBoxOilMax");
         const boxTank = document.getElementById("setBoxTank");
         const boxRate = document.getElementById("setBoxFuelRate");
         const btnConfirm = document.getElementById("btnSettingsConfirm");
@@ -3795,15 +4950,212 @@
         if (preRange) preRange.disabled = !canEdit;
         if (stRange) stRange.disabled = !canEdit;
         if (noAcRange) noAcRange.disabled = !canEdit;
+        if (oilMaxRange) oilMaxRange.disabled = !canEdit;
         if (tankRange) tankRange.disabled = !canEdit;
         if (rateRange) rateRange.disabled = !canEdit;
         if (boxPre) boxPre.classList.toggle("is-disabled", !canEdit);
         if (boxSt) boxSt.classList.toggle("is-disabled", !canEdit);
         if (boxNoAc) boxNoAc.classList.toggle("is-disabled", !canEdit);
+        if (boxOilMax) boxOilMax.classList.toggle("is-disabled", !canEdit);
         if (boxTank) boxTank.classList.toggle("is-disabled", !canEdit);
         if (boxRate) boxRate.classList.toggle("is-disabled", !canEdit);
         if (btnConfirm) btnConfirm.disabled = !canEdit;
         if (btnDefault) btnDefault.disabled = !canEdit;
+        // ★ 발전기 시동 예약 버튼: 블루투스 연결됨 + 발전기가 꺼져 있을 때만 활성화!
+        const btnSched = document.getElementById("btnOpenSchedSafety");
+        if (btnSched) {
+          const canSched =
+            canEdit && !isGeneratorRunning && curAcVolt < 50 && curAcFreq < 10;
+          btnSched.disabled = !canSched;
+        }
+      }
+
+      /* ══════ 5-B. 발전기 시동 예약 (1단계: 안전 경고·동의·3지선다 클릭 -> 2단계: 시간 슬라이더 설정) ══════ */
+      let schedMathChoices = [0, 0, 0];
+      let schedSelectedOptIdx = -1;
+      let schedExpectedAns = 0;
+
+      function buildSchedMathChoices() {
+        schedRandomAdd = Math.floor(Math.random() * 9) + 1;
+        const devName =
+          getSavedDeviceName() ||
+          (bleDevice && sanitizeSsid(bleDevice.name)) ||
+          "0000";
+        const basePinNum = parseInt(extractPinFromName(devName), 10) || 0;
+        schedExpectedAns = basePinNum + schedRandomAdd;
+        schedSelectedOptIdx = -1;
+
+        const promptEl = document.getElementById("schedMathPrompt");
+        if (promptEl) {
+          promptEl.innerHTML = `비밀번호에 <span class="sched-math-num">${schedRandomAdd}</span>을 더한 값을 선택하세요.`;
+        }
+
+        // 정답 1개 + 오답 2개 생성 후 순서 랜덤 셔플
+        const offsets = [-4, -3, -2, -1, 1, 2, 3, 4, 5];
+        for (let i = offsets.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const t = offsets[i];
+          offsets[i] = offsets[j];
+          offsets[j] = t;
+        }
+        const wrongs = [];
+        for (const off of offsets) {
+          const cand = schedExpectedAns + off;
+          if (cand >= 0 && cand !== schedExpectedAns && !wrongs.includes(cand)) {
+            wrongs.push(cand);
+            if (wrongs.length >= 2) break;
+          }
+        }
+        while (wrongs.length < 2) {
+          wrongs.push(schedExpectedAns + wrongs.length + 1);
+        }
+
+        schedMathChoices = [schedExpectedAns, wrongs[0], wrongs[1]];
+        for (let i = schedMathChoices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const t = schedMathChoices[i];
+          schedMathChoices[i] = schedMathChoices[j];
+          schedMathChoices[j] = t;
+        }
+
+        for (let i = 0; i < 3; i++) {
+          const btn = document.getElementById("schedOpt" + i);
+          if (btn) {
+            btn.innerText = String(schedMathChoices[i]);
+            btn.classList.remove("selected");
+          }
+        }
+      }
+
+      function selectSchedMathOption(idx) {
+        schedSelectedOptIdx = idx;
+        for (let i = 0; i < 3; i++) {
+          const btn = document.getElementById("schedOpt" + i);
+          if (btn) {
+            btn.classList.toggle("selected", i === idx);
+          }
+        }
+      }
+
+      function openSchedSafetyModal() {
+        if (
+          !isConnected ||
+          sysLocked ||
+          isGeneratorRunning ||
+          curAcVolt >= 50 ||
+          curAcFreq >= 10
+        ) {
+          return;
+        }
+        closeSettingsModal();
+        const chk = document.getElementById("schedAgreeChk");
+        if (chk) chk.checked = false;
+        buildSchedMathChoices();
+        document.getElementById("schedSafetyModal").classList.add("show");
+      }
+
+      function closeSchedSafetyModal() {
+        document.getElementById("schedSafetyModal").classList.remove("show");
+      }
+
+      function confirmSchedSafetyModal() {
+        const chk = document.getElementById("schedAgreeChk");
+        if (!chk || !chk.checked) {
+          alert("안전한 장소 주차 확인 및 동의에 체크해 주세요.");
+          return;
+        }
+        if (schedSelectedOptIdx < 0 || schedSelectedOptIdx > 2) {
+          alert("비밀번호에 숫자를 더한 정답을 선택해 주세요.");
+          return;
+        }
+        if (schedMathChoices[schedSelectedOptIdx] !== schedExpectedAns) {
+          alert("선택한 값이 일치하지 않습니다. 다시 선택해 주세요.");
+          buildSchedMathChoices();
+          return;
+        }
+        closeSchedSafetyModal();
+        openSchedTimeModal();
+      }
+
+      function onSchedWaitSliderInput(val) {
+        const h = Math.max(1, Math.min(48, parseInt(val, 10) || 1));
+        const r = document.getElementById("schedWaitRange");
+        if (r) updateSliderVisualFill(r);
+        const topVal = document.getElementById("schedWaitSliderVal");
+        if (topVal) topVal.innerText = `${h}시간`;
+        const box = document.getElementById("schedWaitHourBox");
+        if (box) box.innerText = String(h);
+      }
+
+      function onSchedRunSliderInput(val) {
+        const h = Math.max(1, Math.min(12, parseInt(val, 10) || 1));
+        const r = document.getElementById("schedRunRange");
+        if (r) updateSliderVisualFill(r);
+        const topVal = document.getElementById("schedRunSliderVal");
+        if (topVal) topVal.innerText = `${h}시간`;
+        const box = document.getElementById("schedRunHourBox");
+        if (box) box.innerText = String(h);
+      }
+
+      function openSchedTimeModal() {
+        if (!isConnected || sysLocked || isGeneratorRunning) return;
+        const wRange = document.getElementById("schedWaitRange");
+        const rRange = document.getElementById("schedRunRange");
+        let initW = 1;
+        let initR = 1;
+        if (schedStartRemainSec > 0 && schedRunDurationSec > 0) {
+          initW = Math.max(1, Math.min(48, Math.ceil(schedStartRemainSec / 3600)));
+          initR = Math.max(1, Math.min(12, Math.round(schedRunDurationSec / 3600)));
+        }
+        if (wRange) {
+          wRange.value = String(initW);
+          onSchedWaitSliderInput(initW);
+        }
+        if (rRange) {
+          rRange.value = String(initR);
+          onSchedRunSliderInput(initR);
+        }
+        document.getElementById("schedTimeModal").classList.add("show");
+      }
+
+      function closeSchedTimeModal() {
+        document.getElementById("schedTimeModal").classList.remove("show");
+      }
+
+      async function confirmSchedTimeModal() {
+        if (!isConnected || sysLocked || isGeneratorRunning) {
+          closeSchedTimeModal();
+          return;
+        }
+        const wRange = document.getElementById("schedWaitRange");
+        const rRange = document.getElementById("schedRunRange");
+        const waitH = Math.max(1, Math.min(48, parseInt((wRange && wRange.value) || "1", 10) || 1));
+        const runH = Math.max(1, Math.min(12, parseInt((rRange && rRange.value) || "1", 10) || 1));
+        const waitSec = waitH * 3600;
+        const runSec = runH * 3600;
+        closeSchedTimeModal();
+        pendingSchedUntilMs = Date.now() + 1500;
+        const ok = await sendBleCmd(`SCHED_${waitSec}_${runSec}`);
+        if (!ok) {
+          pendingSchedUntilMs = 0;
+        }
+      }
+
+      function openSchedCancelModal() {
+        if (!isConnected || sysLocked || schedStartRemainSec <= 0) return;
+        document.getElementById("schedCancelModal").classList.add("show");
+      }
+
+      function closeSchedCancelModal() {
+        document.getElementById("schedCancelModal").classList.remove("show");
+      }
+
+      async function confirmSchedCancelModal() {
+        closeSchedCancelModal();
+        if (!isConnected || sysLocked) return;
+        pendingSchedUntilMs = Date.now() + 1200;
+        stopScheduledStartLocal();
+        await sendBleCmd("SCHED_0_0");
       }
 
       function openSettingsModal() {
@@ -3811,6 +5163,7 @@
         const preRange = document.getElementById("setPreheatRange");
         const stRange = document.getElementById("setStartRange");
         const noAcRange = document.getElementById("setNoAcRange");
+        const oilMaxRange = document.getElementById("setOilMaxRange");
         const tankRange = document.getElementById("setTankRange");
         const rateRange = document.getElementById("setFuelRateRange");
 
@@ -3829,6 +5182,12 @@
         updateSliderVisualFill(noAcRange);
         document.getElementById("setNoAcVal").innerText =
           formatNoAcSliderText(noAcSliderVal);
+
+        if (oilMaxRange) {
+          oilMaxRange.value = savedOilMaxManKm;
+          updateSliderVisualFill(oilMaxRange);
+          document.getElementById("setOilMaxVal").innerText = `${savedOilMaxManKm}만KM`;
+        }
 
         if (tankRange) {
           tankRange.value = savedTankCapLiters;
@@ -3855,6 +5214,7 @@
         const preRange = document.getElementById("setPreheatRange");
         const stRange = document.getElementById("setStartRange");
         const noAcRange = document.getElementById("setNoAcRange");
+        const oilMaxRange = document.getElementById("setOilMaxRange");
         const tankRange = document.getElementById("setTankRange");
         const rateRange = document.getElementById("setFuelRateRange");
 
@@ -3869,6 +5229,10 @@
         if (noAcRange) {
           noAcRange.value = "60";
           onSettingsNoAcInput("60");
+        }
+        if (oilMaxRange) {
+          oilMaxRange.value = "10";
+          onSettingsOilMaxInput("10");
         }
         if (tankRange) {
           tankRange.value = "200";
@@ -3898,6 +5262,11 @@
           formatNoAcSliderText(val);
       }
 
+      function onSettingsOilMaxInput(val) {
+        updateSliderVisualFill(document.getElementById("setOilMaxRange"));
+        document.getElementById("setOilMaxVal").innerText = `${parseInt(val, 10) || 10}만KM`;
+      }
+
       function onSettingsTankInput(val) {
         updateSliderVisualFill(document.getElementById("setTankRange"));
         document.getElementById("setTankVal").innerText = `${parseInt(val, 10) || 200}L`;
@@ -3911,6 +5280,17 @@
       }
 
       async function confirmSettingsModal() {
+        const prevPre = savedPreheatSec;
+        const prevSt = savedStartSec;
+        const prevNoAc = savedNoAcSec;
+        const prevOilMax = savedOilMaxManKm;
+        const prevTank = savedTankCapLiters;
+        const prevRate = savedFuelRateLph;
+
+        const prevPreX10 = Math.round(prevPre * 10);
+        const prevStX10 = Math.round(prevSt * 10);
+        const prevRateX10 = Math.round(prevRate * 10);
+
         const rawPre = parseFloat(
           document.getElementById("setPreheatRange").value
         );
@@ -3918,6 +5298,10 @@
           document.getElementById("setStartRange").value
         );
         const rawNoAcSlider = document.getElementById("setNoAcRange").value;
+        const rawOilMax = parseInt(
+          document.getElementById("setOilMaxRange").value,
+          10
+        );
         const rawTank = parseInt(
           document.getElementById("setTankRange").value,
           10
@@ -3926,36 +5310,106 @@
           document.getElementById("setFuelRateRange").value
         );
 
-        savedPreheatSec = isNaN(rawPre)
+        const nextPre = isNaN(rawPre)
           ? 8.0
-          : Math.max(1.0, Math.min(15.0, rawPre));
-        savedStartSec = isNaN(rawSt)
+          : Math.round(Math.max(1.0, Math.min(15.0, rawPre)) * 10) / 10;
+        const nextSt = isNaN(rawSt)
           ? 0.9
-          : Math.max(0.5, Math.min(4.0, rawSt));
-        savedNoAcSec = noAcSliderValToSec(rawNoAcSlider);
-        savedTankCapLiters = isNaN(rawTank)
+          : Math.round(Math.max(0.5, Math.min(4.0, rawSt)) * 10) / 10;
+        const nextNoAc = noAcSliderValToSec(rawNoAcSlider);
+        const nextOilMax = isNaN(rawOilMax)
+          ? 10
+          : Math.max(5, Math.min(15, rawOilMax));
+        const nextTank = isNaN(rawTank)
           ? 200
           : Math.max(100, Math.min(500, rawTank));
-        savedFuelRateLph = isNaN(rawRate)
+        const nextRate = isNaN(rawRate)
           ? 3.2
           : Math.max(1.0, Math.min(6.0, Math.round(rawRate * 10) / 10));
 
-        localStorage.setItem(STORAGE_KEY_PREHEAT, String(savedPreheatSec));
-        localStorage.setItem(STORAGE_KEY_START, String(savedStartSec));
-        localStorage.setItem(STORAGE_KEY_NOAC, String(savedNoAcSec));
-        localStorage.setItem(STORAGE_KEY_FUEL, String(savedTankCapLiters));
-        localStorage.setItem(STORAGE_KEY_FUEL_RATE, String(savedFuelRateLph));
+        const nextPreX10 = Math.round(nextPre * 10);
+        const nextStX10 = Math.round(nextSt * 10);
+        const nextRateX10 = Math.round(nextRate * 10);
+
+        const chgPre = nextPreX10 !== prevPreX10;
+        const chgSt = nextStX10 !== prevStX10;
+        const chgNoAc = nextNoAc !== prevNoAc;
+        const chgOilMax = nextOilMax !== prevOilMax;
+        const chgTank = nextTank !== prevTank;
+        const chgRate = nextRateX10 !== prevRateX10;
+
+        savedPreheatSec = nextPre;
+        savedStartSec = nextSt;
+        savedNoAcSec = nextNoAc;
+        savedOilMaxManKm = nextOilMax;
+        savedTankCapLiters = nextTank;
+        savedFuelRateLph = nextRate;
+
+        if (chgPre) localStorage.setItem(STORAGE_KEY_PREHEAT, String(savedPreheatSec));
+        if (chgSt) localStorage.setItem(STORAGE_KEY_START, String(savedStartSec));
+        if (chgNoAc) localStorage.setItem(STORAGE_KEY_NOAC, String(savedNoAcSec));
+        if (chgOilMax) localStorage.setItem(STORAGE_KEY_OIL_MAX, String(savedOilMaxManKm));
+        if (chgTank) localStorage.setItem(STORAGE_KEY_FUEL, String(savedTankCapLiters));
+        if (chgRate) localStorage.setItem(STORAGE_KEY_FUEL_RATE, String(savedFuelRateLph));
 
         syncHomeSlidersAndButtons();
         updateConditionUI();
         closeSettingsModal();
 
         if (isConnected) {
-          await sendBleCmd("RELAY1_" + savedPreheatSec.toFixed(1));
-          await sendBleCmd("RELAY2_" + savedStartSec.toFixed(1));
-          await sendBleCmd("NOAC_" + savedNoAcSec);
-          await sendBleCmd("TANK_" + savedTankCapLiters);
-          await sendBleCmd("RATE_" + Math.round(savedFuelRateLph * 10));
+          let reverted = false;
+          if (chgPre) {
+            const ok = await sendBleCmd("RELAY1_" + savedPreheatSec.toFixed(1));
+            if (!ok) {
+              savedPreheatSec = prevPre;
+              localStorage.setItem(STORAGE_KEY_PREHEAT, String(prevPre));
+              reverted = true;
+            }
+          }
+          if (chgSt) {
+            const ok = await sendBleCmd("RELAY2_" + savedStartSec.toFixed(1));
+            if (!ok) {
+              savedStartSec = prevSt;
+              localStorage.setItem(STORAGE_KEY_START, String(prevSt));
+              reverted = true;
+            }
+          }
+          if (chgNoAc) {
+            const ok = await sendBleCmd("NOAC_" + savedNoAcSec);
+            if (!ok) {
+              savedNoAcSec = prevNoAc;
+              localStorage.setItem(STORAGE_KEY_NOAC, String(prevNoAc));
+              reverted = true;
+            }
+          }
+          if (chgOilMax) {
+            const ok = await sendBleCmd("OILMAX_" + savedOilMaxManKm);
+            if (!ok) {
+              savedOilMaxManKm = prevOilMax;
+              localStorage.setItem(STORAGE_KEY_OIL_MAX, String(prevOilMax));
+              reverted = true;
+            }
+          }
+          if (chgTank) {
+            const ok = await sendBleCmd("TANK_" + savedTankCapLiters);
+            if (!ok) {
+              savedTankCapLiters = prevTank;
+              localStorage.setItem(STORAGE_KEY_FUEL, String(prevTank));
+              reverted = true;
+            }
+          }
+          if (chgRate) {
+            const ok = await sendBleCmd("RATE_" + nextRateX10);
+            if (!ok) {
+              savedFuelRateLph = prevRate;
+              localStorage.setItem(STORAGE_KEY_FUEL_RATE, String(prevRate));
+              reverted = true;
+            }
+          }
+          if (reverted) {
+            syncHomeSlidersAndButtons();
+            updateConditionUI();
+          }
         }
       }
 
@@ -3971,6 +5425,7 @@
         const prevDev = bleDevice;
         bleDevice = null;
         bleChar = null;
+        rxLineBuf = "";
         isConnected = false;
         isConnecting = false;
         curAcVolt = 0;
@@ -3979,12 +5434,21 @@
         curEspRunSec = 0;
         isGeneratorRunning = false;
         disconnectedWhileRunning = false;
+        curCrankMinVolt = 0;
+        hasEspCrankField = false;
+        localStorage.removeItem(STORAGE_KEY_CRANK_V);
 
+        stopManualBellCountdown();
+        stopAutoBellVisualCountdown();
         resetAutoStartState();
         stopPreheatVisualCountdown();
         stopStartVisualCountdown();
         stopRunElapsedTimer();
         cancelReserveCountdown(false);
+        stopScheduledStartLocal();
+        document.getElementById("schedSafetyModal").classList.remove("show");
+        document.getElementById("schedTimeModal").classList.remove("show");
+        document.getElementById("schedCancelModal").classList.remove("show");
 
         setControlsEnabled(false);
         updateTopBarUI();
@@ -4011,11 +5475,22 @@
         updateTopBarUI();
       }
 
-      // 6. 맨 밑 "앱 종료" 버튼 & 5초 카운트다운 모달 (운전 중 / 꺼져 있을 때 모두 동일한 포맷으로 안내)
+      // 6. 맨 밑 "앱 종료" 버튼 & 5초 카운트다운 모달 (시동 예약 중일 때는 카운트다운 없이 확인을 눌러야 종료)
       function updateExitModalMessage() {
         const msgEl = document.getElementById("exitStatusMsg");
         if (!isConnected) {
           msgEl.innerHTML = "블루투스 연결안됨<br>앱을 종료합니다";
+        } else if (!isGeneratorRunning && schedStartRemainSec > 0) {
+          const waitText = formatKoreanDuration(schedStartRemainSec);
+          const runHours = Math.max(1, Math.round(schedRunDurationSec / 3600));
+          msgEl.innerHTML =
+            `<span style="color:#fbbf24;">${waitText}</span> 후에 자동 시동되며<br>` +
+            `<span style="color:#34d399;">${runHours}시간</span> 동안 가동된 후 자동으로 꺼집니다.<br>` +
+            `<div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.12); font-size:0.88rem; color:#fde68a; text-align:left; line-height:1.55;">` +
+            `• 예약 중 시동이 걸리면 예약이 취소됩니다.<br>` +
+            `• 모듈 스위치를 내리면 예약이 취소됩니다.` +
+            `</div>` +
+            `<div style="margin-top:10px; font-size:0.98rem; color:#cbd5e1;">앱을 종료합니다.</div>`;
         } else if (!isGeneratorRunning) {
           msgEl.innerHTML = "앱을 종료합니다.<br>발전기가 꺼져있습니다";
         } else if (reserveRemainSeconds > 0) {
@@ -4025,10 +5500,94 @@
         }
       }
 
+      function armStartDiagnostics() {
+        pendingStartDiag = true;
+        pendingStartExpireMs = Date.now() + 90000;
+        startDiagShownForRun = false;
+      }
+
+      function calcCrankDropPercent(v) {
+        if (!v || v <= 4.0) return 0.0;
+        if (v >= 15.0) return 100.0;
+        return ((v - 4.0) / (15.0 - 4.0)) * 100.0;
+      }
+
+      function triggerBattCondPerformance(minVolt, alreadyAveraged = false) {
+        const rawV = minVolt >= 4.0 ? minVolt : 0;
+        if (rawV < 4.0) return;
+        const cleanV =
+          !alreadyAveraged && curCrankMinVolt >= 4.0
+            ? Math.round(((curCrankMinVolt + rawV) / 2.0) * 10) / 10
+            : Math.round(rawV * 10) / 10;
+        curCrankMinVolt = cleanV;
+        localStorage.setItem(STORAGE_KEY_CRANK_V, String(curCrankMinVolt));
+
+        const card = document.getElementById("cardBattCond");
+        const valEl = document.getElementById("crankVoltVal");
+        const ptrEl = document.getElementById("ptrBattCond");
+        if (!card || !valEl || !ptrEl || !isConnected || sysLocked) return;
+
+        card.classList.remove("is-off");
+        valEl.innerText = cleanV.toFixed(1);
+        valEl.style.color = "#34d399";
+        const targetPct = calcCrankDropPercent(cleanV).toFixed(1) + "%";
+
+        if (battCondPerfRunning) {
+          ptrEl.style.transition = "";
+          ptrEl.style.left = targetPct;
+          return;
+        }
+
+        battCondPerfRunning = true;
+        card.classList.remove("perf-run");
+        ptrEl.style.transition = "none";
+        ptrEl.style.left = "0%";
+
+        if (battCondPerfTimer) clearTimeout(battCondPerfTimer);
+        setTimeout(() => {
+          if (!isConnected || sysLocked) {
+            battCondPerfRunning = false;
+            return;
+          }
+          card.classList.add("perf-run");
+          ptrEl.style.transition = "";
+          ptrEl.style.left = targetPct;
+        }, 50);
+
+        battCondPerfTimer = setTimeout(() => {
+          battCondPerfRunning = false;
+          battCondPerfTimer = null;
+        }, 1000);
+      }
+
       function openExitModal() {
-        if (exitCountdownTimer) clearInterval(exitCountdownTimer);
+        if (exitCountdownTimer) {
+          clearInterval(exitCountdownTimer);
+          exitCountdownTimer = null;
+        }
+        const countEl = document.getElementById("exitCountNum");
+        const singleRow = document.getElementById("exitSingleActionRow");
+        const schedRow = document.getElementById("exitSchedActionRow");
+        const isScheduledWaiting =
+          isConnected && !sysLocked && !isGeneratorRunning && schedStartRemainSec > 0;
+
+        if (isScheduledWaiting) {
+          // ★ 시동 예약이 걸려 있을 때는 5초 카운트다운을 하지 않고, [확인]을 눌러야만 종료!
+          if (countEl) countEl.style.display = "none";
+          if (singleRow) singleRow.style.display = "none";
+          if (schedRow) schedRow.style.display = "grid";
+          updateExitModalMessage();
+          document.getElementById("exitModal").classList.add("show");
+          return;
+        }
+
         exitRemainSeconds = 5;
-        document.getElementById("exitCountNum").innerText = "5";
+        if (countEl) {
+          countEl.style.display = "flex";
+          countEl.innerText = "5";
+        }
+        if (singleRow) singleRow.style.display = "block";
+        if (schedRow) schedRow.style.display = "none";
         document.getElementById("btnCancelExit").style.display = "block";
         updateExitModalMessage();
         document.getElementById("exitModal").classList.add("show");
@@ -4056,21 +5615,7 @@
         document.getElementById("exitModal").classList.remove("show");
       }
 
-      function executeAppExit() {
-        connectSessionId++;
-        if (autoReconnectTimer) {
-          clearTimeout(autoReconnectTimer);
-          autoReconnectTimer = null;
-        }
-        if (bleDevice) {
-          try {
-            bleDevice.removeEventListener(
-              "gattserverdisconnected",
-              onDisconnected
-            );
-            if (bleDevice.gatt) bleDevice.gatt.disconnect();
-          } catch (e) {}
-        }
+      function finishAppClose() {
         try {
           if (
             window.AndroidWifiBridge &&
@@ -4099,6 +5644,41 @@
         try {
           window.close();
         } catch (e) {}
+      }
+
+      function executeAppExit() {
+        connectSessionId++;
+        if (autoReconnectTimer) {
+          clearTimeout(autoReconnectTimer);
+          autoReconnectTimer = null;
+        }
+        if (bleDevice) {
+          try {
+            bleDevice.removeEventListener(
+              "gattserverdisconnected",
+              onDisconnected
+            );
+            if (bleDevice.gatt) bleDevice.gatt.disconnect();
+          } catch (e) {}
+        }
+        if (typeof window.__bleNativeReset === "function") {
+          let closedOnce = false;
+          const safeClose = () => {
+            if (closedOnce) return;
+            closedOnce = true;
+            setTimeout(finishAppClose, 150);
+          };
+          try {
+            Promise.resolve(window.__bleNativeReset())
+              .catch(() => {})
+              .finally(safeClose);
+          } catch (e) {
+            safeClose();
+          }
+          setTimeout(safeClose, 350);
+          return;
+        }
+        finishAppClose();
       }
 
       /* ===== v13 새 화면 연동 (기존 로직은 그대로, 화면 표시용 코드만 추가) ===== */
@@ -4131,16 +5711,43 @@
           if (isGeneratorRunning) {
             st = "run"; title = "운전 중";
             sub = "가동 " + formatHMS(runElapsedSeconds);
+          } else if (autoBellCountdownTimer) {
+            st = "bell"; title = "경고벨 작동";
+            sub = "";
           } else if (isAutoStartActive || startCountdownTimer) {
+            var btnStEl = document.getElementById("btnStart");
+            var isManualFuelChk = !!(startCountdownTimer && btnStEl && btnStEl.classList.contains("fuel-checking"));
             st = "start"; title = "시동 중";
-            sub = isAutoStartActive ? (autoStartPhaseText || "자동 시동 진행") : "시동 합니다";
+            if (isAutoStartActive) {
+              sub = isStartCrankingPhase ? "시동 모터 구동 중" : (autoStartPhaseText || "자동 시동 진행");
+            } else {
+              sub = isStartCrankingPhase ? "시동 합니다" : (isManualFuelChk ? "온도 점검" : "1단 ON · 즉시 시동");
+            }
           } else if (preheatCountdownTimer) {
-            st = "pre"; title = "예열 중"; sub = "예열 합니다";
+            st = "pre"; title = "예열 중";
+            sub = "예열 합니다";
+          } else if (schedStartRemainSec > 0) {
+            st = "stop"; title = "시동 예약";
+            sub = formatHMS(schedStartRemainSec) + " 후 시동";
           } else {
             st = "stop"; title = "정지"; sub = "통신 연결 성공";
           }
-        } else if (isConnecting) {
+        } else if (isConnecting || (everConnected && getSavedDeviceName())) {
+          st = "conn";
+          title = everConnected ? "재연결 중" : "연결 중";
+          sub = everConnected ? "블루투스 신호를 다시 찾고 있습니다" : "발전기를 찾고 있습니다";
+        } else if (getSavedDeviceName()) {
           st = "conn"; title = "연결 중"; sub = "발전기를 찾고 있습니다";
+        }
+        var btnHeroCancel = document.getElementById("btnHeroSchedCancel");
+        var badgeEl = document.getElementById("chargeBadge");
+        var showCancel =
+          isConnected && !sysLocked && !isGeneratorRunning && schedStartRemainSec > 0;
+        if (btnHeroCancel) {
+          btnHeroCancel.style.display = showCancel ? "inline-block" : "none";
+        }
+        if (badgeEl) {
+          badgeEl.style.display = showCancel ? "none" : "";
         }
         if (h.getAttribute("data-state") !== st) h.setAttribute("data-state", st);
         if (t.innerText !== title) t.innerText = title;
