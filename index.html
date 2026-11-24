@@ -2226,6 +2226,7 @@
             <span id="schedStartTimeText" class="time-val">00:00:00</span>
           </div>
           <div class="sched-inline-action-row">
+            <div id="schedStartRetryText" class="sched-inline-none" style="display: none; border-color: rgba(251, 191, 36, 0.6); color: #fde68a; background: rgba(120, 80, 0, 0.28)">시동 시도 중</div>
             <button
               type="button"
               id="btnSchedStartOpen"
@@ -2757,6 +2758,40 @@
       </div>
     </div>
 
+    <!-- [팝업 0-0G] 정지 실패 경보 (ESP st_[19]=1 수신: 정지 신호 후 30초가 지나도 전압이 남아 있음 / 전압이 사라지면 자동 해제) -->
+    <div id="stopFailModal" class="pin-backdrop">
+      <div class="pin-box" style="border-color: #ef4444; text-align: center">
+        <div class="modal-title" style="color: #f87171; font-size: 1.2rem; padding-bottom: 10px">
+          ⚠ 정지 실패
+        </div>
+        <div style="font-size: 1.05rem; font-weight: 800; line-height: 1.6; color: #f8fafc; word-break: keep-all; margin: 6px 0 4px">
+          정지 신호를 보냈지만 발전기가<br />계속 가동 중입니다.<br />정지 신호는 계속 보내고 있으니<br />현장에서 수동으로 정지해 주세요.<br />(전투기 스위치 · 연료 밸브)
+        </div>
+        <div class="pin-btn-row">
+          <button type="button" class="btn-modal-confirm" style="width: 100%" onclick="closeStopFailModal()">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- [팝업 0-0F] 예약 시동 최종 실패 알림 (ESP fail_3 수신 / [확인] 시 CMD_FAIL_ACK 전송) -->
+    <div id="schedFailModal" class="pin-backdrop">
+      <div class="pin-box" style="border-color: #ef4444; text-align: center">
+        <div class="modal-title" style="color: #f87171; font-size: 1.2rem; padding-bottom: 10px">
+          ⚠ 예약 시동 실패
+        </div>
+        <div style="font-size: 1.05rem; font-weight: 800; line-height: 1.6; color: #f8fafc; word-break: keep-all; margin: 6px 0 4px">
+          3회 시도했지만 시동이 걸리지 않아<br />안전하게 정지했습니다.<br />연료·배터리·발전기 상태를 점검하세요.
+        </div>
+        <div class="pin-btn-row">
+          <button type="button" class="btn-modal-confirm" style="width: 100%" onclick="confirmSchedFailModal()">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- [전체화면 팝업 2-B] 발전기 시동 예약 1단계: 안전 경고 + 동의 체크 + 비밀번호 랜덤 더하기 3지선다 -->
     <div id="schedSafetyModal" class="modal-backdrop">
       <div class="modal-card">
@@ -3006,6 +3041,8 @@
       // [v17] ESP32 st_ 확장 필드: 시동/벨 진행 단계 코드(0~7)와 해당 단계 남은 시간(ms) / 마지막 예약 남은 초
       let espStage = 0;
       let espStageRemMs = 0;
+      let espRetryAttempt = 0; // [v19] ESP st_[18] 예약 시동 재시도 차수 (0=없음, 1~3)
+      let espStopFail = false; // [v19] ESP st_[19] 정지 신호 후 30초가 지나도 전압이 남아 있음(정지 실패 경보)
       let curEspRemainSec = 0;
 
       // 원클릭 자동 시동 상태 및 타이머
@@ -3339,15 +3376,6 @@
         const { period, h12 } = getKoreanPeriodAndHour12(dt.getHours());
         const min = String(dt.getMinutes()).padStart(2, "0");
         return `${m}월 ${d}일 ${period} ${h12}시 ${min}분`;
-      }
-
-      function formatSchedDateTimeShort(remainSec) {
-        const dt = new Date(Date.now() + Math.max(0, remainSec) * 1000);
-        const m = dt.getMonth() + 1;
-        const d = dt.getDate();
-        const { period, h12 } = getKoreanPeriodAndHour12(dt.getHours());
-        const min = String(dt.getMinutes()).padStart(2, "0");
-        return `${m}/${d} ${period} ${h12}:${min}`;
       }
 
       // ★ [v17] 발전기 시동 예약 카운트다운 동기화 (ESP32 실시간 sch_ / st_[16..17] 단일 기준 · 운전 중에도 내부 유지, 정지 시에만 메인창 표시)
@@ -4632,6 +4660,8 @@
         curEspRemainSec = 0;
         espStage = 0;
         espStageRemMs = 0;
+        espRetryAttempt = 0;
+        espStopFail = false;
 
         if (isGeneratorRunning) {
           disconnectedWhileRunning = true;
@@ -4817,6 +4847,8 @@
           const rSec = sp.length >= 2 ? parseInt(sp[1], 10) || 0 : 0;
           pendingSchedUntilMs = 0;
           applyEspScheduleSec(wSec, rSec, true);
+        } else if (msg.startsWith("fail_")) {
+          showSchedFailModal();
         } else if (msg.startsWith("st_")) {
           const parts = msg.substring(3).split(",");
           if (parts.length >= 6) {
@@ -4882,6 +4914,10 @@
               const espSchRun = parseInt(parts[17], 10) || 0;
               applyEspScheduleSec(espSchWait, espSchRun, false);
             }
+            espRetryAttempt = parts.length >= 19 ? Math.max(0, Math.min(3, parseInt(parts[18], 10) || 0)) : 0;
+            const prevStopFail = espStopFail;
+            espStopFail = parts.length >= 20 ? parseInt(parts[19], 10) === 1 : false;
+            if (espStopFail && !prevStopFail) showStopFailModal();
             if (wasDiscWhileRun) syncHomeSlidersAndButtons();
             if (exitCountdownTimer || document.getElementById("exitModal").classList.contains("show")) {
               updateExitModalMessage();
@@ -5341,15 +5377,6 @@
           if (sim) sim.classList.remove("show");
           activeSettingItemKey = null;
         }
-        // ★ 시동 예약 항목: 미연결 시에도 목록 버튼은 열람용 활성화, 팝업 내부 조작만 잠금(1~6번과 동일 정책)
-        const boxSched = document.getElementById("setBoxSched");
-        if (boxSched) {
-          boxSched.classList.toggle("is-disabled", sysLocked);
-        }
-        const btnSched = document.getElementById("btnOpenSchedSafety");
-        if (btnSched) {
-          btnSched.disabled = sysLocked;
-        }
         const schedAgreeChk = document.getElementById("schedAgreeChk");
         const schedAgreeLbl = document.getElementById("schedAgreeLabel");
         const btnSchedConfirm = document.getElementById("btnSchedSafetyConfirm");
@@ -5444,6 +5471,10 @@
 
       function openSchedSafetyModal() {
         if (!isConnected || sysLocked) {
+          return;
+        }
+        if (espRetryAttempt > 0) {
+          alert("시동 시도 중에는 예약을 바꿀 수 없습니다.");
           return;
         }
         closeSettingsModal();
@@ -5577,6 +5608,11 @@
           closeSchedTimeModal();
           return;
         }
+        if (espRetryAttempt > 0) {
+          closeSchedTimeModal();
+          alert("시동 시도 중에는 예약을 바꿀 수 없습니다.");
+          return;
+        }
         const wRange = document.getElementById("schedWaitRange");
         const rRange = document.getElementById("schedRunRange");
         const wParsed = parseInt(wRange && wRange.value, 10);
@@ -5596,6 +5632,27 @@
         if (!ok) {
           pendingSchedUntilMs = 0;
         }
+      }
+
+      function showStopFailModal() {
+        const m = document.getElementById("stopFailModal");
+        if (m) m.classList.add("show");
+      }
+
+      function closeStopFailModal() {
+        const m = document.getElementById("stopFailModal");
+        if (m) m.classList.remove("show");
+      }
+
+      function showSchedFailModal() {
+        const m = document.getElementById("schedFailModal");
+        if (m) m.classList.add("show");
+      }
+
+      async function confirmSchedFailModal() {
+        const m = document.getElementById("schedFailModal");
+        if (m) m.classList.remove("show");
+        if (isConnected) await sendBleCmd("CMD_FAIL_ACK");
       }
 
       function openSchedCancelModal() {
@@ -5839,17 +5896,6 @@
         if (elOil) elOil.innerText = `${savedOilMaxManKm}만KM`;
         if (elTank) elTank.innerText = `${savedTankCapLiters}L`;
         if (elRate) elRate.innerText = `${savedFuelRateLph.toFixed(1)}L`;
-        const elSched = document.getElementById("setSchedVal");
-        if (elSched) {
-          if (schedStartRemainSec > 0) {
-            const totalMin = Math.ceil(schedStartRemainSec / 60);
-            const h = Math.floor(totalMin / 60);
-            const m = totalMin % 60;
-            elSched.innerText = h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`;
-          } else {
-            elSched.innerText = "없음";
-          }
-        }
         const elChangeGen = document.getElementById("setChangeGenVal");
         if (elChangeGen) {
           const rawDevName = isConnected
@@ -6226,7 +6272,7 @@
         } else if (isConnected) {
           if (isGeneratorRunning) {
             st = "run"; title = "운전 중";
-            sub = isBattChargingNow ? "배터리 충전중" : "";
+            sub = espStopFail ? "⚠ 정지 실패 · 수동 정지 필요" : (isBattChargingNow ? "배터리 충전중" : "");
           } else if (autoBellCountdownTimer) {
             st = "bell"; title = "경고벨 작동";
             sub = "";
@@ -6242,6 +6288,9 @@
           } else if (preheatCountdownTimer) {
             st = "pre"; title = "예열 중";
             sub = "예열 합니다";
+          } else if (espRetryAttempt > 0 && (espStage === 8 || espStage === 9)) {
+            st = "start"; title = "시동 재시도 " + espRetryAttempt + "/3";
+            sub = espStage === 8 ? "전압 확인 중" : "안전 꺼짐 중";
           } else {
             st = "stop"; title = "정지"; sub = "통신 연결 성공";
           }
@@ -6270,14 +6319,26 @@
         var timeEl = document.getElementById("schedStartTimeText");
         var openBtn = document.getElementById("btnSchedStartOpen");
         var cancelBtn = document.getElementById("btnSchedStartCancel");
-        if (!card || !timeEl || !openBtn || !cancelBtn) return;
+        var retryEl = document.getElementById("schedStartRetryText");
+        if (!card || !timeEl || !openBtn || !cancelBtn || !retryEl) return;
         var canUse = isConnected && !sysLocked;
         var hasSched = canUse && schedStartRemainSec > 0;
+        var retrying = canUse && !hasSched && !isGeneratorRunning && espRetryAttempt > 0;
         card.classList.toggle("is-off", !canUse);
-        card.classList.toggle("active", hasSched);
-        var nextTime = hasSched ? formatHMS(schedStartRemainSec) : "00:00:00";
+        card.classList.toggle("active", hasSched || retrying);
+        var nextTime = "00:00:00";
+        if (hasSched) {
+          nextTime = formatHMS(schedStartRemainSec);
+        } else if (retrying && espStage === 8) {
+          nextTime = formatHMS(Math.ceil(espStageRemMs / 1000));
+        }
         if (timeEl.innerText !== nextTime) timeEl.innerText = nextTime;
-        openBtn.style.display = hasSched ? "none" : "block";
+        if (retrying) {
+          var retryTxt = "시동 시도 " + espRetryAttempt + "/3";
+          if (retryEl.innerText !== retryTxt) retryEl.innerText = retryTxt;
+        }
+        retryEl.style.display = retrying ? "flex" : "none";
+        openBtn.style.display = (hasSched || retrying) ? "none" : "block";
         openBtn.disabled = !canUse;
         cancelBtn.style.display = hasSched ? "block" : "none";
       }
