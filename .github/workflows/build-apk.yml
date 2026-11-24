@@ -136,6 +136,12 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
+      - name: Apply custom app icon
+        run: |
+          set -e
+          python3 -m pip install -q pillow
+          python3 scripts/patch_icon.py assets/app-icon.png android/app/src/main/res
+
       - name: Inject Wi-Fi & BLE bridge (AndroidWifiBridge + MainActivity)
         run: |
           set -e
