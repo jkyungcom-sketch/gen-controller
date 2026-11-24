@@ -80,20 +80,17 @@ def main():
     values_dir = os.path.join(res_dir, "values")
     os.makedirs(values_dir, exist_ok=True)
     bg_xml_path = os.path.join(values_dir, "ic_launcher_background.xml")
-    bg_xml = (
-        '<?xml version="1.0" encoding="utf-8"?>
-'
-        '<resources>
-'
-        f'    <color name="ic_launcher_background">{BG_HEX}</color>
-'
-        '</resources>
-'
-    )
+    bg_lines = [
+        '<?xml version="1.0" encoding="utf-8"?>',
+        '<resources>',
+        f'    <color name="ic_launcher_background">{BG_HEX}</color>',
+        '</resources>',
+        '',
+    ]
     with open(bg_xml_path, "w", encoding="utf-8") as fp:
-        fp.write(bg_xml)
+        fp.write("\n".join(bg_lines))
 
-    print(f"✅ 커스텀 APK 아이콘 주입 완료: {icon_path} -> {res_dir} (bg={BG_HEX})")
+    print(f"OK: custom APK icon applied: {icon_path} -> {res_dir} (bg={BG_HEX})")
 
 
 if __name__ == "__main__":
