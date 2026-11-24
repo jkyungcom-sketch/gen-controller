@@ -3,15 +3,15 @@
 
 assets/app-icon.png (1024x1024 풀블리드 PNG)를 읽어:
   - mipmap-mdpi ~ xxxhdpi: ic_launcher.png, ic_launcher_round.png, ic_launcher_foreground.png
-  - values/ic_launcher_background.xml: Adaptive Icon 배경색 (#21242d)
+  - values/ic_launcher_background.xml: Adaptive Icon 배경색 (#ffffff)
 를 모두 일괄 교체한다.
 """
 import os
 import sys
 from PIL import Image, ImageDraw
 
-BG_RGB = (33, 36, 45)
-BG_HEX = "#21242d"
+BG_RGB = (255, 255, 255)
+BG_HEX = "#ffffff"
 
 LAUNCHER_SIZES = {
     "mipmap-mdpi": 48,
