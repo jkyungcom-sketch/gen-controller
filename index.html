@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- 스마트 발전기 리모컨 앱 17번 (앱 17 · ESP32 17 · 마스터 설계도 17): AC 처짐 20초 유예 연동 / st_ 16필드 단계 복원 / 시동 최저전압 ESP 실측값만 표시 -->
+<!-- 스마트 발전기 리모컨 앱 18번 (앱 18 · ESP32 18 · 마스터 설계도 18): AC 처짐 20초 유예 연동 / st_ 16필드 단계 복원 / 시동 최저전압 ESP 실측값만 표시 -->
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
@@ -224,7 +224,6 @@
         background: rgba(16, 224, 160, 0.14);
         color: var(--emerald);
         border-color: rgba(16, 224, 160, 0.55);
-        animation: blinkCharge 1.2s infinite ease-in-out;
       }
       @keyframes blinkCharge {
         0%, 100% { opacity: 1; box-shadow: 0 0 10px rgba(16, 224, 160, 0.4); }
@@ -612,19 +611,19 @@
         border-color: #fbbf24;
         box-shadow: 0 0 22px rgba(245, 158, 11, 0.55);
         pointer-events: none;
-        justify-content: space-between;
-        padding: 0 20px;
+        justify-content: center;
+        padding: 0 16px;
       }
       .btn-autostart.bell-active .autostart-thumb,
       .btn-autostart.bell-active .autostart-fill { display: none; }
       .btn-autostart.bell-active .autostart-label {
-        width: auto;
+        width: 100%;
         padding-left: 0;
-        text-align: left;
+        text-align: center;
         font-size: 1rem;
       }
       .btn-autostart.bell-active .autostart-bell-cnt {
-        display: inline-block;
+        display: none;
       }
 
       /* preheat */
@@ -671,10 +670,10 @@
       }
       .manual-bell-cnt {
         display: none;
-        font-size: 0.98rem;
-        font-weight: 900;
+        font-size: 0.78rem;
+        font-weight: 800;
         color: #fef08a;
-        font-variant-numeric: tabular-nums;
+        opacity: 0.95;
         white-space: nowrap;
       }
       .btn-manual-bell.active .manual-bell-cnt {
@@ -798,6 +797,97 @@
         border-color: #4a5a76;
         color: var(--txt2);
       }
+      /* inline auto-start schedule card (자동시동 예약) */
+      .sched-inline-card {
+        width: 100%;
+        background:
+          radial-gradient(260px 90px at 50% 0%, rgba(56, 189, 248, 0.14), transparent 70%),
+          linear-gradient(145deg, #10203a, #0b1220);
+        border: 1px solid rgba(56, 189, 248, 0.42);
+        border-radius: 16px;
+        padding: 11px 12px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
+      }
+      .sched-inline-card.active {
+        background:
+          radial-gradient(260px 90px at 50% 0%, rgba(251, 191, 36, 0.18), transparent 70%),
+          linear-gradient(145deg, #2a2112, #0c1220);
+        border-color: rgba(251, 191, 36, 0.78);
+        box-shadow: 0 0 22px rgba(251, 191, 36, 0.28);
+      }
+      .sched-inline-card.is-off {
+        opacity: 0.55;
+        filter: grayscale(0.45);
+      }
+      .sched-inline-title {
+        color: #7dd3fc;
+      }
+      .sched-inline-card.active .sched-inline-title {
+        color: #fcd34d;
+      }
+      .sched-inline-card .reserve-inline-header span.time-val {
+        text-shadow: 0 0 16px rgba(56, 189, 248, 0.55);
+      }
+      .sched-inline-card.active .reserve-inline-header span.time-val {
+        color: #fef08a;
+        text-shadow: 0 0 16px rgba(251, 191, 36, 0.65);
+      }
+      .sched-inline-action-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .sched-inline-none {
+        width: 100%;
+        height: 40px;
+        border-radius: 11px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: rgba(15, 23, 42, 0.65);
+        color: #cbd5e1;
+        font-size: 0.88rem;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: 0.4px;
+      }
+      .btn-sched-open {
+        width: 100%;
+        height: 40px;
+        border-radius: 11px;
+        border: 1px solid rgba(56, 189, 248, 0.7);
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.32), rgba(2, 132, 199, 0.42));
+        color: #e0f2fe;
+        font-size: 0.9rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 0.08s, filter 0.15s, opacity 0.2s;
+      }
+      .btn-sched-open:active { transform: scale(0.96); }
+      .btn-sched-open:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        border-color: rgba(148, 163, 184, 0.3);
+        background: rgba(15, 23, 42, 0.65);
+        color: #94a3b8;
+      }
+      .btn-sched-cancel {
+        width: 100%;
+        height: 40px;
+        border-radius: 11px;
+        border: 1px solid rgba(255, 77, 94, 0.7);
+        background: linear-gradient(135deg, rgba(225, 29, 72, 0.35), rgba(159, 18, 57, 0.45));
+        color: #fecdd3;
+        font-size: 0.9rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 0.08s, filter 0.15s;
+      }
+      .btn-sched-cancel:active { transform: scale(0.96); }
 
       /* stop & exit */
       .btn-stop {
@@ -901,6 +991,7 @@
         width: 100%;
         -webkit-appearance: none;
         appearance: none;
+        touch-action: none;
         height: 13px;
         background: linear-gradient(
           90deg,
@@ -1174,7 +1265,7 @@
       .running-status-title { font-size: 0.9rem; }
       .running-status-sub { font-size: 0.72rem; }
       .running-status-time { font-size: 1.45rem; letter-spacing: 1.5px; }
-      .reserve-inline-card { padding: 9px 10px 10px; gap: 7px; }
+      .reserve-inline-card, .sched-inline-card { padding: 9px 10px 10px; gap: 7px; }
       .reserve-inline-title { font-size: 0.9rem; }
       .reserve-inline-header span.time-val { font-size: 1.45rem; letter-spacing: 1.5px; }
       .btn-res-inline { height: 38px; font-size: 0.8rem; }
@@ -1507,6 +1598,130 @@
         font-weight: 900;
         box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.28);
       }
+      /* ---------- 설정 목록 한 줄 메뉴 + 전용 전체 팝업 ---------- */
+      .settings-menu-row {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(15, 23, 42, 0.72);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, transform 0.08s, opacity 0.2s;
+      }
+      .settings-menu-row:active {
+        transform: scale(0.985);
+        background: rgba(30, 41, 59, 0.88);
+      }
+      .settings-menu-row.is-disabled {
+        opacity: 0.42;
+        pointer-events: none;
+        cursor: not-allowed;
+      }
+      .settings-menu-title {
+        font-size: 0.98rem;
+        font-weight: 800;
+        color: var(--txt1);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .settings-menu-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+      .settings-menu-val {
+        font-size: 0.96rem;
+        font-weight: 900;
+        color: #38bdf8;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .btn-row-setting {
+        padding: 7px 14px;
+        border-radius: 10px;
+        font-size: 0.84rem;
+        font-weight: 800;
+        color: #e2e8f0;
+        background: linear-gradient(135deg, #334155, #1e293b);
+        border: 1px solid rgba(148, 163, 184, 0.42);
+        cursor: pointer;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+        transition: transform 0.08s, background 0.15s;
+      }
+      .btn-row-setting:active { transform: scale(0.94); }
+      .btn-row-setting:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      #settingItemModal {
+        z-index: 10050;
+      }
+      #settingItemModal .modal-card {
+        padding: 22px 18px;
+        gap: 18px;
+      }
+      .setting-item-desc {
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: rgba(30, 41, 59, 0.65);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        font-size: 0.95rem;
+        font-weight: 700;
+        line-height: 1.55;
+        color: #cbd5e1;
+        text-align: center;
+        word-break: keep-all;
+      }
+      .setting-item-slider-box {
+        width: 100%;
+        padding: 18px 16px;
+        gap: 14px;
+        border-radius: 16px;
+      }
+      .setting-item-big-val {
+        font-size: 1.95rem;
+        font-weight: 900;
+        color: #38bdf8;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 0 18px rgba(56, 189, 248, 0.28);
+      }
+      .setting-item-range-ends {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--txt3);
+        margin-top: 2px;
+      }
+      .btn-setting-item-default {
+        width: 100%;
+        height: 44px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(51, 65, 85, 0.72);
+        color: #e2e8f0;
+        font-size: 0.92rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.1s ease;
+      }
+      .btn-setting-item-default:active {
+        transform: scale(0.98);
+      }
+      .btn-setting-item-default:disabled {
+        opacity: 0.42;
+        cursor: not-allowed;
+      }
 
       /* ---------- 홈 화면 배터리 컨디션 카드 (시동시 전압 눈금 슬라이더) ---------- */
       #crankVoltVal {
@@ -1682,6 +1897,16 @@
         color: #ffffff;
         box-shadow: 0 0 18px rgba(34, 211, 238, 0.45);
       }
+      .btn-sched-opt:disabled {
+        opacity: 0.42;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+      .sched-agree-label.is-disabled {
+        opacity: 0.48;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
       .sched-time-card {
         background: linear-gradient(180deg, #0f172a, #09101d);
         border: 1px solid rgba(34, 211, 238, 0.45);
@@ -1732,13 +1957,39 @@
         gap: 5px;
         flex-shrink: 0;
       }
-      .hero-right-col .hero-charge {
-        margin-left: 0;
+      .hero-bell-cnt {
+        font-size: 1.05rem;
+        font-weight: 900;
+        color: #fde047;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        letter-spacing: -0.02em;
+        text-shadow: 0 0 10px rgba(250, 204, 21, 0.35);
+      }
+      .sched-none-badge {
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(56, 189, 248, 0.18);
+        color: #bae6fd;
+        border: 1px solid rgba(56, 189, 248, 0.65);
+        white-space: nowrap;
+      }
+      .sched-run-badge {
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(251, 191, 36, 0.16);
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.6);
+        white-space: nowrap;
       }
       .btn-hero-sched-cancel {
-        font-size: 0.65rem;
+        font-size: 0.68rem;
         font-weight: 800;
-        padding: 3px 9px;
+        padding: 4px 10px;
         border-radius: 999px;
         border: 1px solid rgba(255, 77, 94, 0.6);
         background: rgba(255, 77, 94, 0.16);
@@ -1747,6 +1998,24 @@
         white-space: nowrap;
         transition: transform 0.1s, background 0.2s;
       }
+      .dial-range {
+        align-items: center;
+        min-height: 16px;
+      }
+      #cardBatt .dial-range {
+        flex-wrap: nowrap;
+        gap: 2px;
+      }
+      #cardBatt .dial-range span:first-child { order: 1; }
+      #cardBatt .dial-range .dial-charge {
+        order: 2;
+        font-size: 0.56rem;
+        font-weight: 800;
+        padding: 1px 5px;
+        line-height: 1.15;
+        white-space: nowrap;
+      }
+      #cardBatt .dial-range span:last-child { order: 3; }
       .btn-hero-sched-cancel:active {
         transform: scale(0.94);
       }
@@ -1784,16 +2053,7 @@
         <div id="heroSub" class="hero-sub">[연결하기]를 눌러 발전기를 선택하세요</div>
       </div>
       <div class="hero-right-col">
-        <span id="chargeBadge" class="charge-badge hero-charge">대기중</span>
-        <button
-          type="button"
-          id="btnHeroSchedCancel"
-          class="btn-hero-sched-cancel"
-          style="display: none"
-          onclick="openSchedCancelModal()"
-        >
-          예약취소
-        </button>
+        <span id="heroBellCnt" class="hero-bell-cnt" style="display: none"></span>
       </div>
     </div>
 
@@ -1839,7 +2099,7 @@
       </div>
       <div id="cardBatt" class="cond-card dial-card is-off">
         <div class="dial-head">
-          <span class="cond-title">밧데리</span>
+          <span class="cond-title">배터리</span>
         </div>
         <div class="dial">
           <div class="dial-arc"></div>
@@ -1958,30 +2218,60 @@
         </div>
       </div>
 
-      <!-- 오일 컨디션 -->
-      <div id="cardDrive" class="cond-card oil-card is-off">
-        <div class="cond-top">
-          <span class="cond-title">오일 컨디션</span>
-          <div class="cond-val-wrap">
-            <span id="oilRemainVal" class="cond-val">0.0</span>
-            <span class="cond-unit">KM</span>
+      <!-- 인라인 자동시동 예약 상태 카드 -->
+      <div id="schedStartBlock" class="action-block">
+        <div id="schedInlineCard" class="sched-inline-card is-off">
+          <div class="reserve-inline-header">
+            <div class="reserve-inline-title sched-inline-title">자동시동 예약</div>
+            <span id="schedStartTimeText" class="time-val">00:00:00</span>
           </div>
-          <button
-            type="button"
-            id="btnOilChange"
-            class="btn-fuel-charge"
-            onclick="openOilResetModal()"
-          >
-            교환
-          </button>
+          <div class="sched-inline-action-row">
+            <button
+              type="button"
+              id="btnSchedStartOpen"
+              class="btn-sched-open"
+              disabled
+              onclick="openSchedSafetyModal()"
+            >
+              시동 예약
+            </button>
+            <button
+              type="button"
+              id="btnSchedStartCancel"
+              class="btn-sched-cancel"
+              style="display: none"
+              onclick="openSchedCancelModal()"
+            >
+              예약 취소
+            </button>
+          </div>
         </div>
-        <div class="gauge-track-burn">
-          <div id="ptrOil" class="gauge-pointer" style="left: 0%"></div>
+      </div>
+
+      <!-- 배터리 컨디션 -->
+      <div id="cardBattCond" class="cond-card oil-card is-off">
+        <div class="cond-top">
+          <span class="cond-title">배터리 컨디션</span>
+          <div class="cond-val-wrap">
+            <span id="crankVoltVal" class="cond-val">0.0</span>
+            <span class="cond-unit">V</span>
+          </div>
+          <span class="cond-sub-note">시동시 전압</span>
         </div>
-        <div class="gauge-labels">
-          <span>0KM</span>
-          <span class="center-lbl">주행 거리</span>
-          <span id="oilMaxLabel">10만KM</span>
+        <div class="batt-drop-scale-head">
+          <span class="batt-scale-end">4V</span>
+          <div class="batt-drop-ticks" aria-hidden="true">
+            <i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i>
+          </div>
+          <span class="batt-scale-end">15V</span>
+        </div>
+        <div class="gauge-track-battdrop">
+          <div id="ptrBattCond" class="gauge-pointer" style="left: 0%"></div>
+        </div>
+        <div class="gauge-labels batt-cond-labels">
+          <span class="bd-lbl bd-lbl-1">교체필요</span>
+          <span class="center-lbl bd-lbl bd-lbl-2">보통</span>
+          <span class="bd-lbl bd-lbl-3">양호</span>
         </div>
       </div>
 
@@ -2012,30 +2302,30 @@
         </div>
       </div>
 
-      <!-- 배터리 컨디션 -->
-      <div id="cardBattCond" class="cond-card oil-card is-off">
+      <!-- 오일 컨디션 -->
+      <div id="cardDrive" class="cond-card oil-card is-off">
         <div class="cond-top">
-          <span class="cond-title">배터리 컨디션</span>
+          <span class="cond-title">오일 컨디션</span>
           <div class="cond-val-wrap">
-            <span id="crankVoltVal" class="cond-val">0.0</span>
-            <span class="cond-unit">V</span>
+            <span id="oilRemainVal" class="cond-val">0.0</span>
+            <span class="cond-unit">KM</span>
           </div>
-          <span class="cond-sub-note">시동시 전압</span>
+          <button
+            type="button"
+            id="btnOilChange"
+            class="btn-fuel-charge"
+            onclick="openOilResetModal()"
+          >
+            교환
+          </button>
         </div>
-        <div class="batt-drop-scale-head">
-          <span class="batt-scale-end">4V</span>
-          <div class="batt-drop-ticks" aria-hidden="true">
-            <i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i><i></i><i></i><i></i><i></i><i class="maj"></i>
-          </div>
-          <span class="batt-scale-end">15V</span>
+        <div class="gauge-track-burn">
+          <div id="ptrOil" class="gauge-pointer" style="left: 0%"></div>
         </div>
-        <div class="gauge-track-battdrop">
-          <div id="ptrBattCond" class="gauge-pointer" style="left: 0%"></div>
-        </div>
-        <div class="gauge-labels batt-cond-labels">
-          <span class="bd-lbl bd-lbl-1">교체필요</span>
-          <span class="center-lbl bd-lbl bd-lbl-2">보통</span>
-          <span class="bd-lbl bd-lbl-3">양호</span>
+        <div class="gauge-labels">
+          <span>0KM</span>
+          <span class="center-lbl">주행 거리</span>
+          <span id="oilMaxLabel">10만KM</span>
         </div>
       </div>
 
@@ -2260,155 +2550,176 @@
     <!-- [전체화면 팝업 2] 설정 모달 (예열시간 / 시동시간 / 다른 발전기 선택) -->
     <div id="settingsModal" class="modal-backdrop">
       <div class="modal-card">
-        <div class="modal-title modal-title-row">
-          <span></span>
-          <span>발전기 설정</span>
-          <button
-            type="button"
-            id="btnSettingsDefault"
-            class="btn-settings-default"
-            onclick="resetSettingsToDefault()"
-          >
-            기본값
-          </button>
-        </div>
+        <div class="modal-title">발전기 설정</div>
 
         <div class="modal-body-center">
-          <!-- 예열시간 설정 슬라이더 (기본 8초, 1~15초) -->
-          <div id="setBoxPreheat" class="modal-slider-box">
-            <div class="modal-slider-top">
-              <span class="modal-slider-title">예열시간 설정</span>
-              <span id="setPreheatVal" class="modal-slider-val">8초</span>
+          <!-- 1. 예열시간 -->
+          <div id="setBoxPreheat" class="settings-menu-row" onclick="openSettingItemModal('preheat')">
+            <span class="settings-menu-title">예열 시간</span>
+            <div class="settings-menu-right">
+              <span id="setPreheatVal" class="settings-menu-val">8초</span>
+              <button type="button" class="btn-row-setting" onclick="event.stopPropagation(); openSettingItemModal('preheat')">설정</button>
             </div>
-            <input
-              type="range"
-              id="setPreheatRange"
-              class="modal-range"
-              min="1.0"
-              max="15.0"
-              step="0.5"
-              value="8.0"
-              oninput="onSettingsPreheatInput(this.value)"
-            />
           </div>
 
-          <!-- 시동시간 설정 슬라이더 (기본 0.9초, 0.5~4초) -->
-          <div id="setBoxStart" class="modal-slider-box">
-            <div class="modal-slider-top">
-              <span class="modal-slider-title">시동시간 설정</span>
-              <span id="setStartVal" class="modal-slider-val">0.9초</span>
+          <!-- 2. 시동시간 -->
+          <div id="setBoxStart" class="settings-menu-row" onclick="openSettingItemModal('start')">
+            <span class="settings-menu-title">시동 시간</span>
+            <div class="settings-menu-right">
+              <span id="setStartVal" class="settings-menu-val">0.9초</span>
+              <button type="button" class="btn-row-setting" onclick="event.stopPropagation(); openSettingItemModal('start')">설정</button>
             </div>
-            <input
-              type="range"
-              id="setStartRange"
-              class="modal-range"
-              min="0.5"
-              max="4.0"
-              step="0.1"
-              value="0.9"
-              oninput="onSettingsStartInput(this.value)"
-            />
           </div>
 
-          <!-- 100V이하 정지 슬라이더 (기본 1시간, 1분~1시간 / 슬라이더 마지막 값=1시간, "안꺼짐" 없음) -->
-          <div id="setBoxNoAc" class="modal-slider-box">
-            <div class="modal-slider-top">
-              <span class="modal-slider-title">100V이하 정지</span>
-              <span id="setNoAcVal" class="modal-slider-val">1시간</span>
+          <!-- 3. 고장시 엔진 정지 (100V이하 정지: 1분~1시간, 최대 정지안함) -->
+          <div id="setBoxNoAc" class="settings-menu-row" onclick="openSettingItemModal('noac')">
+            <span class="settings-menu-title">비상 정지</span>
+            <div class="settings-menu-right">
+              <span id="setNoAcVal" class="settings-menu-val">안함</span>
+              <button type="button" class="btn-row-setting" onclick="event.stopPropagation(); openSettingItemModal('noac')">설정</button>
             </div>
-            <input
-              type="range"
-              id="setNoAcRange"
-              class="modal-range"
-              min="1"
-              max="60"
-              step="1"
-              value="60"
-              oninput="onSettingsNoAcInput(this.value)"
-            />
           </div>
 
-          <!-- 오일 교체 주기 슬라이더 (기본 10만KM, 5만~15만KM) -->
-          <div id="setBoxOilMax" class="modal-slider-box">
-            <div class="modal-slider-top">
-              <span class="modal-slider-title">오일 교체 주기</span>
-              <span id="setOilMaxVal" class="modal-slider-val">10만KM</span>
+          <!-- 4. 오일 교체 주기 -->
+          <div id="setBoxOilMax" class="settings-menu-row" onclick="openSettingItemModal('oilmax')">
+            <span class="settings-menu-title">오일 교환</span>
+            <div class="settings-menu-right">
+              <span id="setOilMaxVal" class="settings-menu-val">10만KM</span>
+              <button type="button" class="btn-row-setting" onclick="event.stopPropagation(); openSettingItemModal('oilmax')">설정</button>
             </div>
-            <input
-              type="range"
-              id="setOilMaxRange"
-              class="modal-range"
-              min="5"
-              max="15"
-              step="1"
-              value="10"
-              oninput="onSettingsOilMaxInput(this.value)"
-            />
           </div>
 
-          <!-- 기름탱크 용량 슬라이더 (기본 200L, 100~500L) -->
-          <div id="setBoxTank" class="modal-slider-box">
-            <div class="modal-slider-top">
-              <span class="modal-slider-title">기름탱크 용량</span>
-              <span id="setTankVal" class="modal-slider-val">200L</span>
+          <!-- 5. 기름탱크 용량 -->
+          <div id="setBoxTank" class="settings-menu-row" onclick="openSettingItemModal('tank')">
+            <span class="settings-menu-title">기름 탱크</span>
+            <div class="settings-menu-right">
+              <span id="setTankVal" class="settings-menu-val">200L</span>
+              <button type="button" class="btn-row-setting" onclick="event.stopPropagation(); openSettingItemModal('tank')">설정</button>
             </div>
-            <input
-              type="range"
-              id="setTankRange"
-              class="modal-range"
-              min="100"
-              max="500"
-              step="10"
-              value="200"
-              oninput="onSettingsTankInput(this.value)"
-            />
           </div>
 
-          <!-- 시간당 연비 설정 슬라이더 (기본 3.2L, 1.0~6.0L) -->
-          <div id="setBoxFuelRate" class="modal-slider-box">
-            <div class="modal-slider-top">
-              <span class="modal-slider-title">시간당 연비 설정</span>
-              <span id="setFuelRateVal" class="modal-slider-val">3.2L</span>
+          <!-- 6. 시간당 연비 -->
+          <div id="setBoxFuelRate" class="settings-menu-row" onclick="openSettingItemModal('fuelrate')">
+            <span class="settings-menu-title">연비 설정</span>
+            <div class="settings-menu-right">
+              <span id="setFuelRateVal" class="settings-menu-val">3.2L</span>
+              <button type="button" class="btn-row-setting" onclick="event.stopPropagation(); openSettingItemModal('fuelrate')">설정</button>
             </div>
-            <input
-              type="range"
-              id="setFuelRateRange"
-              class="modal-range"
-              min="1.0"
-              max="6.0"
-              step="0.1"
-              value="3.2"
-              oninput="onSettingsFuelRateInput(this.value)"
-            />
           </div>
 
+          <!-- 7. 장비 변경 (다른 발전기 선택) -->
+          <div id="setBoxChangeGen" class="settings-menu-row" onclick="openChangeGenModal()">
+            <span class="settings-menu-title">장비 변경</span>
+            <div class="settings-menu-right">
+              <span id="setChangeGenVal" class="settings-menu-val">미연결</span>
+              <button type="button" class="btn-row-setting" onclick="event.stopPropagation(); openChangeGenModal()">설정</button>
+            </div>
+          </div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 12px">
-          <!-- 취소 / 확인 -->
-          <div class="modal-action-row">
-            <button class="btn-modal-cancel" onclick="closeSettingsModal()">
-              취소
-            </button>
-            <button id="btnSettingsConfirm" class="btn-modal-confirm" onclick="confirmSettingsModal()">
-              확인
-            </button>
-          </div>
-
-          <!-- 발전기 시동 예약 (연결됨 + 발전기 꺼져 있을 때만 활성화) -->
-          <button
-            type="button"
-            id="btnOpenSchedSafety"
-            class="btn-modal-drive-reset"
-            onclick="openSchedSafetyModal()"
-            disabled
-          >
-            발전기 시동 예약
+          <!-- 닫기 -->
+          <button type="button" class="btn-modal-cancel" style="width: 100%" onclick="closeSettingsModal()">
+            닫기
           </button>
+        </div>
+      </div>
+    </div>
 
-          <!-- 다른 발전기 선택 (초기화 후 홈 복귀) -->
-          <button class="btn-modal-reset" onclick="selectAnotherGenerator()">
-            다른 발전기 선택
+    <!-- [팝업 0-0S] 개별 설정 항목 전용 전체 팝업 -->
+    <div id="settingItemModal" class="modal-backdrop">
+      <div class="modal-card">
+        <div id="settingItemTitle" class="modal-title">설정</div>
+        <div class="modal-body-center" style="gap: 16px">
+          <div id="settingItemDesc" class="setting-item-desc"></div>
+          <div class="modal-slider-box setting-item-slider-box">
+            <div id="settingItemVal" class="setting-item-big-val">-</div>
+            <input
+              type="range"
+              id="settingItemRange"
+              class="modal-range"
+              min="1"
+              max="61"
+              step="1"
+              value="60"
+              oninput="onSettingItemRangeInput(this.value)"
+            />
+            <div class="setting-item-range-ends">
+              <span id="settingItemMinLbl"></span>
+              <span id="settingItemMaxLbl"></span>
+            </div>
+          </div>
+        </div>
+        <button type="button" id="btnSettingItemDefault" class="btn-setting-item-default" onclick="applySettingItemDefault()">
+          기본값
+        </button>
+        <div class="modal-action-row">
+          <button type="button" class="btn-modal-cancel" onclick="closeSettingItemModal()">
+            취소
+          </button>
+          <button type="button" id="btnSettingItemConfirm" class="btn-modal-confirm" onclick="confirmSettingItemModal()">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- [팝업 0-0B] 장비 변경(다른 발전기 연결) 확인 모달 -->
+    <div id="changeGenModal" class="pin-backdrop" style="z-index: 10060">
+      <div class="pin-box" style="border-color: #38bdf8; text-align: center">
+        <div
+          class="modal-title"
+          style="color: #38bdf8; font-size: 1.2rem; padding-bottom: 10px"
+        >
+          장비 변경
+        </div>
+        <div
+          style="
+            font-size: 1.12rem;
+            font-weight: 800;
+            line-height: 1.6;
+            color: #f8fafc;
+            word-break: keep-all;
+            margin: 6px 0 4px;
+          "
+        >
+          다른 발전기에 연결하시겠습니까?
+        </div>
+        <div class="pin-btn-row">
+          <button type="button" class="btn-modal-cancel" onclick="closeChangeGenModal()">
+            취소
+          </button>
+          <button type="button" class="btn-modal-confirm" onclick="confirmChangeGenModal()">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- [팝업 0-0D] 시동 예약 자동정지 시간 내 차단 안내 모달 -->
+    <div id="schedConflictModal" class="pin-backdrop">
+      <div class="pin-box" style="border-color: #f59e0b; text-align: center">
+        <div
+          class="modal-title"
+          style="color: #fbbf24; font-size: 1.2rem; padding-bottom: 10px"
+        >
+          ⚠️ 시동 예약 안내
+        </div>
+        <div
+          style="
+            font-size: 1.08rem;
+            font-weight: 800;
+            line-height: 1.65;
+            color: #f8fafc;
+            word-break: keep-all;
+            margin: 6px 0 4px;
+          "
+        >
+          자동정지 시간내에 있습니다.<br />그 이후 시간을 설정하세요.
+        </div>
+        <div class="pin-btn-row" style="grid-template-columns: 1fr">
+          <button type="button" class="btn-modal-confirm" onclick="closeSchedConflictModal()">
+            확인
           </button>
         </div>
       </div>
@@ -2457,7 +2768,7 @@
             안전한 장소에 주차를 확인하셨습니까?
           </div>
 
-          <label class="sched-agree-label" for="schedAgreeChk">
+          <label id="schedAgreeLabel" class="sched-agree-label" for="schedAgreeChk">
             <input type="checkbox" id="schedAgreeChk" />
             <span>안전한 장소 주차를 확인하였으며 무인 시동에 동의합니다.</span>
           </label>
@@ -2499,7 +2810,7 @@
           <button type="button" class="btn-modal-cancel" onclick="closeSchedSafetyModal()">
             취소
           </button>
-          <button type="button" class="btn-modal-confirm" onclick="confirmSchedSafetyModal()">
+          <button type="button" id="btnSchedSafetyConfirm" class="btn-modal-confirm" onclick="confirmSchedSafetyModal()">
             확인
           </button>
         </div>
@@ -2521,10 +2832,10 @@
               type="range"
               id="schedWaitRange"
               class="modal-range"
-              min="1"
-              max="48"
+              min="0"
+              max="96"
               step="1"
-              value="1"
+              value="2"
               oninput="onSchedWaitSliderInput(this.value)"
             />
           </div>
@@ -2538,18 +2849,19 @@
               type="range"
               id="schedRunRange"
               class="modal-range"
-              min="1"
-              max="12"
+              min="0"
+              max="24"
               step="1"
-              value="1"
+              value="2"
               oninput="onSchedRunSliderInput(this.value)"
             />
           </div>
 
           <div class="sched-time-card">
             <div class="sched-sentence-row">
-              <span id="schedWaitHourBox" class="sched-hour-badge">1</span>시간 후에 자동 시동되며<br />
-              <span id="schedRunHourBox" class="sched-hour-badge">1</span>시간 동안 가동된 후<br />
+              <span id="schedWaitHourBox" class="sched-hour-badge" style="padding: 2px 10px;">-</span>부터<br />
+              자동 시동되며<br />
+              <span id="schedRunHourBox" class="sched-hour-badge" style="padding: 2px 10px;">1시간</span> 동안 가동된 후<br />
               자동으로 꺼집니다.
             </div>
           </div>
@@ -2646,12 +2958,14 @@
       let savedStartSec = isNaN(rawSavedStart)
         ? 0.9
         : Math.max(0.5, Math.min(4.0, rawSavedStart));
-      // 전압 없으면 엔진끄기(초): 기본값 3600(1시간), 설정 범위 60~3600(1분~1시간). "안꺼짐" 없음
+      // 비상 정지(100V이하 정지, 초): 기본값 0(설정 목록: 없음 / 팝업: 정지 안함), 설정 범위 60~3600(1분~1시간)
       let rawSavedNoAc = parseInt(localStorage.getItem(STORAGE_KEY_NOAC), 10);
       let savedNoAcSec =
-        isNaN(rawSavedNoAc) || rawSavedNoAc <= 0 || rawSavedNoAc > 3600
-          ? 3600
-          : Math.max(60, Math.min(3600, rawSavedNoAc));
+        isNaN(rawSavedNoAc) || rawSavedNoAc < 0 || rawSavedNoAc > 3600
+          ? 0
+          : rawSavedNoAc === 0
+            ? 0
+            : Math.max(60, Math.min(3600, rawSavedNoAc));
 
       // ★ ESP32는 순수 가동 초(정수)와 기름탱크 용량(정수)만 저장하고, 실질적인 소수점/km/남은L 계산은 컴퓨터인 핸드폰이 100% 전담!
       let rawSavedTank = parseInt(localStorage.getItem(STORAGE_KEY_FUEL), 10);
@@ -2675,6 +2989,7 @@
       let manualBellTimer = null;
       let manualBellEndAtMs = 0;
       let manualBellRemainText = "";
+      let manualBellBusy = false;
       let isStartCrankingPhase = false;
       let preheatCountdownTimer = null;
       let startCountdownTimer = null;
@@ -2704,6 +3019,7 @@
 
       // 발전기 가동 상태 및 운전 시간 카운터 (ESP32 실시간 동기화 지원)
       let isGeneratorRunning = false;
+      let isBattChargingNow = false;
       let disconnectedWhileRunning = false;
       let runElapsedSeconds = 0;
       let runElapsedTimer = null;
@@ -2719,6 +3035,8 @@
       let schedStartRemainSec = 0;
       let schedRunDurationSec = 0;
       let schedCountdownTimer = null;
+      let pendingSchedRunForStartSec = 0;
+      let pendingSchedRunExpireMs = 0;
       let schedRandomAdd = 3;
       let pendingSchedUntilMs = 0;
 
@@ -3003,7 +3321,36 @@
       }
 
 
-      // ★ [v17] 발전기 시동 예약 카운트다운 동기화 (ESP32 실시간 sch_ / st_[16..17] 단일 기준 · localStorage 저장/복원 및 중복 발동 없음)
+      // ★ [v17] 시동 예약 목표 날짜·시간대 포맷 (새벽 0~5시 / 오전 6~11시 / 오후 12~23시)
+      function getKoreanPeriodAndHour12(hour24) {
+        if (hour24 >= 0 && hour24 <= 5) {
+          return { period: "새벽", h12: hour24 === 0 ? 12 : hour24 };
+        }
+        if (hour24 >= 6 && hour24 <= 11) {
+          return { period: "오전", h12: hour24 };
+        }
+        return { period: "오후", h12: hour24 === 12 ? 12 : hour24 - 12 };
+      }
+
+      function formatSchedDateTimeFull(remainSec) {
+        const dt = new Date(Date.now() + Math.max(0, remainSec) * 1000);
+        const m = dt.getMonth() + 1;
+        const d = dt.getDate();
+        const { period, h12 } = getKoreanPeriodAndHour12(dt.getHours());
+        const min = String(dt.getMinutes()).padStart(2, "0");
+        return `${m}월 ${d}일 ${period} ${h12}시 ${min}분`;
+      }
+
+      function formatSchedDateTimeShort(remainSec) {
+        const dt = new Date(Date.now() + Math.max(0, remainSec) * 1000);
+        const m = dt.getMonth() + 1;
+        const d = dt.getDate();
+        const { period, h12 } = getKoreanPeriodAndHour12(dt.getHours());
+        const min = String(dt.getMinutes()).padStart(2, "0");
+        return `${m}/${d} ${period} ${h12}:${min}`;
+      }
+
+      // ★ [v17] 발전기 시동 예약 카운트다운 동기화 (ESP32 실시간 sch_ / st_[16..17] 단일 기준 · 운전 중에도 내부 유지, 정지 시에만 메인창 표시)
       function stopScheduledStartLocal() {
         if (schedCountdownTimer) {
           clearInterval(schedCountdownTimer);
@@ -3019,7 +3366,7 @@
         const cleanWait = Math.max(0, parseInt(waitSec, 10) || 0);
         const cleanRun = Math.max(0, parseInt(runSec, 10) || 0);
 
-        if (!isConnected || sysLocked || isGeneratorRunning || cleanWait <= 0 || cleanRun <= 0) {
+        if (!isConnected || sysLocked || cleanWait <= 0 || cleanRun <= 0) {
           stopScheduledStartLocal();
           return;
         }
@@ -3035,7 +3382,7 @@
 
         if (schedStartRemainSec > 0 && !schedCountdownTimer) {
           schedCountdownTimer = setInterval(() => {
-            if (!isConnected || sysLocked || isGeneratorRunning) {
+            if (!isConnected || sysLocked) {
               stopScheduledStartLocal();
               return;
             }
@@ -3046,7 +3393,11 @@
                 updateExitModalMessage();
               }
             } else {
-              // ★ 0초 도달 시 자동 시동 및 가동시간 세팅은 ESP32가 단독 실행 (앱 중복 발동 금지)
+              // ★ 0초 도달 시 자동 시동 진입 직후 앱 자동정지 카운터를 즉시 시작할 수 있도록 가동시간을 임시 보관(90초 유효)
+              if (!isGeneratorRunning && schedRunDurationSec > 0) {
+                pendingSchedRunForStartSec = schedRunDurationSec;
+                pendingSchedRunExpireMs = Date.now() + 90000;
+              }
               stopScheduledStartLocal();
             }
           }, 1000);
@@ -3121,8 +3472,8 @@
             return;
           }
           autoBellRemainText = `${remainSec.toFixed(1)}초`;
-          const cntEl = document.getElementById("autoStartBellCnt");
-          if (cntEl) cntEl.innerText = autoBellRemainText;
+          const heroBellEl = document.getElementById("heroBellCnt");
+          if (heroBellEl) heroBellEl.innerText = autoBellRemainText;
         }, 80);
 
         syncAutoStartButtonUI();
@@ -3149,7 +3500,7 @@
         if (manualBellTimer && !disabled) {
           btn.classList.add("active");
           txt.innerText = `🔔 경고벨 ${manualBellRemainText || MANUAL_BELL_SEC.toFixed(1) + "초"}`;
-          cnt.innerText = "";
+          cnt.innerText = "정지";
         } else {
           btn.classList.remove("active");
           txt.innerText = "🔔 경고벨 20초";
@@ -3212,6 +3563,7 @@
 
       async function toggleManualBell() {
         if (
+          manualBellBusy ||
           !isConnected ||
           sysLocked ||
           isGeneratorRunning ||
@@ -3222,13 +3574,18 @@
         ) {
           return;
         }
-        if (manualBellTimer) {
-          stopManualBellCountdown();
-          updateHero();
-          await sendBleCmd("CMD_BELL_OFF");
-        } else {
-          if (!(await sendBleCmd("CMD_BELL"))) return;
-          startManualBellCountdown();
+        manualBellBusy = true;
+        try {
+          if (manualBellTimer) {
+            stopManualBellCountdown();
+            updateHero();
+            await sendBleCmd("CMD_BELL_OFF");
+          } else {
+            if (!(await sendBleCmd("CMD_BELL"))) return;
+            startManualBellCountdown();
+          }
+        } finally {
+          manualBellBusy = false;
         }
       }
 
@@ -3281,8 +3638,8 @@
           btn.classList.add("bell-active");
           if (btnPre) btnPre.disabled = true;
           if (btnSt) btnSt.disabled = true;
-          txt.innerText = "경고벨 작동";
-          if (cntEl) cntEl.innerText = autoBellRemainText || `${AUTO_BELL_PRE_SEC.toFixed(1)}초`;
+          txt.innerText = "자동운전 준비 중";
+          if (cntEl) cntEl.innerText = "";
           resetAutoStartThumbPosition();
           syncManualBellButtonUI();
           return;
@@ -3487,7 +3844,8 @@
           autoStartPhaseText = "예열 합니다";
           runAutoStartTimeline(stage, remMs);
         } else if (stage === 2) {
-          startManualBellCountdown(remMs);
+          // 수동 경고벨은 앱 자체 카운터로만 독립 동작 (정지 직후 직전 st_ 패킷으로 카운터가 되살아나는 현상 방지)
+          return;
         } else if (stage === 3) {
           startPreheatVisualCountdown(remMs);
         } else if (stage === 5) {
@@ -3662,7 +4020,6 @@
         const ptrVolt = document.getElementById("ptrVolt");
         const ptrFreq = document.getElementById("ptrFreq");
         const ptrBatt = document.getElementById("ptrBatt");
-        const chargeBadge = document.getElementById("chargeBadge");
 
         // 1. 발전기 컨디션 (실측치 * 2.0 표시, 최저 400V ~ 평균선 440V ~ 최고 480V, 전압 유무 기준 100V 이상)
         const displayVolt =
@@ -3675,7 +4032,15 @@
 
         if (nowRunning && !isGeneratorRunning) {
           isGeneratorRunning = true;
-          // ★ 시동이 걸려 운전 확정 시 로컬 예약 표시 정리 (예약 시동 가동시간은 ESP32가 자동 세팅)
+          // ★ 시동이 걸려 운전 확정 시 로컬 예약 표시 정리 + 예약 시동 가동시간이 있으면 즉시 자동정지 카운트다운 시작
+          const instantStopSec =
+            curEspRemainSec > 0
+              ? curEspRemainSec
+              : (pendingSchedRunForStartSec > 0 && Date.now() < pendingSchedRunExpireMs
+                  ? pendingSchedRunForStartSec
+                  : 0);
+          pendingSchedRunForStartSec = 0;
+          pendingSchedRunExpireMs = 0;
           stopScheduledStartLocal();
           stopManualBellCountdown();
           stopAutoBellVisualCountdown();
@@ -3683,6 +4048,11 @@
           stopStartVisualCountdown();
           markAutoStartSuccess();
           startRunElapsedTimer();
+          if (instantStopSec > 0) {
+            applyEspRemainSec(instantStopSec, true);
+          } else {
+            syncReserveButtonUI();
+          }
           syncHomeSlidersAndButtons();
           if (pendingStartDiag && !startDiagShownForRun && Date.now() < pendingStartExpireMs) {
             pendingStartDiag = false;
@@ -3759,8 +4129,7 @@
           cardBatt.classList.add("is-off");
           elBatt.innerText = "0.0";
           ptrBatt.style.left = "0%";
-          chargeBadge.innerText = "대기중";
-          chargeBadge.classList.remove("charging");
+          isBattChargingNow = false;
         } else {
           cardBatt.classList.remove("is-off");
           elBatt.innerText = curDcBatt.toFixed(1);
@@ -3768,13 +4137,7 @@
 
           const isAcMeasured =
             displayVolt >= 100.0 || curAcVolt >= 50.0 || curAcFreq >= 10.0;
-          if (isAcMeasured && curDcBatt >= 13.0) {
-            chargeBadge.innerText = "충전중";
-            chargeBadge.classList.add("charging");
-          } else {
-            chargeBadge.innerText = "대기중";
-            chargeBadge.classList.remove("charging");
-          }
+          isBattChargingNow = !!(isAcMeasured && curDcBatt >= 13.0);
 
           if (curDcBatt >= 12.0 && curDcBatt <= 14.6) {
             elBatt.style.color = "#34d399";
@@ -4314,6 +4677,8 @@
           autoReconnectTimer = null;
         }
         document.getElementById("settingsModal").classList.remove("show");
+        const sim = document.getElementById("settingItemModal");
+        if (sim) sim.classList.remove("show");
         document.getElementById("reserveModal").classList.remove("show");
         document.getElementById("pinModal").classList.remove("show");
         document.getElementById("fuelResetModal").classList.remove("show");
@@ -4379,8 +4744,13 @@
           const v = parseInt(msg.substring(3), 10);
           if (!isNaN(v)) {
             savedNoAcSec =
-              v <= 0 || v > 3600 ? 3600 : Math.max(60, Math.min(3600, v));
+              v === 0
+                ? 0
+                : v < 0 || v > 3600
+                  ? 0
+                  : Math.max(60, Math.min(3600, v));
             localStorage.setItem(STORAGE_KEY_NOAC, String(savedNoAcSec));
+            if (typeof refreshSettingsMenuValues === "function") refreshSettingsMenuValues();
           }
         } else if (msg.startsWith("fl_")) {
           const v = parseInt(msg.substring(3), 10);
@@ -4548,7 +4918,9 @@
             if (reserveRemainSeconds > 0) {
               reserveRemainSeconds--;
               syncReserveButtonUI();
-              if (exitCountdownTimer) updateExitModalMessage();
+              if (document.getElementById("exitModal").classList.contains("show")) {
+                updateExitModalMessage();
+              }
             } else {
               clearInterval(reserveCountdownTimer);
               reserveCountdownTimer = null;
@@ -4874,21 +5246,30 @@
         }, 2500);
       }
 
-      // 5. 설정 모달 (예열 기본 8초 / 1~15초, 시동 기본 0.9초 / 0.5~4초, 100V이하 정지 기본 1시간 / 1분~1시간, 다른 발전기 선택)
+      // 5. 설정 모달 (한 줄 메뉴 + 전용 전체 팝업: 예열/시동/비상 정지[1분~1시간, 최대 정지 안함·목록 없음]/오일/탱크/연비)
       function formatNoAcSliderText(sliderVal) {
-        const v = Math.max(1, Math.min(60, parseInt(sliderVal, 10) || 60));
+        const v = parseInt(sliderVal, 10);
+        if (isNaN(v)) return "정지 안함";
+        if (v >= 61) return "정지 안함";
         if (v >= 60) return "1시간";
-        return `${v}분`;
+        return `${Math.max(1, v)}분`;
+      }
+
+      function formatNoAcMenuText(sec) {
+        if (!sec || sec <= 0) return "안함";
+        return formatNoAcSliderText(secToNoAcSliderVal(sec));
       }
 
       function secToNoAcSliderVal(sec) {
-        if (!sec || sec <= 0 || sec > 3600) return 60; // 기본값 1시간 (슬라이더 마지막 값)
+        if (sec === 0) return 61; // 최대값 = 정지 안함(목록: 없음)
+        if (!sec || sec < 0 || sec > 3600) return 61; // 기본값 = 없음(정지 안함)
         return Math.max(1, Math.min(60, Math.round(sec / 60)));
       }
 
       function noAcSliderValToSec(sliderVal) {
         const v = parseInt(sliderVal, 10);
-        if (isNaN(v) || v > 60) return 3600; // 마지막 값 = 1시간
+        if (isNaN(v)) return 0;
+        if (v >= 61) return 0; // 정지 안함
         return Math.max(1, Math.min(60, v)) * 60;
       }
 
@@ -4931,42 +5312,65 @@
       // ★ 블루투스 미연결 시: 설정 창 내부 슬라이더 및 [확인] 버튼 비활성화, [다른 발전기 선택] 및 [취소]만 활성화!
       // ★ 블루투스 연결 시: 모두 활성화!
       function syncSettingsModalState() {
-        const preRange = document.getElementById("setPreheatRange");
-        const stRange = document.getElementById("setStartRange");
-        const noAcRange = document.getElementById("setNoAcRange");
-        const oilMaxRange = document.getElementById("setOilMaxRange");
-        const tankRange = document.getElementById("setTankRange");
-        const rateRange = document.getElementById("setFuelRateRange");
-        const boxPre = document.getElementById("setBoxPreheat");
-        const boxSt = document.getElementById("setBoxStart");
-        const boxNoAc = document.getElementById("setBoxNoAc");
-        const boxOilMax = document.getElementById("setBoxOilMax");
-        const boxTank = document.getElementById("setBoxTank");
-        const boxRate = document.getElementById("setBoxFuelRate");
-        const btnConfirm = document.getElementById("btnSettingsConfirm");
+        const boxIds = [
+          "setBoxPreheat",
+          "setBoxStart",
+          "setBoxNoAc",
+          "setBoxOilMax",
+          "setBoxTank",
+          "setBoxFuelRate",
+        ];
         const btnDefault = document.getElementById("btnSettingsDefault");
-
         const canEdit = isConnected && !sysLocked;
-        if (preRange) preRange.disabled = !canEdit;
-        if (stRange) stRange.disabled = !canEdit;
-        if (noAcRange) noAcRange.disabled = !canEdit;
-        if (oilMaxRange) oilMaxRange.disabled = !canEdit;
-        if (tankRange) tankRange.disabled = !canEdit;
-        if (rateRange) rateRange.disabled = !canEdit;
-        if (boxPre) boxPre.classList.toggle("is-disabled", !canEdit);
-        if (boxSt) boxSt.classList.toggle("is-disabled", !canEdit);
-        if (boxNoAc) boxNoAc.classList.toggle("is-disabled", !canEdit);
-        if (boxOilMax) boxOilMax.classList.toggle("is-disabled", !canEdit);
-        if (boxTank) boxTank.classList.toggle("is-disabled", !canEdit);
-        if (boxRate) boxRate.classList.toggle("is-disabled", !canEdit);
-        if (btnConfirm) btnConfirm.disabled = !canEdit;
+        boxIds.forEach((id) => {
+          const box = document.getElementById(id);
+          if (!box) return;
+          box.classList.toggle("is-disabled", sysLocked);
+          const btn = box.querySelector(".btn-row-setting");
+          if (btn) btn.disabled = sysLocked;
+        });
         if (btnDefault) btnDefault.disabled = !canEdit;
-        // ★ 발전기 시동 예약 버튼: 블루투스 연결됨 + 발전기가 꺼져 있을 때만 활성화!
+        const itemRange = document.getElementById("settingItemRange");
+        const itemDefault = document.getElementById("btnSettingItemDefault");
+        const itemConfirm = document.getElementById("btnSettingItemConfirm");
+        if (itemRange) itemRange.disabled = !canEdit;
+        if (itemDefault) itemDefault.disabled = !canEdit;
+        if (itemConfirm) itemConfirm.disabled = !canEdit;
+        if (sysLocked) {
+          const sim = document.getElementById("settingItemModal");
+          if (sim) sim.classList.remove("show");
+          activeSettingItemKey = null;
+        }
+        // ★ 시동 예약 항목: 미연결 시에도 목록 버튼은 열람용 활성화, 팝업 내부 조작만 잠금(1~6번과 동일 정책)
+        const boxSched = document.getElementById("setBoxSched");
+        if (boxSched) {
+          boxSched.classList.toggle("is-disabled", sysLocked);
+        }
         const btnSched = document.getElementById("btnOpenSchedSafety");
         if (btnSched) {
-          const canSched =
-            canEdit && !isGeneratorRunning && curAcVolt < 50 && curAcFreq < 10;
-          btnSched.disabled = !canSched;
+          btnSched.disabled = sysLocked;
+        }
+        const schedAgreeChk = document.getElementById("schedAgreeChk");
+        const schedAgreeLbl = document.getElementById("schedAgreeLabel");
+        const btnSchedConfirm = document.getElementById("btnSchedSafetyConfirm");
+        if (schedAgreeChk) schedAgreeChk.disabled = !canEdit;
+        if (schedAgreeLbl) schedAgreeLbl.classList.toggle("is-disabled", !canEdit);
+        for (let i = 0; i < 3; i++) {
+          const optBtn = document.getElementById("schedOpt" + i);
+          if (optBtn) optBtn.disabled = !canEdit;
+        }
+        if (btnSchedConfirm) btnSchedConfirm.disabled = !canEdit;
+        if (sysLocked) {
+          const ssm = document.getElementById("schedSafetyModal");
+          if (ssm) ssm.classList.remove("show");
+        }
+        const elChangeGen = document.getElementById("setChangeGenVal");
+        if (elChangeGen) {
+          const rawDevName = isConnected
+            ? ((bleDevice && sanitizeSsid(bleDevice.name)) || getSavedDeviceName() || "")
+            : "";
+          const shortName = rawDevName.replace(/^korea[_\-\s]*/i, "");
+          elChangeGen.innerText = shortName || "미연결";
         }
       }
 
@@ -5028,6 +5432,7 @@
       }
 
       function selectSchedMathOption(idx) {
+        if (!isConnected || sysLocked) return;
         schedSelectedOptIdx = idx;
         for (let i = 0; i < 3; i++) {
           const btn = document.getElementById("schedOpt" + i);
@@ -5038,19 +5443,14 @@
       }
 
       function openSchedSafetyModal() {
-        if (
-          !isConnected ||
-          sysLocked ||
-          isGeneratorRunning ||
-          curAcVolt >= 50 ||
-          curAcFreq >= 10
-        ) {
+        if (!isConnected || sysLocked) {
           return;
         }
         closeSettingsModal();
         const chk = document.getElementById("schedAgreeChk");
         if (chk) chk.checked = false;
         buildSchedMathChoices();
+        syncSettingsModalState();
         document.getElementById("schedSafetyModal").classList.add("show");
       }
 
@@ -5059,6 +5459,7 @@
       }
 
       function confirmSchedSafetyModal() {
+        if (!isConnected || sysLocked) return;
         const chk = document.getElementById("schedAgreeChk");
         if (!chk || !chk.checked) {
           alert("안전한 장소 주차 확인 및 동의에 체크해 주세요.");
@@ -5077,43 +5478,92 @@
         openSchedTimeModal();
       }
 
-      function onSchedWaitSliderInput(val) {
-        const h = Math.max(1, Math.min(48, parseInt(val, 10) || 1));
+      function schedIndexToSec(idx) {
+        const n = Math.max(0, parseInt(idx, 10) || 0);
+        return n === 0 ? 60 : n * 1800;
+      }
+
+      function secToSchedIndex(sec, maxIdx) {
+        const s = Math.max(0, parseInt(sec, 10) || 0);
+        if (s <= 900) return 0;
+        return Math.max(1, Math.min(maxIdx, Math.round(s / 1800)));
+      }
+
+      function formatSchedStepDuration(sec) {
+        const s = Math.max(60, parseInt(sec, 10) || 60);
+        if (s < 3600) {
+          return `${Math.max(1, Math.round(s / 60))}분`;
+        }
+        const h = Math.floor(s / 3600);
+        const m = Math.round((s % 3600) / 60);
+        return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
+      }
+
+      let _schedWaitRaf = 0;
+      let _schedWaitPendingVal = null;
+      let _schedRunRaf = 0;
+      let _schedRunPendingVal = null;
+
+      function renderSchedWaitSlider(val) {
+        const parsed = parseInt(val, 10);
+        const idx = Math.max(0, Math.min(96, isNaN(parsed) ? 2 : parsed));
+        const waitSec = schedIndexToSec(idx);
         const r = document.getElementById("schedWaitRange");
         if (r) updateSliderVisualFill(r);
         const topVal = document.getElementById("schedWaitSliderVal");
-        if (topVal) topVal.innerText = `${h}시간`;
+        if (topVal) topVal.textContent = `${formatSchedStepDuration(waitSec)} 후`;
         const box = document.getElementById("schedWaitHourBox");
-        if (box) box.innerText = String(h);
+        if (box) box.textContent = formatSchedDateTimeFull(waitSec);
       }
 
-      function onSchedRunSliderInput(val) {
-        const h = Math.max(1, Math.min(12, parseInt(val, 10) || 1));
+      function onSchedWaitSliderInput(val) {
+        _schedWaitPendingVal = val;
+        if (_schedWaitRaf) return;
+        _schedWaitRaf = requestAnimationFrame(() => {
+          _schedWaitRaf = 0;
+          renderSchedWaitSlider(_schedWaitPendingVal);
+        });
+      }
+
+      function renderSchedRunSlider(val) {
+        const parsed = parseInt(val, 10);
+        const idx = Math.max(0, Math.min(24, isNaN(parsed) ? 2 : parsed));
+        const runSec = schedIndexToSec(idx);
+        const label = formatSchedStepDuration(runSec);
         const r = document.getElementById("schedRunRange");
         if (r) updateSliderVisualFill(r);
         const topVal = document.getElementById("schedRunSliderVal");
-        if (topVal) topVal.innerText = `${h}시간`;
+        if (topVal) topVal.textContent = label;
         const box = document.getElementById("schedRunHourBox");
-        if (box) box.innerText = String(h);
+        if (box) box.textContent = label;
+      }
+
+      function onSchedRunSliderInput(val) {
+        _schedRunPendingVal = val;
+        if (_schedRunRaf) return;
+        _schedRunRaf = requestAnimationFrame(() => {
+          _schedRunRaf = 0;
+          renderSchedRunSlider(_schedRunPendingVal);
+        });
       }
 
       function openSchedTimeModal() {
-        if (!isConnected || sysLocked || isGeneratorRunning) return;
+        if (!isConnected || sysLocked) return;
         const wRange = document.getElementById("schedWaitRange");
         const rRange = document.getElementById("schedRunRange");
-        let initW = 1;
-        let initR = 1;
+        let initW = 2;
+        let initR = 2;
         if (schedStartRemainSec > 0 && schedRunDurationSec > 0) {
-          initW = Math.max(1, Math.min(48, Math.ceil(schedStartRemainSec / 3600)));
-          initR = Math.max(1, Math.min(12, Math.round(schedRunDurationSec / 3600)));
+          initW = secToSchedIndex(schedStartRemainSec, 96);
+          initR = secToSchedIndex(schedRunDurationSec, 24);
         }
         if (wRange) {
           wRange.value = String(initW);
-          onSchedWaitSliderInput(initW);
+          renderSchedWaitSlider(initW);
         }
         if (rRange) {
           rRange.value = String(initR);
-          onSchedRunSliderInput(initR);
+          renderSchedRunSlider(initR);
         }
         document.getElementById("schedTimeModal").classList.add("show");
       }
@@ -5123,16 +5573,23 @@
       }
 
       async function confirmSchedTimeModal() {
-        if (!isConnected || sysLocked || isGeneratorRunning) {
+        if (!isConnected || sysLocked) {
           closeSchedTimeModal();
           return;
         }
         const wRange = document.getElementById("schedWaitRange");
         const rRange = document.getElementById("schedRunRange");
-        const waitH = Math.max(1, Math.min(48, parseInt((wRange && wRange.value) || "1", 10) || 1));
-        const runH = Math.max(1, Math.min(12, parseInt((rRange && rRange.value) || "1", 10) || 1));
-        const waitSec = waitH * 3600;
-        const runSec = runH * 3600;
+        const wParsed = parseInt(wRange && wRange.value, 10);
+        const rParsed = parseInt(rRange && rRange.value, 10);
+        const waitIdx = Math.max(0, Math.min(96, isNaN(wParsed) ? 2 : wParsed));
+        const runIdx = Math.max(0, Math.min(24, isNaN(rParsed) ? 2 : rParsed));
+        const waitSec = schedIndexToSec(waitIdx);
+        const runSec = schedIndexToSec(runIdx);
+        if (isGeneratorRunning && reserveRemainSeconds > 0 && waitSec <= reserveRemainSeconds) {
+          const cfModal = document.getElementById("schedConflictModal");
+          if (cfModal) cfModal.classList.add("show");
+          return;
+        }
         closeSchedTimeModal();
         pendingSchedUntilMs = Date.now() + 1500;
         const ok = await sendBleCmd(`SCHED_${waitSec}_${runSec}`);
@@ -5146,6 +5603,11 @@
         document.getElementById("schedCancelModal").classList.add("show");
       }
 
+      function closeSchedConflictModal() {
+        const cfModal = document.getElementById("schedConflictModal");
+        if (cfModal) cfModal.classList.remove("show");
+      }
+
       function closeSchedCancelModal() {
         document.getElementById("schedCancelModal").classList.remove("show");
       }
@@ -5154,263 +5616,336 @@
         closeSchedCancelModal();
         if (!isConnected || sysLocked) return;
         pendingSchedUntilMs = Date.now() + 1200;
+        pendingSchedRunForStartSec = 0;
+        pendingSchedRunExpireMs = 0;
         stopScheduledStartLocal();
         await sendBleCmd("SCHED_0_0");
       }
 
+      let activeSettingItemKey = null;
+
+      const SETTING_ITEM_CONFIGS = {
+        preheat: {
+          title: "예열 시간",
+          desc: "시동 전 엔진 예열 시간을 설정합니다.",
+          defaultVal: 8.0,
+          min: 1.0,
+          max: 15.0,
+          step: 0.5,
+          minLbl: "1초",
+          maxLbl: "15초",
+          getSliderVal: () => savedPreheatSec,
+          formatVal: (v) => `${formatSecondsText(v)}초`,
+          applyAndSend: async (rawVal) => {
+            const prev = savedPreheatSec;
+            const num = parseFloat(rawVal);
+            const next = isNaN(num) ? 8.0 : Math.round(Math.max(1.0, Math.min(15.0, num)) * 10) / 10;
+            if (Math.round(next * 10) === Math.round(prev * 10)) return true;
+            savedPreheatSec = next;
+            localStorage.setItem(STORAGE_KEY_PREHEAT, String(savedPreheatSec));
+            syncHomeSlidersAndButtons();
+            refreshSettingsMenuValues();
+            if (isConnected) {
+              const ok = await sendBleCmd("RELAY1_" + savedPreheatSec.toFixed(1));
+              if (!ok) {
+                savedPreheatSec = prev;
+                localStorage.setItem(STORAGE_KEY_PREHEAT, String(prev));
+                syncHomeSlidersAndButtons();
+                refreshSettingsMenuValues();
+                return false;
+              }
+            }
+            return true;
+          },
+        },
+        start: {
+          title: "시동 시간",
+          desc: "스타터 모터(시동) 작동 시간을 설정합니다.",
+          defaultVal: 0.9,
+          min: 0.5,
+          max: 4.0,
+          step: 0.1,
+          minLbl: "0.5초",
+          maxLbl: "4초",
+          getSliderVal: () => savedStartSec,
+          formatVal: (v) => `${formatSecondsText(v)}초`,
+          applyAndSend: async (rawVal) => {
+            const prev = savedStartSec;
+            const num = parseFloat(rawVal);
+            const next = isNaN(num) ? 0.9 : Math.round(Math.max(0.5, Math.min(4.0, num)) * 10) / 10;
+            if (Math.round(next * 10) === Math.round(prev * 10)) return true;
+            savedStartSec = next;
+            localStorage.setItem(STORAGE_KEY_START, String(savedStartSec));
+            syncHomeSlidersAndButtons();
+            refreshSettingsMenuValues();
+            if (isConnected) {
+              const ok = await sendBleCmd("RELAY2_" + savedStartSec.toFixed(1));
+              if (!ok) {
+                savedStartSec = prev;
+                localStorage.setItem(STORAGE_KEY_START, String(prev));
+                syncHomeSlidersAndButtons();
+                refreshSettingsMenuValues();
+                return false;
+              }
+            }
+            return true;
+          },
+        },
+        noac: {
+          title: "비상 정지",
+          desc: "발전기 전압이 안나오거나 고장시 엔진이 자동 정지합니다.",
+          defaultVal: 61,
+          min: 1,
+          max: 61,
+          step: 1,
+          minLbl: "1분",
+          maxLbl: "정지 안함",
+          getSliderVal: () => secToNoAcSliderVal(savedNoAcSec),
+          formatVal: (v) => formatNoAcSliderText(v),
+          applyAndSend: async (rawVal) => {
+            const prev = savedNoAcSec;
+            const next = noAcSliderValToSec(rawVal);
+            if (next === prev) return true;
+            savedNoAcSec = next;
+            localStorage.setItem(STORAGE_KEY_NOAC, String(savedNoAcSec));
+            refreshSettingsMenuValues();
+            if (isConnected) {
+              const ok = await sendBleCmd("NOAC_" + savedNoAcSec);
+              if (!ok) {
+                savedNoAcSec = prev;
+                localStorage.setItem(STORAGE_KEY_NOAC, String(prev));
+                refreshSettingsMenuValues();
+                return false;
+              }
+            }
+            return true;
+          },
+        },
+        oilmax: {
+          title: "오일 교환",
+          desc: "엔진 오일 교환 알림 기준 주기를 설정합니다.",
+          defaultVal: 10,
+          min: 5,
+          max: 15,
+          step: 1,
+          minLbl: "5만KM",
+          maxLbl: "15만KM",
+          getSliderVal: () => savedOilMaxManKm,
+          formatVal: (v) => `${parseInt(v, 10) || 10}만KM`,
+          applyAndSend: async (rawVal) => {
+            const prev = savedOilMaxManKm;
+            const num = parseInt(rawVal, 10);
+            const next = isNaN(num) ? 10 : Math.max(5, Math.min(15, num));
+            if (next === prev) return true;
+            savedOilMaxManKm = next;
+            localStorage.setItem(STORAGE_KEY_OIL_MAX, String(savedOilMaxManKm));
+            updateConditionUI();
+            refreshSettingsMenuValues();
+            if (isConnected) {
+              const ok = await sendBleCmd("OILMAX_" + savedOilMaxManKm);
+              if (!ok) {
+                savedOilMaxManKm = prev;
+                localStorage.setItem(STORAGE_KEY_OIL_MAX, String(prev));
+                updateConditionUI();
+                refreshSettingsMenuValues();
+                return false;
+              }
+            }
+            return true;
+          },
+        },
+        tank: {
+          title: "기름 탱크",
+          desc: "장착된 연료탱크의 전체 용량을 설정합니다.",
+          defaultVal: 200,
+          min: 100,
+          max: 500,
+          step: 10,
+          minLbl: "100L",
+          maxLbl: "500L",
+          getSliderVal: () => savedTankCapLiters,
+          formatVal: (v) => `${parseInt(v, 10) || 200}L`,
+          applyAndSend: async (rawVal) => {
+            const prev = savedTankCapLiters;
+            const num = parseInt(rawVal, 10);
+            const next = isNaN(num) ? 200 : Math.max(100, Math.min(500, num));
+            if (next === prev) return true;
+            savedTankCapLiters = next;
+            localStorage.setItem(STORAGE_KEY_FUEL, String(savedTankCapLiters));
+            updateConditionUI();
+            refreshSettingsMenuValues();
+            if (isConnected) {
+              const ok = await sendBleCmd("TANK_" + savedTankCapLiters);
+              if (!ok) {
+                savedTankCapLiters = prev;
+                localStorage.setItem(STORAGE_KEY_FUEL, String(prev));
+                updateConditionUI();
+                refreshSettingsMenuValues();
+                return false;
+              }
+            }
+            return true;
+          },
+        },
+        fuelrate: {
+          title: "연비 설정",
+          desc: "발전기 1시간 운전 시 평균 연료 소비량을 설정합니다.",
+          defaultVal: 3.2,
+          min: 1.0,
+          max: 6.0,
+          step: 0.1,
+          minLbl: "1.0L",
+          maxLbl: "6.0L",
+          getSliderVal: () => savedFuelRateLph,
+          formatVal: (v) => {
+            const num = parseFloat(v);
+            return `${(isNaN(num) ? 3.2 : num).toFixed(1)}L`;
+          },
+          applyAndSend: async (rawVal) => {
+            const prev = savedFuelRateLph;
+            const num = parseFloat(rawVal);
+            const next = isNaN(num) ? 3.2 : Math.max(1.0, Math.min(6.0, Math.round(num * 10) / 10));
+            const nextX10 = Math.round(next * 10);
+            if (nextX10 === Math.round(prev * 10)) return true;
+            savedFuelRateLph = next;
+            localStorage.setItem(STORAGE_KEY_FUEL_RATE, String(savedFuelRateLph));
+            updateConditionUI();
+            refreshSettingsMenuValues();
+            if (isConnected) {
+              const ok = await sendBleCmd("RATE_" + nextX10);
+              if (!ok) {
+                savedFuelRateLph = prev;
+                localStorage.setItem(STORAGE_KEY_FUEL_RATE, String(prev));
+                updateConditionUI();
+                refreshSettingsMenuValues();
+                return false;
+              }
+            }
+            return true;
+          },
+        },
+      };
+
+      function refreshSettingsMenuValues() {
+        const elPre = document.getElementById("setPreheatVal");
+        const elSt = document.getElementById("setStartVal");
+        const elNoAc = document.getElementById("setNoAcVal");
+        const elOil = document.getElementById("setOilMaxVal");
+        const elTank = document.getElementById("setTankVal");
+        const elRate = document.getElementById("setFuelRateVal");
+        if (elPre) elPre.innerText = `${formatSecondsText(savedPreheatSec)}초`;
+        if (elSt) elSt.innerText = `${formatSecondsText(savedStartSec)}초`;
+        if (elNoAc) elNoAc.innerText = formatNoAcMenuText(savedNoAcSec);
+        if (elOil) elOil.innerText = `${savedOilMaxManKm}만KM`;
+        if (elTank) elTank.innerText = `${savedTankCapLiters}L`;
+        if (elRate) elRate.innerText = `${savedFuelRateLph.toFixed(1)}L`;
+        const elSched = document.getElementById("setSchedVal");
+        if (elSched) {
+          if (schedStartRemainSec > 0) {
+            const totalMin = Math.ceil(schedStartRemainSec / 60);
+            const h = Math.floor(totalMin / 60);
+            const m = totalMin % 60;
+            elSched.innerText = h > 0 ? (m > 0 ? `${h}시간 ${m}분` : `${h}시간`) : `${m}분`;
+          } else {
+            elSched.innerText = "없음";
+          }
+        }
+        const elChangeGen = document.getElementById("setChangeGenVal");
+        if (elChangeGen) {
+          const rawDevName = isConnected
+            ? ((bleDevice && sanitizeSsid(bleDevice.name)) || getSavedDeviceName() || "")
+            : "";
+          const shortName = rawDevName.replace(/^korea[_\-\s]*/i, "");
+          elChangeGen.innerText = shortName || "미연결";
+        }
+      }
+
       function openSettingsModal() {
         if (sysLocked) return;
-        const preRange = document.getElementById("setPreheatRange");
-        const stRange = document.getElementById("setStartRange");
-        const noAcRange = document.getElementById("setNoAcRange");
-        const oilMaxRange = document.getElementById("setOilMaxRange");
-        const tankRange = document.getElementById("setTankRange");
-        const rateRange = document.getElementById("setFuelRateRange");
-
-        preRange.value = savedPreheatSec;
-        updateSliderVisualFill(preRange);
-        document.getElementById("setPreheatVal").innerText =
-          `${formatSecondsText(savedPreheatSec)}초`;
-
-        stRange.value = savedStartSec;
-        updateSliderVisualFill(stRange);
-        document.getElementById("setStartVal").innerText =
-          `${formatSecondsText(savedStartSec)}초`;
-
-        const noAcSliderVal = secToNoAcSliderVal(savedNoAcSec);
-        noAcRange.value = noAcSliderVal;
-        updateSliderVisualFill(noAcRange);
-        document.getElementById("setNoAcVal").innerText =
-          formatNoAcSliderText(noAcSliderVal);
-
-        if (oilMaxRange) {
-          oilMaxRange.value = savedOilMaxManKm;
-          updateSliderVisualFill(oilMaxRange);
-          document.getElementById("setOilMaxVal").innerText = `${savedOilMaxManKm}만KM`;
-        }
-
-        if (tankRange) {
-          tankRange.value = savedTankCapLiters;
-          updateSliderVisualFill(tankRange);
-          document.getElementById("setTankVal").innerText = `${savedTankCapLiters}L`;
-        }
-
-        if (rateRange) {
-          rateRange.value = savedFuelRateLph.toFixed(1);
-          updateSliderVisualFill(rateRange);
-          document.getElementById("setFuelRateVal").innerText = `${savedFuelRateLph.toFixed(1)}L`;
-        }
-
+        refreshSettingsMenuValues();
         syncSettingsModalState();
         document.getElementById("settingsModal").classList.add("show");
       }
 
       function closeSettingsModal() {
+        closeSettingItemModal();
         document.getElementById("settingsModal").classList.remove("show");
       }
 
-      function resetSettingsToDefault() {
+      function openSettingItemModal(key) {
+        if (sysLocked) return;
+        const cfg = SETTING_ITEM_CONFIGS[key];
+        if (!cfg) return;
+        activeSettingItemKey = key;
+        document.getElementById("settingItemTitle").innerText = cfg.title;
+        document.getElementById("settingItemDesc").innerText = cfg.desc;
+        document.getElementById("settingItemMinLbl").innerText = cfg.minLbl;
+        document.getElementById("settingItemMaxLbl").innerText = cfg.maxLbl;
+        const range = document.getElementById("settingItemRange");
+        range.min = String(cfg.min);
+        range.max = String(cfg.max);
+        range.step = String(cfg.step);
+        const curVal = cfg.getSliderVal();
+        range.value = String(curVal);
+        const canEdit = isConnected && !sysLocked;
+        range.disabled = !canEdit;
+        const btnDefault = document.getElementById("btnSettingItemDefault");
+        if (btnDefault) btnDefault.disabled = !canEdit;
+        const btnConfirm = document.getElementById("btnSettingItemConfirm");
+        if (btnConfirm) btnConfirm.disabled = !canEdit;
+        updateSliderVisualFill(range);
+        document.getElementById("settingItemVal").innerText = cfg.formatVal(curVal);
+        document.getElementById("settingItemModal").classList.add("show");
+      }
+
+      function onSettingItemRangeInput(val) {
+        const range = document.getElementById("settingItemRange");
+        updateSliderVisualFill(range);
+        const cfg = SETTING_ITEM_CONFIGS[activeSettingItemKey];
+        if (cfg) {
+          document.getElementById("settingItemVal").innerText = cfg.formatVal(val);
+        }
+      }
+
+      function closeSettingItemModal() {
+        activeSettingItemKey = null;
+        const modal = document.getElementById("settingItemModal");
+        if (modal) modal.classList.remove("show");
+      }
+
+      async function confirmSettingItemModal() {
+        const key = activeSettingItemKey;
+        const cfg = SETTING_ITEM_CONFIGS[key];
+        const rawVal = document.getElementById("settingItemRange").value;
+        closeSettingItemModal();
+        if (!cfg || !isConnected || sysLocked) return;
+        await cfg.applyAndSend(rawVal);
+      }
+
+      function applySettingItemDefault() {
         if (!isConnected || sysLocked) return;
-        const preRange = document.getElementById("setPreheatRange");
-        const stRange = document.getElementById("setStartRange");
-        const noAcRange = document.getElementById("setNoAcRange");
-        const oilMaxRange = document.getElementById("setOilMaxRange");
-        const tankRange = document.getElementById("setTankRange");
-        const rateRange = document.getElementById("setFuelRateRange");
-
-        if (preRange) {
-          preRange.value = "8.0";
-          onSettingsPreheatInput("8.0");
-        }
-        if (stRange) {
-          stRange.value = "0.9";
-          onSettingsStartInput("0.9");
-        }
-        if (noAcRange) {
-          noAcRange.value = "60";
-          onSettingsNoAcInput("60");
-        }
-        if (oilMaxRange) {
-          oilMaxRange.value = "10";
-          onSettingsOilMaxInput("10");
-        }
-        if (tankRange) {
-          tankRange.value = "200";
-          onSettingsTankInput("200");
-        }
-        if (rateRange) {
-          rateRange.value = "3.2";
-          onSettingsFuelRateInput("3.2");
-        }
+        const cfg = SETTING_ITEM_CONFIGS[activeSettingItemKey];
+        if (!cfg || cfg.defaultVal === undefined) return;
+        const range = document.getElementById("settingItemRange");
+        if (!range) return;
+        range.value = String(cfg.defaultVal);
+        updateSliderVisualFill(range);
+        document.getElementById("settingItemVal").innerText = cfg.formatVal(cfg.defaultVal);
       }
 
-      function onSettingsPreheatInput(val) {
-        updateSliderVisualFill(document.getElementById("setPreheatRange"));
-        document.getElementById("setPreheatVal").innerText =
-          `${formatSecondsText(val)}초`;
+      function openChangeGenModal() {
+        const modal = document.getElementById("changeGenModal");
+        if (modal) modal.classList.add("show");
       }
 
-      function onSettingsStartInput(val) {
-        updateSliderVisualFill(document.getElementById("setStartRange"));
-        document.getElementById("setStartVal").innerText =
-          `${formatSecondsText(val)}초`;
+      function closeChangeGenModal() {
+        const modal = document.getElementById("changeGenModal");
+        if (modal) modal.classList.remove("show");
       }
 
-      function onSettingsNoAcInput(val) {
-        updateSliderVisualFill(document.getElementById("setNoAcRange"));
-        document.getElementById("setNoAcVal").innerText =
-          formatNoAcSliderText(val);
-      }
-
-      function onSettingsOilMaxInput(val) {
-        updateSliderVisualFill(document.getElementById("setOilMaxRange"));
-        document.getElementById("setOilMaxVal").innerText = `${parseInt(val, 10) || 10}만KM`;
-      }
-
-      function onSettingsTankInput(val) {
-        updateSliderVisualFill(document.getElementById("setTankRange"));
-        document.getElementById("setTankVal").innerText = `${parseInt(val, 10) || 200}L`;
-      }
-
-      function onSettingsFuelRateInput(val) {
-        updateSliderVisualFill(document.getElementById("setFuelRateRange"));
-        const num = parseFloat(val);
-        document.getElementById("setFuelRateVal").innerText =
-          `${(isNaN(num) ? 3.2 : num).toFixed(1)}L`;
-      }
-
-      async function confirmSettingsModal() {
-        const prevPre = savedPreheatSec;
-        const prevSt = savedStartSec;
-        const prevNoAc = savedNoAcSec;
-        const prevOilMax = savedOilMaxManKm;
-        const prevTank = savedTankCapLiters;
-        const prevRate = savedFuelRateLph;
-
-        const prevPreX10 = Math.round(prevPre * 10);
-        const prevStX10 = Math.round(prevSt * 10);
-        const prevRateX10 = Math.round(prevRate * 10);
-
-        const rawPre = parseFloat(
-          document.getElementById("setPreheatRange").value
-        );
-        const rawSt = parseFloat(
-          document.getElementById("setStartRange").value
-        );
-        const rawNoAcSlider = document.getElementById("setNoAcRange").value;
-        const rawOilMax = parseInt(
-          document.getElementById("setOilMaxRange").value,
-          10
-        );
-        const rawTank = parseInt(
-          document.getElementById("setTankRange").value,
-          10
-        );
-        const rawRate = parseFloat(
-          document.getElementById("setFuelRateRange").value
-        );
-
-        const nextPre = isNaN(rawPre)
-          ? 8.0
-          : Math.round(Math.max(1.0, Math.min(15.0, rawPre)) * 10) / 10;
-        const nextSt = isNaN(rawSt)
-          ? 0.9
-          : Math.round(Math.max(0.5, Math.min(4.0, rawSt)) * 10) / 10;
-        const nextNoAc = noAcSliderValToSec(rawNoAcSlider);
-        const nextOilMax = isNaN(rawOilMax)
-          ? 10
-          : Math.max(5, Math.min(15, rawOilMax));
-        const nextTank = isNaN(rawTank)
-          ? 200
-          : Math.max(100, Math.min(500, rawTank));
-        const nextRate = isNaN(rawRate)
-          ? 3.2
-          : Math.max(1.0, Math.min(6.0, Math.round(rawRate * 10) / 10));
-
-        const nextPreX10 = Math.round(nextPre * 10);
-        const nextStX10 = Math.round(nextSt * 10);
-        const nextRateX10 = Math.round(nextRate * 10);
-
-        const chgPre = nextPreX10 !== prevPreX10;
-        const chgSt = nextStX10 !== prevStX10;
-        const chgNoAc = nextNoAc !== prevNoAc;
-        const chgOilMax = nextOilMax !== prevOilMax;
-        const chgTank = nextTank !== prevTank;
-        const chgRate = nextRateX10 !== prevRateX10;
-
-        savedPreheatSec = nextPre;
-        savedStartSec = nextSt;
-        savedNoAcSec = nextNoAc;
-        savedOilMaxManKm = nextOilMax;
-        savedTankCapLiters = nextTank;
-        savedFuelRateLph = nextRate;
-
-        if (chgPre) localStorage.setItem(STORAGE_KEY_PREHEAT, String(savedPreheatSec));
-        if (chgSt) localStorage.setItem(STORAGE_KEY_START, String(savedStartSec));
-        if (chgNoAc) localStorage.setItem(STORAGE_KEY_NOAC, String(savedNoAcSec));
-        if (chgOilMax) localStorage.setItem(STORAGE_KEY_OIL_MAX, String(savedOilMaxManKm));
-        if (chgTank) localStorage.setItem(STORAGE_KEY_FUEL, String(savedTankCapLiters));
-        if (chgRate) localStorage.setItem(STORAGE_KEY_FUEL_RATE, String(savedFuelRateLph));
-
-        syncHomeSlidersAndButtons();
-        updateConditionUI();
-        closeSettingsModal();
-
-        if (isConnected) {
-          let reverted = false;
-          if (chgPre) {
-            const ok = await sendBleCmd("RELAY1_" + savedPreheatSec.toFixed(1));
-            if (!ok) {
-              savedPreheatSec = prevPre;
-              localStorage.setItem(STORAGE_KEY_PREHEAT, String(prevPre));
-              reverted = true;
-            }
-          }
-          if (chgSt) {
-            const ok = await sendBleCmd("RELAY2_" + savedStartSec.toFixed(1));
-            if (!ok) {
-              savedStartSec = prevSt;
-              localStorage.setItem(STORAGE_KEY_START, String(prevSt));
-              reverted = true;
-            }
-          }
-          if (chgNoAc) {
-            const ok = await sendBleCmd("NOAC_" + savedNoAcSec);
-            if (!ok) {
-              savedNoAcSec = prevNoAc;
-              localStorage.setItem(STORAGE_KEY_NOAC, String(prevNoAc));
-              reverted = true;
-            }
-          }
-          if (chgOilMax) {
-            const ok = await sendBleCmd("OILMAX_" + savedOilMaxManKm);
-            if (!ok) {
-              savedOilMaxManKm = prevOilMax;
-              localStorage.setItem(STORAGE_KEY_OIL_MAX, String(prevOilMax));
-              reverted = true;
-            }
-          }
-          if (chgTank) {
-            const ok = await sendBleCmd("TANK_" + savedTankCapLiters);
-            if (!ok) {
-              savedTankCapLiters = prevTank;
-              localStorage.setItem(STORAGE_KEY_FUEL, String(prevTank));
-              reverted = true;
-            }
-          }
-          if (chgRate) {
-            const ok = await sendBleCmd("RATE_" + nextRateX10);
-            if (!ok) {
-              savedFuelRateLph = prevRate;
-              localStorage.setItem(STORAGE_KEY_FUEL_RATE, String(prevRate));
-              reverted = true;
-            }
-          }
-          if (reverted) {
-            syncHomeSlidersAndButtons();
-            updateConditionUI();
-          }
-        }
+      async function confirmChangeGenModal() {
+        closeChangeGenModal();
+        await selectAnotherGenerator();
       }
 
       async function selectAnotherGenerator() {
@@ -5480,15 +6015,27 @@
         const msgEl = document.getElementById("exitStatusMsg");
         if (!isConnected) {
           msgEl.innerHTML = "블루투스 연결안됨<br>앱을 종료합니다";
-        } else if (!isGeneratorRunning && schedStartRemainSec > 0) {
-          const waitText = formatKoreanDuration(schedStartRemainSec);
-          const runHours = Math.max(1, Math.round(schedRunDurationSec / 3600));
+        } else if (isGeneratorRunning && reserveRemainSeconds > 0 && schedStartRemainSec > 0) {
+          const startDateTimeText = formatSchedDateTimeFull(schedStartRemainSec);
+          const runText = formatSchedStepDuration(schedRunDurationSec);
           msgEl.innerHTML =
-            `<span style="color:#fbbf24;">${waitText}</span> 후에 자동 시동되며<br>` +
-            `<span style="color:#34d399;">${runHours}시간</span> 동안 가동된 후 자동으로 꺼집니다.<br>` +
+            `<div style="text-align:left; line-height:1.6;">` +
+            `<div style="margin-bottom:8px;"><strong style="color:#a78bfa;">예약 1.</strong> <span style="color:#a78bfa;">${formatKoreanDuration(reserveRemainSeconds)}</span> 후 발전기가 자동정지합니다.</div>` +
+            `<div><strong style="color:#fbbf24;">예약 2.</strong> <span style="color:#fbbf24;">${startDateTimeText}</span>에 발전기가 20초 경고 후 자동시동한 후에 <span style="color:#34d399;">${runText}</span> 뒤에 정지합니다.</div>` +
+            `</div>` +
             `<div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.12); font-size:0.88rem; color:#fde68a; text-align:left; line-height:1.55;">` +
-            `• 예약 중 시동이 걸리면 예약이 취소됩니다.<br>` +
-            `• 모듈 스위치를 내리면 예약이 취소됩니다.` +
+            `• 예약 중 시동을 하거나 모듈 스위치를 내리면 모든 예약이 취소됩니다.` +
+            `</div>` +
+            `<div style="margin-top:10px; font-size:0.98rem; color:#cbd5e1;">앱을 종료합니다.</div>`;
+        } else if (schedStartRemainSec > 0) {
+          const startDateTimeText = formatSchedDateTimeFull(schedStartRemainSec);
+          const runText = formatSchedStepDuration(schedRunDurationSec);
+          msgEl.innerHTML =
+            `<div style="text-align:left; line-height:1.6;">` +
+            `<div><span style="color:#fbbf24;">${startDateTimeText}</span>에 발전기가 20초 경고 후 자동시동한 후에 <span style="color:#34d399;">${runText}</span> 뒤에 정지합니다.</div>` +
+            `</div>` +
+            `<div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.12); font-size:0.88rem; color:#fde68a; text-align:left; line-height:1.55;">` +
+            `• 예약 중 시동을 하거나 모듈 스위치를 내리면 모든 예약이 취소됩니다.` +
             `</div>` +
             `<div style="margin-top:10px; font-size:0.98rem; color:#cbd5e1;">앱을 종료합니다.</div>`;
         } else if (!isGeneratorRunning) {
@@ -5568,43 +6115,12 @@
         const countEl = document.getElementById("exitCountNum");
         const singleRow = document.getElementById("exitSingleActionRow");
         const schedRow = document.getElementById("exitSchedActionRow");
-        const isScheduledWaiting =
-          isConnected && !sysLocked && !isGeneratorRunning && schedStartRemainSec > 0;
-
-        if (isScheduledWaiting) {
-          // ★ 시동 예약이 걸려 있을 때는 5초 카운트다운을 하지 않고, [확인]을 눌러야만 종료!
-          if (countEl) countEl.style.display = "none";
-          if (singleRow) singleRow.style.display = "none";
-          if (schedRow) schedRow.style.display = "grid";
-          updateExitModalMessage();
-          document.getElementById("exitModal").classList.add("show");
-          return;
-        }
-
-        exitRemainSeconds = 5;
-        if (countEl) {
-          countEl.style.display = "flex";
-          countEl.innerText = "5";
-        }
-        if (singleRow) singleRow.style.display = "block";
-        if (schedRow) schedRow.style.display = "none";
-        document.getElementById("btnCancelExit").style.display = "block";
+        // ★ 모든 경우에 카운트다운 없이 [취소] / [확인] 버튼으로 종료
+        if (countEl) countEl.style.display = "none";
+        if (singleRow) singleRow.style.display = "none";
+        if (schedRow) schedRow.style.display = "grid";
         updateExitModalMessage();
         document.getElementById("exitModal").classList.add("show");
-
-        exitCountdownTimer = setInterval(() => {
-          exitRemainSeconds--;
-          if (exitRemainSeconds > 0) {
-            document.getElementById("exitCountNum").innerText =
-              String(exitRemainSeconds);
-            updateExitModalMessage();
-          } else {
-            document.getElementById("exitCountNum").innerText = "0";
-            clearInterval(exitCountdownTimer);
-            exitCountdownTimer = null;
-            executeAppExit();
-          }
-        }, 1000);
       }
 
       function cancelExitModal() {
@@ -5710,7 +6226,7 @@
         } else if (isConnected) {
           if (isGeneratorRunning) {
             st = "run"; title = "운전 중";
-            sub = "가동 " + formatHMS(runElapsedSeconds);
+            sub = isBattChargingNow ? "배터리 충전중" : "";
           } else if (autoBellCountdownTimer) {
             st = "bell"; title = "경고벨 작동";
             sub = "";
@@ -5726,9 +6242,6 @@
           } else if (preheatCountdownTimer) {
             st = "pre"; title = "예열 중";
             sub = "예열 합니다";
-          } else if (schedStartRemainSec > 0) {
-            st = "stop"; title = "시동 예약";
-            sub = formatHMS(schedStartRemainSec) + " 후 시동";
           } else {
             st = "stop"; title = "정지"; sub = "통신 연결 성공";
           }
@@ -5739,19 +6252,34 @@
         } else if (getSavedDeviceName()) {
           st = "conn"; title = "연결 중"; sub = "발전기를 찾고 있습니다";
         }
-        var btnHeroCancel = document.getElementById("btnHeroSchedCancel");
-        var badgeEl = document.getElementById("chargeBadge");
-        var showCancel =
-          isConnected && !sysLocked && !isGeneratorRunning && schedStartRemainSec > 0;
-        if (btnHeroCancel) {
-          btnHeroCancel.style.display = showCancel ? "inline-block" : "none";
+        var heroBellCnt = document.getElementById("heroBellCnt");
+        var isBellState = st === "bell";
+        if (heroBellCnt) {
+          heroBellCnt.style.display = isBellState ? "inline-block" : "none";
+          if (isBellState && autoBellRemainText) {
+            heroBellCnt.innerText = autoBellRemainText;
+          }
         }
-        if (badgeEl) {
-          badgeEl.style.display = showCancel ? "none" : "";
-        }
+        syncSchedStartCardUI();
         if (h.getAttribute("data-state") !== st) h.setAttribute("data-state", st);
         if (t.innerText !== title) t.innerText = title;
         if (s.innerText !== sub) s.innerText = sub;
+      }
+      function syncSchedStartCardUI() {
+        var card = document.getElementById("schedInlineCard");
+        var timeEl = document.getElementById("schedStartTimeText");
+        var openBtn = document.getElementById("btnSchedStartOpen");
+        var cancelBtn = document.getElementById("btnSchedStartCancel");
+        if (!card || !timeEl || !openBtn || !cancelBtn) return;
+        var canUse = isConnected && !sysLocked;
+        var hasSched = canUse && schedStartRemainSec > 0;
+        card.classList.toggle("is-off", !canUse);
+        card.classList.toggle("active", hasSched);
+        var nextTime = hasSched ? formatHMS(schedStartRemainSec) : "00:00:00";
+        if (timeEl.innerText !== nextTime) timeEl.innerText = nextTime;
+        openBtn.style.display = hasSched ? "none" : "block";
+        openBtn.disabled = !canUse;
+        cancelBtn.style.display = hasSched ? "block" : "none";
       }
       setInterval(updateHero, 300);
       updateHero();
