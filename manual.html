@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0" />
+  <meta name="theme-color" content="#070b14" />
+  <title>스마트 발전기 리모컨 사용 설명서 v1.02</title>
+  <style>
+    :root {
+      --bg0: #050810;
+      --bg1: #0b1120;
+      --card: #10192b;
+      --card2: #152138;
+      --line: #223252;
+      --txt: #f1f5fb;
+      --txt2: #a8b8d0;
+      --txt3: #647896;
+      --cyan: #22d3ee;
+      --blue: #3b82f6;
+      --emerald: #10e0a0;
+      --amber: #ffb020;
+      --red: #ff4d5e;
+      --violet: #a78bfa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { scroll-behavior: smooth; background: var(--bg0); }
+    body {
+      font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      background:
+        radial-gradient(600px 360px at 50% -80px, rgba(34, 211, 238, 0.16), transparent 70%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+      color: var(--txt);
+      line-height: 1.62;
+      letter-spacing: -0.25px;
+      padding-bottom: 64px;
+    }
+    .wrap {
+      width: 100%;
+      max-width: 460px;
+      margin: 0 auto;
+      padding: 0 12px;
+    }
+
+    /* 웹툰 표지 배너 */
+    .cover {
+      margin: 14px 0 12px;
+      padding: 24px 18px 20px;
+      border-radius: 22px;
+      background:
+        radial-gradient(280px 140px at 85% 15%, rgba(16, 224, 160, 0.22), transparent 70%),
+        radial-gradient(260px 140px at 10% 90%, rgba(59, 130, 246, 0.24), transparent 70%),
+        linear-gradient(155deg, #13223c, #0a101d);
+      border: 1.5px solid rgba(56, 189, 248, 0.45);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .ver-pill {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(34, 211, 238, 0.14);
+      border: 1px solid rgba(34, 211, 238, 0.5);
+      color: var(--cyan);
+      font-size: 0.78rem;
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+    .cover h1 {
+      font-size: 1.52rem;
+      font-weight: 900;
+      line-height: 1.3;
+      color: #fff;
+      margin-bottom: 8px;
+      word-break: keep-all;
+    }
+    .cover p {
+      font-size: 0.9rem;
+      color: var(--txt2);
+      word-break: keep-all;
+    }
+    .scroll-hint {
+      margin-top: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #fde68a;
+      background: rgba(255, 176, 32, 0.12);
+      border: 1px solid rgba(255, 176, 32, 0.35);
+      padding: 5px 12px;
+      border-radius: 999px;
+    }
+
+    /* 목차 퀵 점프 바 */
+    .toc-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(7, 11, 20, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 9px 0;
+      margin: 0 -12px 14px;
+      border-bottom: 1px solid rgba(34, 211, 238, 0.2);
+    }
+    .toc-scroll {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      padding: 0 12px;
+      scrollbar-width: none;
+    }
+    .toc-scroll::-webkit-scrollbar { display: none; }
+    .toc-chip {
+      flex: 0 0 auto;
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--card2);
+      border: 1px solid var(--line);
+      color: var(--txt);
+      font-size: 0.78rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .toc-chip:active { background: #1d4ed8; border-color: var(--cyan); }
+
+    /* 웹툰 에피소드 헤더 */
+    .ep {
+      margin-bottom: 22px;
+      scroll-margin-top: 56px;
+    }
+    .ep-head {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 10px;
+      padding: 0 2px;
+    }
+    .ep-num {
+      flex: 0 0 auto;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+      color: #fff;
+      font-size: 0.76rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+    }
+    .ep-num.amber { background: linear-gradient(135deg, #d97706, #f59e0b); color: #1a1100; }
+    .ep-num.emerald { background: linear-gradient(135deg, #059669, #10b981); }
+    .ep-num.violet { background: linear-gradient(135deg, #7c3aed, #a855f7); }
+    .ep-num.red { background: linear-gradient(135deg, #dc2626, #f43f5e); }
+    .ep-title {
+      font-size: 1.18rem;
+      font-weight: 900;
+      color: #fff;
+      word-break: keep-all;
+    }
+
+    /* 웹툰 컷 패널 */
+    .cut {
+      background: linear-gradient(165deg, var(--card2), var(--card));
+      border: 1.5px solid var(--line);
+      border-radius: 20px;
+      padding: 16px 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+      position: relative;
+      overflow: hidden;
+    }
+    .cut-arrow {
+      text-align: center;
+      color: var(--cyan);
+      font-size: 1.15rem;
+      font-weight: 900;
+      margin: -4px 0 6px;
+      opacity: 0.8;
+    }
+
+    /* 웹툰 말풍선 */
+    .bubble {
+      background: #0b1324;
+      border: 1.5px solid rgba(56, 189, 248, 0.45);
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-size: 0.94rem;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 12px;
+      position: relative;
+      word-break: keep-all;
+    }
+    .bubble.amber { border-color: rgba(255, 176, 32, 0.55); background: rgba(255, 176, 32, 0.08); color: #fef3c7; }
+    .bubble.emerald { border-color: rgba(16, 224, 160, 0.5); background: rgba(16, 224, 160, 0.08); color: #d1fae5; }
+    .bubble.red { border-color: rgba(255, 77, 94, 0.6); background: rgba(255, 77, 94, 0.1); color: #ffe4e6; }
+    .bubble b { color: var(--cyan); }
+    .bubble.amber b { color: #fcd34d; }
+    .bubble.emerald b { color: #34d399; }
+    .bubble.red b { color: #fda4af; }
+
+    /* 미니 앱 UI 목업 컷 */
+    .mock {
+      background: #060a12;
+      border: 1px solid #263859;
+      border-radius: 15px;
+      padding: 13px 12px;
+      margin-bottom: 10px;
+    }
+    .mock-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .mock-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 900;
+      color: #fff;
+      background: linear-gradient(135deg, #1d4ed8, #0ea5e9);
+      box-shadow: 0 0 14px rgba(37, 99, 235, 0.45);
+    }
+    .mock-pill.ok {
+      background: rgba(16, 224, 160, 0.14);
+      border: 1px solid rgba(16, 224, 160, 0.6);
+      color: var(--emerald);
+      box-shadow: none;
+    }
+    .mock-btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 0.96rem;
+      font-weight: 900;
+      color: #fff;
+    }
+    .mock-btn.auto { background: linear-gradient(135deg, #0b2a66, #1e1b6e); border: 1px solid rgba(96, 165, 250, 0.55); display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; }
+    .mock-thumb { background: linear-gradient(135deg, #7dd3fc, #2563eb); padding: 7px 13px; border-radius: 9px; font-size: 0.95rem; }
+    .mock-btn.bell { background: linear-gradient(135deg, #451a03, #78350f); border: 1px solid rgba(251, 191, 36, 0.5); color: #fde68a; }
+    .mock-btn.pre { background: linear-gradient(135deg, #e08a00, #b45309); }
+    .mock-btn.start { background: linear-gradient(135deg, #10b981, #047857); }
+    .mock-btn.stop { background: linear-gradient(135deg, #ff4d5e, #b91c1c); }
+    .mock-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mock-4col { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+    .mock-chip-btn {
+      padding: 8px 4px;
+      border-radius: 9px;
+      background: #131e33;
+      border: 1px solid #2b3f63;
+      color: #f1f5f9;
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-align: center;
+    }
+    .mock-pin {
+      text-align: center;
+      padding: 10px;
+      border-radius: 11px;
+      background: #0b1220;
+      border: 1.5px solid var(--blue);
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 10px;
+      color: var(--cyan);
+      margin-top: 8px;
+    }
+
+    /* 스텝 리스트 */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: rgba(8, 13, 24, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 13px;
+      padding: 10px 12px;
+      font-size: 0.88rem;
+      color: var(--txt);
+      word-break: keep-all;
+    }
+    .step-badge {
+      flex: 0 0 auto;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #1d4ed8;
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+    .step-badge.amber { background: #d97706; }
+    .step-badge.emerald { background: #059669; }
+    .step-badge.violet { background: #7c3aed; }
+    .step-badge.red { background: #dc2626; }
+
+    /* 3열 다이얼 목업 */
+    .dial3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+    .dial-mini {
+      background: #0a1120;
+      border: 1px solid #223252;
+      border-radius: 13px;
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .dial-mini .t { font-size: 0.74rem; font-weight: 800; color: var(--txt2); margin-bottom: 4px; }
+    .dial-mini .v { font-size: 1.18rem; font-weight: 900; color: var(--emerald); }
+    .dial-mini .r { font-size: 0.66rem; color: var(--txt3); margin-top: 3px; }
+
+    /* 설정표 */
+    .cfg-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+    }
+    .cfg-table th, .cfg-table td {
+      padding: 9px 8px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+      text-align: left;
+      word-break: keep-all;
+    }
+    .cfg-table th { color: var(--cyan); font-weight: 900; font-size: 0.78rem; }
+    .cfg-table td:first-child { font-weight: 800; color: #fff; white-space: nowrap; }
+    .cfg-table td:last-child { color: var(--txt2); }
+
+    /* 팁 박스 */
+    .tip {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(34, 211, 238, 0.08);
+      border-left: 3.5px solid var(--cyan);
+      font-size: 0.84rem;
+      color: #cffafe;
+      word-break: keep-all;
+    }
+    .tip.warn {
+      background: rgba(255, 77, 94, 0.1);
+      border-left-color: var(--red);
+      color: #fecdd3;
+    }
+    .tip.gold {
+      background: rgba(255, 176, 32, 0.1);
+      border-left-color: var(--amber);
+      color: #fef3c7;
+    }
+
+    /* FAQ 아코디언 */
+    details.faq {
+      background: rgba(8, 13, 24, 0.75);
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 11px 13px;
+      margin-bottom: 8px;
+    }
+    details.faq summary {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #fff;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    details.faq summary::after { content: "▼"; font-size: 0.72rem; color: var(--cyan); }
+    details.faq[open] summary::after { content: "▲"; }
+    details.faq p {
+      margin-top: 9px;
+      padding-top: 9px;
+      border-top: 1px solid rgba(148, 163, 184, 0.14);
+      font-size: 0.85rem;
+      color: var(--txt2);
+      word-break: keep-all;
+    }
+
+    /* 하단 맨위로 */
+    .footer-end {
+      text-align: center;
+      padding: 18px 12px 10px;
+      color: var(--txt3);
+      font-size: 0.8rem;
+    }
+    .btn-top {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 11px 26px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #1d4ed8, #0ea5e9);
+      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 900;
+      text-decoration: none;
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+    }
+  </style>
+</head>
+<body id="top">
+  <div class="wrap">
+    <!-- 표지 -->
+    <header class="cover">
+      <div class="ver-pill">스마트 발전기 리모컨 · v1.02</div>
+      <h1>📱 한눈에 보는<br />스마트 발전기 사용 설명서</h1>
+      <p>복잡한 글 대신 화면 순서대로 쭉 내려보며<br />3분 만에 끝내는 무선 발전기 리모컨 가이드</p>
+      <div class="scroll-hint">👇 웹툰처럼 아래로 쭉~ 밀어서 보세요</div>
+    </header>
+
+    <!-- 빠른 목차 -->
+    <nav class="toc-bar" aria-label="목차">
+      <div class="toc-scroll">
+        <a class="toc-chip" href="#ep1">① 처음 연결</a>
+        <a class="toc-chip" href="#ep2">② 계기판 보기</a>
+        <a class="toc-chip" href="#ep3">③ AI 자동시동</a>
+        <a class="toc-chip" href="#ep4">④ 수동·겨울시동</a>
+        <a class="toc-chip" href="#ep5">⑤ 정지·자동꺼짐</a>
+        <a class="toc-chip" href="#ep6">⑥ 자동시동 예약</a>
+        <a class="toc-chip" href="#ep7">⑦ 설정 메뉴</a>
+        <a class="toc-chip" href="#ep8">⑧ 안전·FAQ</a>
+      </div>
+    </nav>
+
+    <!-- EP 01 -->
+    <section id="ep1" class="ep">
+      <div class="ep-head">
+        <span class="ep-num">EP.01</span>
+        <h2 class="ep-title">처음 딱 1번만! 블루투스 연결하기</h2>
+      </div>
+      <div class="cut">
+        <div class="bubble">
+          폰 설정에서 복잡하게 페어링할 필요 없어요!<br />
+          <b>앱 안에서 [연결하기] → 이름 선택 → 뒤 4자리 입력</b>하면 끝!
+        </div>
+        <div class="mock">
+          <div class="mock-row">
+            <span class="mock-pill">● 연결하기</span>
+            <span style="font-size:0.82rem;color:#9fb0c9;font-weight:800;">⚙️ 설정</span>
+          </div>
+          <div class="mock-pin">1 1 1 2</div>
+          <div style="text-align:center;font-size:0.74rem;color:#9fb0c9;margin-top:6px;">
+            예: 장비 이름이 <b style="color:#fff">korea1112</b> 라면 비밀번호는 <b style="color:#22d3ee">1112</b>
+          </div>
+        </div>
+        <div class="steps">
+          <div class="step-item"><span class="step-badge">1</span><div>휴대폰 <b>블루투스</b>를 켜고, 발전기 모듈 <b>전투기 스위치</b>가 켜져 있는지 확인하세요.</div></div>
+          <div class="step-item"><span class="step-badge">2</span><div>앱 왼쪽 위 파란색 <b>[연결하기]</b> 버튼을 누르고 목록에서 내 발전기(<b>korea + 숫자 4자리</b>)를 선택하세요.</div></div>
+          <div class="step-item"><span class="step-badge">3</span><div>이름 맨 뒤 <b>숫자 4자리</b>를 비밀번호로 1번만 입력하면 저장되어, <b>다음부터는 앱만 열어도 자동 연결</b>됩니다.</div></div>
+        </div>
+        <div class="tip">🔊 연결되면 여성 음성으로 <b>"발전기에 연결되었습니다"</b> 안내가 나옵니다. 다른 발전기로 바꿀 때는 <b>[⚙️ 설정 → 장비 변경]</b>을 누르세요.</div>
+      </div>
+    </section>
+
+    <div class="cut-arrow">▼</div>
+
+    <!-- EP 02 -->
+    <section id="ep2" class="ep">
+      <div class="ep-head">
+        <span class="ep-num emerald">EP.02</span>
+        <h2 class="ep-title">계기판 &amp; 3대 컨디션 읽는 법</h2>
+      </div>
+      <div class="cut">
+        <div class="bubble emerald">
+          바늘이 <b>12시 정중앙 검정 기준선</b> 근처(초록 구간)에 있으면 최상의 정상 상태예요!
+        </div>
+        <div class="dial3">
+          <div class="dial-mini">
+            <div class="t">발전기</div>
+            <div class="v">440<span style="font-size:0.72rem">V</span></div>
+            <div class="r">400 ~ 480V</div>
+          </div>
+          <div class="dial-mini">
+            <div class="t">엔진</div>
+            <div class="v">60.0<span style="font-size:0.72rem">Hz</span></div>
+            <div class="r">56 ~ 64Hz</div>
+          </div>
+          <div class="dial-mini">
+            <div class="t">배터리</div>
+            <div class="v">13.8<span style="font-size:0.72rem">V</span></div>
+            <div class="r">10 ~ 16V</div>
+          </div>
+        </div>
+        <div class="steps">
+          <div class="step-item"><span class="step-badge emerald">전</span><div><b>배터리 컨디션 (시동시 전압):</b> 평상시 전압이 아니라 <b>실제 시동 모터를 돌릴 때 떨어진 최저 전압</b>(최근 3회 중앙값)을 보여줍니다. 왼쪽 빨강(교체필요)으로 갈수록 배터리 점검 시기!</div></div>
+          <div class="step-item"><span class="step-badge emerald">연</span><div><b>연료 컨디션:</b> 설정한 연비(기본 3.2L/h)로 소모량을 실시간 계산합니다. 주유 후 <b>[충전]</b> 버튼을 누르면 0.0L로 초기화됩니다.</div></div>
+          <div class="step-item"><span class="step-badge emerald">오</span><div><b>오일 컨디션:</b> 가동 1시간 = 100KM로 환산해 주행 거리를 누적합니다. 오일 교환 후 <b>[교환]</b> 버튼으로 0.0KM 초기화!</div></div>
+        </div>
+        <div class="tip">⚡ 발전기가 정상 가동되면서 배터리가 13.0V 이상이면 상단 상태 카드 <b>"시동 성공"</b> 아래에 <b>"배터리 충전중"</b>이 표시됩니다.</div>
+      </div>
+    </section>
+
+    <div class="cut-arrow">▼</div>
+
+    <!-- EP 03 -->
+    <section id="ep3" class="ep">
+      <div class="ep-head">
+        <span class="ep-num">EP.03</span>
+        <h2 class="ep-title">손가락 한 번 밀어서! [AI 자동 시동]</h2>
+      </div>
+      <div class="cut">
+        <div class="bubble">
+          평소에는 이 버튼 하나만 오른쪽 끝까지 밀어주면<br />
+          <b>경고벨 → 예열 → 점검 → 시동</b>까지 발전기가 알아서 척척!
+        </div>
+        <div class="mock">
+          <div class="mock-btn auto">
+            <span class="mock-thumb">❯❯</span>
+            <span style="flex:1;text-align:center;">AI 자동 시동 (오른쪽으로 밀기)</span>
+          </div>
+        </div>
+        <div class="steps">
+          <div class="step-item"><span class="step-badge">1</span><div><b>20초 연속 경고벨:</b> 주변 작업자·보행자 안전을 위해 먼저 20초 동안 경고벨이 울립니다.</div></div>
+          <div class="step-item"><span class="step-badge">2</span><div><b>자동 예열 (기본 8초) + 1초 대기:</b> 1초 간격 <b>삐- 삐-</b> 끊김음과 함께 엔진을 예열합니다.</div></div>
+          <div class="step-item"><span class="step-badge">3</span><div><b>1단 ON + 4초 시동 전 점검:</b> 연료를 열고 4초간 점검한 뒤 경고벨을 끄고 <b>시동 모터</b>를 돌립니다.</div></div>
+          <div class="step-item"><span class="step-badge emerald">✓</span><div><b>시동 성공!</b> 전압이 올라오면 시동 모터가 즉시 멈추고 <b>"발전기가 정상 가동되었습니다"</b> 음성이 나옵니다.</div></div>
+        </div>
+        <div class="tip gold">💡 자동 시동 진행 중에 <b>중간에 블루투스가 잠시 끊겨도</b> 보드가 안전하게 끝까지 시동을 마칩니다. 멈추고 싶을 땐 아래 빨간 <b>[엔진 정지]</b>를 누르세요!</div>
+      </div>
+    </section>
+
+    <div class="cut-arrow">▼</div>
+
+    <!-- EP 04 -->
+    <section id="ep4" class="ep">
+      <div class="ep-head">
+        <span class="ep-num amber">EP.04</span>
+        <h2 class="ep-title">수동 [예열] · [시동] &amp; 한겨울 동시 시동 비법</h2>
+      </div>
+      <div class="cut">
+        <div class="bubble amber">
+          추운 겨울철 시동이 뻑뻑할 땐?<br />
+          <b>[예열]이 돌아가는 도중에 바로 [시동]을 눌러보세요!</b>
+        </div>
+        <div class="mock">
+          <div class="mock-btn bell" style="margin-bottom:8px;">🔔 경고벨 20초 (눌러서 울림 / 다시 누르면 정지)</div>
+          <div class="mock-2col">
+            <div class="mock-btn pre">예열 8초</div>
+            <div class="mock-btn start">시동 0.9초</div>
+          </div>
+        </div>
+        <div class="steps">
+          <div class="step-item"><span class="step-badge amber">벨</span><div><b>[🔔 경고벨 20초]:</b> 시동 없이 주변에 미리 알림만 울릴 때 사용합니다. 울리는 중 한 번 더 누르면 즉시 꺼집니다.</div></div>
+          <div class="step-item"><span class="step-badge amber">예</span><div><b>단독 [예열]:</b> 연료(1단)는 안 열고 예열 플러그만 설정 시간(기본 8초) 동안 켭니다.</div></div>
+          <div class="step-item"><span class="step-badge emerald">시</span><div><b>단독 [시동]:</b> 1단 ON → 4초 온도 점검 후 시동 모터를 돌립니다.</div></div>
+          <div class="step-item"><span class="step-badge red">❄</span><div><b>한겨울 동시 시동 (강력 추천!):</b> <b>[예열] 작동 중에 [시동]</b>을 누르면 예열은 꺼지지 않고 계속 유지된 채, 4초 점검을 건너뛰고 <b>1초 만에 바로 시동 모터</b>가 돌아갑니다!</div></div>
+        </div>
+        <div class="tip">🛡️ <b>스타트 모터 보호 기능:</b> 시동 모터를 돌린 뒤 <b>15초 이내</b>에 다시 시동을 누르면 모터 과열 방지를 위해 남은 휴지 시간만큼 기다린 후 안전하게 돕니다.</div>
+      </div>
+    </section>
+
+    <div class="cut-arrow">▼</div>
+
+    <!-- EP 05 -->
+    <section id="ep5" class="ep">
+      <div class="ep-head">
+        <span class="ep-num red">EP.05</span>
+        <h2 class="ep-title">운전 중 [자동 꺼짐] &amp; 하단 [엔진 정지]</h2>
+      </div>
+      <div class="cut">
+        <div class="bubble red">
+          시동이 걸리면 화면이 자동으로 <b>운전 모드</b>로 바뀌고,<br />
+          화면 맨 아래 빨간 <b>[엔진 정지]</b> 버튼은 언제든 누를 수 있게 고정돼요!
+        </div>
+        <div class="mock">
+          <div style="text-align:center;margin-bottom:10px;">
+            <div style="font-size:0.84rem;font-weight:900;color:#c8a6ff;">자동 꺼짐 설정 (최대 12시간)</div>
+            <div style="font-size:1.55rem;font-weight:900;color:#fff;letter-spacing:2px;">01:15:00</div>
+            <div class="mock-4col">
+              <div class="mock-chip-btn">1분</div>
+              <div class="mock-chip-btn">15분</div>
+              <div class="mock-chip-btn">60분</div>
+              <div class="mock-chip-btn" style="color:#9fb0c9;">취소</div>
+            </div>
+          </div>
+          <div class="mock-btn stop">엔진 정지</div>
+        </div>
+        <div class="steps">
+          <div class="step-item"><span class="step-badge violet">⏱</span><div><b>자동 꺼짐 설정:</b> 운전 중에 <b>[1분] [15분] [60분]</b>을 누를 때마다 시간이 누적됩니다. 시간이 0이 되면 폰이 꺼져 있어도 <b>발전기가 스스로 완전히 정지</b>합니다.</div></div>
+          <div class="step-item"><span class="step-badge red">■</span><div><b>[엔진 정지]:</b> 누르는 즉시 시동·예열·연료를 차단하고, 발전기 전압이 완전히 사라질 때까지 보드가 끝까지 정지 신호를 책임집니다.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="cut-arrow">▼</div>
+
+    <!-- EP 06 -->
+    <section id="ep6" class="ep">
+      <div class="ep-head">
+        <span class="ep-num violet">EP.06</span>
+        <h2 class="ep-title">알아서 켜지고 꺼지는 [자동시동 예약]</h2>
+      </div>
+      <div class="cut">
+        <div class="bubble">
+          새벽 작업이나 한파 대비! <b>몇 시간 뒤에 켜서 몇 시간 돌고 자동으로 끌지</b><br />
+          최대 48시간 뒤까지 미리 예약해 둘 수 있어요!
+        </div>
+        <div class="steps">
+          <div class="step-item"><span class="step-badge violet">1</span><div>홈 화면 <b>[자동시동 예약]</b> 카드에서 <b>[시동 예약]</b>을 누릅니다. (운전 중에도 다음 시동 예약 가능!)</div></div>
+          <div class="step-item"><span class="step-badge violet">2</span><div><b>1단계 안전 확인:</b> 안전한 주차 동의 체크 + <b>비밀번호에 랜덤 숫자를 더한 정답</b>을 3개 버튼 중 선택합니다.</div></div>
+          <div class="step-item"><span class="step-badge violet">3</span><div><b>2단계 시간 설정:</b> <b>예약 시간</b>(최대 48시간)과 <b>가동 시간</b>(최대 12시간)을 <b>[1분] [15분] [60분] [취소]</b> 버튼으로 맞춰 <b>[확인]</b>을 누릅니다.</div></div>
+          <div class="step-item"><span class="step-badge emerald">3x</span><div><b>겨울철 최대 3회 자동 재시도:</b> 예약 시동이 한 번에 안 걸리면 30초 확인 → 안전 꺼짐 5회 후 <b>최대 3회까지 스스로 재시도</b>합니다. 3회 모두 실패하면 안전 정지 후 다음 연결 시 알림창을 띄웁니다.</div></div>
+        </div>
+        <div class="tip warn">⚠️ 예약은 <b>① [예약 취소] 버튼 ② 예약 대기 중 직접 시동을 건 경우 ③ 기판 전투기 스위치를 끈 경우</b>에만 취소됩니다. 앱을 종료해도 보드 안에서 예약은 그대로 유지됩니다!</div>
+      </div>
+    </section>
+
+    <div class="cut-arrow">▼</div>
+
+    <!-- EP 07 -->
+    <section id="ep7" class="ep">
+      <div class="ep-head">
+        <span class="ep-num">EP.07</span>
+        <h2 class="ep-title">⚙️ 설정 메뉴 한눈에 보기</h2>
+      </div>
+      <div class="cut">
+        <div class="bubble">
+          우측 상단 <b>[⚙️ 설정]</b>은 블루투스가 안 연결되어 있어도 언제든 열어볼 수 있어요!
+        </div>
+        <table class="cfg-table">
+          <thead>
+            <tr><th>메뉴</th><th>기본값 / 설명</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>예열 시간</td><td>기본 <b>8초</b> (1~15초 조절)</td></tr>
+            <tr><td>시동 시간</td><td>기본 <b>0.9초</b> (0.5~4.0초 조절)</td></tr>
+            <tr><td>비상 정지</td><td>기본 <b>안함</b> (고장 무전압 시 1분~1시간 자동 정지)</td></tr>
+            <tr><td>오일 교환</td><td>기본 <b>10만KM</b> (5만~15만KM 주기 설정)</td></tr>
+            <tr><td>기름 탱크</td><td>기본 <b>200L</b> (100~500L 용량 설정)</td></tr>
+            <tr><td>연비 설정</td><td>기본 <b>3.2L</b> (1.0~6.0L/h 시간당 소비량)</td></tr>
+            <tr><td>음성 안내</td><td>기본 <b>켜짐</b> (여성 보이스 안내 켜기/끄기)</td></tr>
+            <tr><td>운행 기록</td><td>최근 <b>50건</b> 날짜·가동시간 자동 저장 (폰 보관)</td></tr>
+            <tr><td>사용 설명서</td><td>최신 모바일 웹툰형 사용 설명서 열기</td></tr>
+            <tr><td>장비 변경</td><td>저장된 발전기 해제 후 다른 발전기에 연결</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="cut-arrow">▼</div>
+
+    <!-- EP 08 -->
+    <section id="ep8" class="ep">
+      <div class="ep-head">
+        <span class="ep-num red">EP.08</span>
+        <h2 class="ep-title">현장 안전 수칙 &amp; 자주 묻는 질문</h2>
+      </div>
+      <div class="cut">
+        <details class="faq" open>
+          <summary>Q. 운전 중 블루투스가 끊어지면 발전기가 꺼지나요?</summary>
+          <p><b>아니요! 발전기는 절대 꺼지지 않고 정상 가동을 유지합니다.</b> 상단에 빨간 끊김 배너가 뜨고, 가까이 가면 자동으로 다시 연결됩니다. 예약해 둔 자동 꺼짐 시간도 보드가 기억해서 제시간에 꺼줍니다.</p>
+        </details>
+        <details class="faq">
+          <summary>Q. 비상 시 현장에서 수동으로 바로 끄려면?</summary>
+          <p>기판 박스의 <b>전투기 스위치(모듈 전원 스위치)</b>를 내리거나 발전기 본체의 수동 정지·연료 밸브로 즉시 정지할 수 있습니다. 전투기 스위치를 내리면 대기 중이던 시동 예약도 100% 안전하게 취소됩니다.</p>
+        </details>
+        <details class="faq">
+          <summary>Q. 연결할 때 "블루투스를 켜주세요" 창이 떠요.</summary>
+          <p>휴대폰 상단 바를 내려 <b>블루투스</b>를 켜신 뒤 다시 <b>[연결하기]</b>를 눌러주세요.</p>
+        </details>
+        <details class="faq">
+          <summary>Q. "제어기 점검이 필요합니다 (x3303)"가 뜨면?</summary>
+          <p>안전한 장비 관리와 업그레이드를 위해 <b>장기간(약 3년) 정기점검이 없을 경우</b> 정지 상태에서만 무선 제어를 잠그는 정식 안전 기능입니다. (운전 중에는 절대 작동하지 않습니다.) 본사로 연락해 점검을 받아주세요.</p>
+        </details>
+        <div class="tip warn">
+          🛑 <b>안전 최우선:</b> 무인 시동 예약 전에는 반드시 <b>사람·동물·인화성 물질이 없는 안전한 장소</b>에 주차되어 있는지 확인해 주세요!
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer-end">
+      <div>스마트 발전기 원격 제어 시스템 · 사용 설명서 v1.02</div>
+      <div>뒤로가기 버튼을 누르면 발전기 리모컨 앱으로 바로 돌아갑니다.</div>
+      <a class="btn-top" href="#top">▲ 맨 위로 올라가기</a>
+    </footer>
+  </div>
+</body>
+</html>
