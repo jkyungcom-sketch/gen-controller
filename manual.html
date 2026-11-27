@@ -701,9 +701,21 @@
 
     <footer class="footer-end">
       <div>스마트 발전기 원격 제어 시스템 · 사용 설명서 v1.02</div>
-      <div>뒤로가기 버튼을 누르면 발전기 리모컨 앱으로 바로 돌아갑니다.</div>
-      <a class="btn-top" href="#top">▲ 맨 위로 올라가기</a>
+      <div>아래 닫기 버튼을 누르면 설정창으로 바로 돌아갑니다.</div>
+      <button type="button" class="btn-top" style="border:none;cursor:pointer;font-family:inherit" onclick="closeManualToApp()">✕ 닫기</button>
     </footer>
+    <script>
+      function closeManualToApp() {
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage("CLOSE_MANUAL", "*");
+            return;
+          }
+        } catch (e) {}
+        try { window.close(); } catch (e) {}
+        try { history.back(); } catch (e) {}
+      }
+    </script>
   </div>
 </body>
 </html>
