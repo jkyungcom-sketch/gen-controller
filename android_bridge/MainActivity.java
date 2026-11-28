@@ -112,6 +112,10 @@ public class MainActivity extends BridgeActivity {
                         != PackageManager.PERMISSION_GRANTED) {
                     need.add("android.permission.NEARBY_WIFI_DEVICES");
                 }
+                if (ContextCompat.checkSelfPermission(this, "android.permission.POST_NOTIFICATIONS")
+                        != PackageManager.PERMISSION_GRANTED) {
+                    need.add("android.permission.POST_NOTIFICATIONS");
+                }
             }
             // ★ 위치 권한은 Android 12+ 에서도 SSID 스캔에 필수
             //   (FINE 만 요청하면 일부 기기에서 COARSE 가 자동 거부되어 SSID 가 <unknown ssid>)
