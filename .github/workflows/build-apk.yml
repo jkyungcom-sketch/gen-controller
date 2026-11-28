@@ -92,7 +92,7 @@ jobs:
           set -e
           npm init -y >/dev/null
           npm i --no-audit --no-fund @capacitor/core @capacitor/cli @capacitor/android
-          npm i --no-audit --no-fund @capacitor-community/bluetooth-le @capacitor/preferences
+          npm i --no-audit --no-fund @capacitor-community/bluetooth-le @capacitor/preferences @capacitor/local-notifications
 
       - name: Prepare web assets (inject BLE adapter)
         run: |
